@@ -1,0 +1,81 @@
+# Lab Cyber - Environnement isolé d'apprentissage
+# Réseau dédié : cibles + conteneur attaquant
+
+services:
+  # --- Réseau interne (tous les services sont sur lab-network) ---
+
+  # Machine attaquant : outils de test (nmap, nikto, sqlmap, etc.)
+  attaquant:
+    build: ./attacker
+    container_name: lab-attaquant
+    networks:
+      - lab-network
+    stdin_open: true
+    tty: true
+    # Garder le conteneur actif pour se connecter en bash
+    profiles:
+      - default
+
+  # --- Cibles vulnérables ---
+
+  # DVWA - Damn Vulnerable Web Application (SQLi, XSS, CSRF, etc.)
+  dvwa:
+    image: cytopia/dvwa:latest
+    container_name: lab-dvwa
+    networks:
+      lab-network:
+        aliases:
+          - dvwa
+    ports:
+      - "4280:80"
+    environment:
+      - MYSQL_HOST=dvwa-db
+      - MYSQL_DATABASE=dvwa
+      - MYSQL_USER=dvwa
+      - MYSQL_PASSWORD=p@ssw0rd
+    depends_on:
+      - dvwa-db
+
+  dvwa-db:
+    image: mariadb:10
+    container_name: lab-dvwa-db
+    networks:
+      - lab-network
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=dvwa
+      - MYSQL_USER=dvwa
+      - MYSQL_PASSWORD=p@ssw0rd
+    volumes:
+      - dvwa-db-data:/var/lib/mysql
+
+  # OWASP Juice Shop - Application moderne vulnérable
+  juice-shop:
+    image: bkimminich/juice-shop:v17.4.0
+    container_name: lab-juice-shop
+    networks:
+      lab-network:
+        aliases:
+          - juice-shop
+    ports:
+      - "3000:3000"
+
+  # bWAPP - buggy Web Application (nombreuses vulnérabilités)
+  # Premier accès : http://localhost:4281/install.php pour finaliser l'installation
+  bwapp:
+    image: raesene/bwapp:latest
+    container_name: lab-bwapp
+    networks:
+      lab-network:
+        aliases:
+          - bwapp
+    ports:
+      - "4281:80"
+
+volumes:
+  dvwa-db-data:
+
+networks:
+  lab-network:
+    driver: bridge
+    name: lab-network

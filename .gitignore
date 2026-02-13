@@ -1,0 +1,39 @@
+# Environnement virtuel Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+.eggs/
+
+# Docker
+.docker/
+*.log
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / Env local
+.env
+.env.local
+*.pem
+secrets/
+
+# Résultats / Rapports (optionnel : décommenter si vous ne versionnez pas les rapports)
+# reports/
+# scans/
+
+# Logs et données temporaires
+tmp/
+temp/
+*.tmp
