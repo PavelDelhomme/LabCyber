@@ -1,10 +1,15 @@
-# Lab Cyber - Environnement isolé d'apprentissage
-# Réseau dédié : cibles + conteneur attaquant
+# Lab Cyber - Plateforme web + toutes catégories (Web, Réseau, App, Red/Blue, Stégano, Crypto)
+# Réseau isolé : lab-network
 
 services:
-  # --- Réseau interne (tous les services sont sur lab-network) ---
+  # ========== Plateforme web (interface type TryHackMe, accès aux machines) ==========
+  platform:
+    build: ./platform
+    container_name: lab-platform
+    ports: ["8080:80"]
+    networks: [lab-network]
 
-  # Machine attaquant : outils de test (nmap, nikto, sqlmap, etc.)
+  # ========== Machine attaquant (Red + outils multi-catégories) ==========
   attaquant:
     build: ./attacker
     container_name: lab-attaquant
@@ -12,68 +17,89 @@ services:
       - lab-network
     stdin_open: true
     tty: true
-    # Garder le conteneur actif pour se connecter en bash
-    profiles:
-      - default
 
-  # --- Cibles vulnérables ---
-
-  # DVWA - Damn Vulnerable Web Application (SQLi, XSS, CSRF, etc.)
+  # ========== WEB ==========
   dvwa:
     image: cytopia/dvwa:latest
     container_name: lab-dvwa
     networks:
       lab-network:
-        aliases:
-          - dvwa
-    ports:
-      - "4280:80"
+        aliases: [dvwa]
+    ports: ["4280:80"]
     environment:
       - MYSQL_HOST=dvwa-db
       - MYSQL_DATABASE=dvwa
       - MYSQL_USER=dvwa
       - MYSQL_PASSWORD=p@ssw0rd
-    depends_on:
-      - dvwa-db
+    depends_on: [dvwa-db]
 
   dvwa-db:
     image: mariadb:10
     container_name: lab-dvwa-db
-    networks:
-      - lab-network
+    networks: [lab-network]
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=dvwa
       - MYSQL_USER=dvwa
       - MYSQL_PASSWORD=p@ssw0rd
-    volumes:
-      - dvwa-db-data:/var/lib/mysql
+    volumes: [dvwa-db-data:/var/lib/mysql]
 
-  # OWASP Juice Shop - Application moderne vulnérable
   juice-shop:
     image: bkimminich/juice-shop:v17.4.0
     container_name: lab-juice-shop
     networks:
       lab-network:
-        aliases:
-          - juice-shop
-    ports:
-      - "3000:3000"
+        aliases: [juice-shop]
+    ports: ["3000:3000"]
 
-  # bWAPP - buggy Web Application (nombreuses vulnérabilités)
-  # Premier accès : http://localhost:4281/install.php pour finaliser l'installation
   bwapp:
     image: raesene/bwapp:latest
     container_name: lab-bwapp
     networks:
       lab-network:
-        aliases:
-          - bwapp
+        aliases: [bwapp]
+    ports: ["4281:80"]
+
+  # ========== RÉSEAU (pentest réseau, brute force SSH, Redis) ==========
+  vuln-network:
+    build: ./vuln-network
+    container_name: lab-vuln-network
+    networks:
+      lab-network:
+        aliases: [vuln-network, vulnbox]
     ports:
-      - "4281:80"
+      - "4222:22"
+      - "6379:6379"
+
+  # ========== APPLICATIONS / API ==========
+  vuln-api:
+    build: ./vuln-api
+    container_name: lab-vuln-api
+    networks:
+      lab-network:
+        aliases: [vuln-api, api]
+    ports: ["5000:5000"]
+    volumes: [vuln-api-data:/data]
+
+  # ========== BLUE TEAM (analyse trafic / forensique) ==========
+  # Se connecter et lancer : suricata -r /workspace/capture.pcap -l /var/log/suricata
+  blue-suricata:
+    image: jasonish/suricata:latest
+    container_name: lab-suricata
+    networks: [lab-network]
+    volumes:
+      - suricata-logs:/var/log/suricata
+      - suricata-pcaps:/workspace
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep infinity"]
+    profiles:
+      - blue
 
 volumes:
   dvwa-db-data:
+  vuln-api-data:
+  suricata-logs:
+  suricata-pcaps:
 
 networks:
   lab-network:

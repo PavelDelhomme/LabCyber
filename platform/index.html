@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab Cyber – Plateforme d'apprentissage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1 class="logo">Lab Cyber</h1>
+        <p class="tagline">Plateforme d'apprentissage cybersécurité</p>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">◉</span>
+          <span>Tableau de bord</span>
+        </button>
+        <div class="nav-section">Rooms par catégorie</div>
+        <div id="nav-rooms"></div>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+        <span>•</span>
+        <span>Usage éducatif uniquement</span>
+      </div>
+    </aside>
+    <main class="main">
+      <div id="view-dashboard" class="view active">
+        <header class="page-header">
+          <h2>Bienvenue sur le Lab Cyber</h2>
+          <p>Choisis une room pour commencer. Chaque room contient des objectifs, des machines accessibles directement et des tâches avec explications et tips.</p>
+        </header>
+        <div class="dashboard-grid" id="dashboard-cards"></div>
+      </div>
+      <div id="view-room" class="view">
+        <header class="page-header room-header">
+          <div class="room-meta">
+            <span id="room-category-badge" class="badge"></span>
+            <span id="room-difficulty" class="difficulty"></span>
+          </div>
+          <h2 id="room-title"></h2>
+          <p id="room-description" class="room-description"></p>
+        </header>
+        <section class="room-section">
+          <h3>Objectifs</h3>
+          <ul id="room-objectives"></ul>
+        </section>
+        <section id="room-challenges-section" class="room-section challenges-section" hidden>
+          <h3>Télécharger les défis</h3>
+          <p class="hint">Télécharge les fichiers puis travaille depuis le conteneur attaquant (steghide, openssl, etc.).</p>
+          <div id="room-challenge-downloads" class="machine-cards"></div>
+        </section>
+        <section class="room-section machines-section">
+          <h3>Accéder aux machines</h3>
+          <p class="hint">Ouvre les cibles dans un nouvel onglet. Les URLs pointent vers localhost (adapte si ton lab tourne ailleurs).</p>
+          <div id="room-machines" class="machine-cards"></div>
+        </section>
+        <section class="room-section">
+          <h3>Tâches</h3>
+          <div id="room-tasks" class="tasks-list"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

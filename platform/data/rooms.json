@@ -1,0 +1,184 @@
+{
+  "categories": [
+    { "id": "web", "name": "Web", "icon": "🌐", "color": "#4ade80" },
+    { "id": "network", "name": "Réseau", "icon": "🔌", "color": "#60a5fa" },
+    { "id": "api", "name": "Applications / API", "icon": "⚙️", "color": "#a78bfa" },
+    { "id": "red", "name": "Red Team", "icon": "🔴", "color": "#f87171" },
+    { "id": "blue", "name": "Blue Team", "icon": "🔵", "color": "#38bdf8" },
+    { "id": "forensics", "name": "Forensique", "icon": "🔍", "color": "#fbbf24" },
+    { "id": "osint", "name": "OSINT", "icon": "📡", "color": "#34d399" },
+    { "id": "stego", "name": "Stéganographie", "icon": "🖼️", "color": "#c084fc" },
+    { "id": "crypto", "name": "Cryptographie", "icon": "🔐", "color": "#fb923c" }
+  ],
+  "rooms": [
+    {
+      "id": "dvwa-web",
+      "category": "web",
+      "title": "DVWA – Vulnérabilités web",
+      "difficulty": "Débutant",
+      "description": "Damn Vulnerable Web Application : injection SQL, XSS, CSRF, upload de fichiers, etc. Parfait pour apprendre l’OWASP Top 10.",
+      "objectives": ["Comprendre l’injection SQL", "Tester XSS réfléchi et stocké", "Exploiter un upload de fichier", "Reproduire une attaque CSRF"],
+      "machines": [
+        { "name": "DVWA", "url": "http://localhost:4280", "credentials": "admin / password" }
+      ],
+      "tasks": [
+        { "title": "Créer la base de données", "content": "Sur la page d’accueil DVWA, clique sur « Create / Reset Database » en bas de page.", "tip": "Sans ça, les modules ne fonctionneront pas." },
+        { "title": "SQL Injection (Low)", "content": "Va dans « SQL Injection », niveau Low. Modifie le paramètre id dans l’URL pour injecter du SQL (ex: 1' OR '1'='1).", "tip": "Utilise sqlmap avec --cookie pour automatiser : repère d’abord le cookie de session dans ton navigateur." },
+        { "title": "XSS réfléchi", "content": "Dans « XSS (Reflected) », entre un script dans le champ (ex: <script>alert(1)</script>) et observe le résultat.", "tip": "En situation réelle, l’attaquant envoie un lien contenant le payload à la victime." },
+        { "title": "File Upload", "content": "Dans « File Upload », uploade un fichier PHP (webshell) ou contourne la validation (double extension, type MIME).", "tip": "En Low, la validation est minimale. Passe en Medium/High pour des bypass plus avancés." }
+      ]
+    },
+    {
+      "id": "juice-shop",
+      "category": "web",
+      "title": "OWASP Juice Shop",
+      "difficulty": "Intermédiaire",
+      "description": "Application moderne volontairement vulnérable. Suis les défis du scoreboard (icône sur la page) pour pratiquer XSS, auth, API, etc.",
+      "objectives": ["Résoudre les défis du scoreboard", "Tester l’API et les vulnérabilités modernes"],
+      "machines": [
+        { "name": "Juice Shop", "url": "http://localhost:3000" }
+      ],
+      "tasks": [
+        { "title": "Ouvrir le scoreboard", "content": "Clique sur l’icône du scoreboard (tableau des défis) et choisis un défi à résoudre.", "tip": "Commence par les plus faciles (étoiles)." },
+        { "title": "XSS et auth", "content": "Plusieurs défis concernent le vol de token, la connexion admin, ou l’injection de script.", "tip": "Regarde les requêtes dans l’onglet Réseau (F12) pour comprendre les appels API." }
+      ]
+    },
+    {
+      "id": "vuln-network",
+      "category": "network",
+      "title": "Pentest réseau – vuln-network",
+      "difficulty": "Débutant",
+      "description": "Une machine avec SSH (mot de passe faible) et Redis (sans authentification). Objectif : découverte, exploitation, accès.",
+      "objectives": ["Scanner les ports et services", "Exploiter Redis non sécurisé", "Se connecter en SSH (credentials faibles ou brute force)"],
+      "machines": [
+        { "name": "Terminal attaquant", "url": "#", "note": "docker compose exec attaquant bash" },
+        { "name": "vuln-network (SSH)", "url": "http://localhost:4222", "note": "SSH root@localhost -p 4222 — mot de passe : labpassword" },
+        { "name": "Redis", "url": "http://localhost:6379", "note": "redis-cli -h vuln-network (depuis l’attaquant)" }
+      ],
+      "tasks": [
+        { "title": "Découverte", "content": "Depuis le conteneur attaquant : nmap -sV vuln-network. Note les ports ouverts (22, 6379).", "tip": "nmap -sC ajoute des scripts de détection." },
+        { "title": "Redis sans auth", "content": "Depuis l’attaquant : redis-cli -h vuln-network. Tape INFO puis CONFIG GET dir pour voir la config.", "tip": "Redis sans mot de passe permet parfois d’écrire des clés (ex: clé SSH) pour escalade." },
+        { "title": "SSH", "content": "Connecte-toi en SSH : ssh root@vuln-network (depuis l’attaquant) ou ssh root@localhost -p 4222 (depuis ta machine). Mot de passe : labpassword.", "tip": "Pour t’entraîner au brute force : hydra -l root -P wordlist.txt ssh://vuln-network." }
+      ]
+    },
+    {
+      "id": "vuln-api",
+      "category": "api",
+      "title": "API vulnérable – vuln-api",
+      "difficulty": "Débutant",
+      "description": "API REST avec SQLi, IDOR et authentification faible. Idéal pour OWASP API Security.",
+      "objectives": ["Tester l’authentification (login)", "Exploiter un IDOR sur /api/users/<id>", "Injection SQL sur /api/products?q="],
+      "machines": [
+        { "name": "vuln-api", "url": "http://localhost:5000", "credentials": "admin / admin123 ou user / user123" }
+      ],
+      "tasks": [
+        { "title": "Login", "content": "POST /api/login avec {\"login\":\"admin\",\"password\":\"admin123\"}. Tu reçois un « token » (factice).", "tip": "curl -X POST http://vuln-api:5000/api/login -H 'Content-Type: application/json' -d '{\"login\":\"admin\",\"password\":\"admin123\"}'" },
+        { "title": "IDOR", "content": "Appelle GET /api/users/1 et GET /api/users/2. L’API ne vérifie pas que tu es autorisé à voir l’utilisateur demandé.", "tip": "Change l’id dans l’URL pour accéder à d’autres comptes." },
+        { "title": "SQLi", "content": "GET /api/products?q= avec par ex. q=' OR '1'='1 pour extraire tous les produits. Utilise sqlmap pour automatiser.", "tip": "sqlmap -u 'http://vuln-api:5000/api/products?q=1' --batch" }
+      ]
+    },
+    {
+      "id": "red-team-scenario",
+      "category": "red",
+      "title": "Scénario Red Team (solo)",
+      "difficulty": "Intermédiaire",
+      "description": "Mène un scénario d’attaque complet : recon → exploitation → accès. Utilise toutes les cibles du lab et rédige un mini-rapport.",
+      "objectives": ["Reconnaissance (nmap, nikto sur les cibles)", "Au moins un accès (web, SSH ou Redis)", "Rédiger une note avec preuves"],
+      "machines": [
+        { "name": "Toutes les cibles", "url": "http://localhost:4280", "note": "DVWA 4280, Juice 3000, bWAPP 4281, vuln-api 5000, vuln-network SSH 4222" }
+      ],
+      "tasks": [
+        { "title": "Cartographie", "content": "Depuis l’attaquant, scanne toutes les cibles (dvwa, juice-shop, bwapp, vuln-api, vuln-network) et note les services.", "tip": "nmap -sV pour chaque hostname." },
+        { "title": "Exploitation", "content": "Choisis au moins une cible et obtiens un accès ou des données (ex: SQLi sur DVWA, SSH sur vuln-network).", "tip": "Documente chaque commande et le résultat." },
+        { "title": "Rapport", "content": "Rédige un court rapport : objectif, méthodo, vulnérabilités trouvées, preuves (screenshot ou output).", "tip": "Structure : Résumé → Méthode → Vulns → Recommandations." }
+      ]
+    },
+    {
+      "id": "blue-team-suricata",
+      "category": "blue",
+      "title": "Blue Team – Suricata et analyse de trafic",
+      "difficulty": "Intermédiaire",
+      "description": "Utilise Suricata pour analyser des captures de trafic (pcap). Démarrer le lab avec le profil blue.",
+      "objectives": ["Lancer le profil Blue (Suricata)", "Capturer du trafic pendant des scans", "Analyser les alertes Suricata"],
+      "machines": [
+        { "name": "Suricata", "url": "#", "note": "docker compose --profile blue up -d puis docker compose exec blue-suricata sh" }
+      ],
+      "tasks": [
+        { "title": "Démarrer Suricata", "content": "docker compose --profile blue up -d. Puis docker compose exec blue-suricata sh. Tu peux lancer sur un pcap : suricata -r /workspace/capture.pcap -l /var/log/suricata.", "tip": "Les pcaps peuvent être copiés dans le volume suricata-pcaps." },
+        { "title": "Capturer du trafic", "content": "Pendant que tu lances des scans (nmap, nikto) depuis l’attaquant, capture le trafic sur la machine hôte (tcpdump -i docker0 -w capture.pcap).", "tip": "Copie le fichier dans le volume pour l’analyser avec Suricata." },
+        { "title": "Lire les alertes", "content": "Après analyse, consulte /var/log/suricata/eve.json pour les événements et alertes.", "tip": "jq peut aider à parser le JSON." }
+      ]
+    },
+    {
+      "id": "forensics-pcap",
+      "category": "forensics",
+      "title": "Forensique – Analyse de pcap",
+      "difficulty": "Débutant",
+      "description": "Capture et analyse du trafic réseau avec tshark/tcpdump. Identifier des requêtes HTTP, des scans, etc.",
+      "objectives": ["Capturer du trafic avec tcpdump", "Filtrer et analyser avec tshark", "Rédiger une courte fiche d’incident"],
+      "machines": [
+        { "name": "Conteneur attaquant", "url": "#", "note": "docker compose exec attaquant bash — tshark, tcpdump disponibles" }
+      ],
+      "tasks": [
+        { "title": "Capture", "content": "Depuis l’attaquant : tcpdump -i eth0 -w /workspace/capture.pcap. Dans un autre terminal, lance des requêtes (curl, nmap) puis arrête la capture.", "tip": "Limite le temps (tcpdump -G 60 -W 1 -i eth0 -w cap.pcap) ou Ctrl+C." },
+        { "title": "Analyse tshark", "content": "tshark -r /workspace/capture.pcap -Y 'http' -T fields -e http.request.uri. Identifie les URLs et les paramètres suspects.", "tip": "tshark -r file.pcap -Y 'tcp.flags.syn==1' pour les connexions TCP." }
+      ]
+    },
+    {
+      "id": "osint-recon",
+      "category": "osint",
+      "title": "OSINT – Reconnaissance",
+      "difficulty": "Débutant",
+      "description": "Utilise theHarvester et les outils de recon sur un domaine que tu contrôles (ou sur les hostnames du lab en interne).",
+      "objectives": ["Utiliser theHarvester (domaine autorisé)", "Faire une recon « interne » du lab (nmap, énumération)"],
+      "machines": [
+        { "name": "Conteneur attaquant", "url": "#", "note": "theHarvester, dig, curl" }
+      ],
+      "tasks": [
+        { "title": "theHarvester", "content": "Sur un domaine dont tu as le droit : theHarvester -d ton-domaine.fr -b bing,google. Analyse les emails et sous-domaines.", "tip": "Ne cible que des domaines autorisés." },
+        { "title": "Recon interne", "content": "Depuis l’attaquant, considère les hostnames du lab (dvwa, juice-shop, vuln-network) comme des « cibles ». Fais un nmap et une énumération comme en pentest.", "tip": "Documente la cartographie comme un rapport de recon." }
+      ]
+    },
+    {
+      "id": "stego-intro",
+      "category": "stego",
+      "title": "Stéganographie – Introduction",
+      "difficulty": "Débutant",
+      "description": "Apprends à détecter et extraire des données cachées dans des images. Télécharge les défis ci-dessous.",
+      "objectives": ["Utiliser file, exiftool, binwalk", "Extraire un fichier caché avec steghide", "Trouver un flag dans les métadonnées ou le contenu"],
+      "challengeDownloads": [
+        { "name": "Image avec données cachées (steghide)", "url": "/challenges/stego/image_stego.jpg", "password": "labstego" }
+      ],
+      "machines": [
+        { "name": "Tous les défis", "url": "/challenges/stego/", "note": "Liste des fichiers stégano" },
+        { "name": "Terminal attaquant", "url": "#", "note": "docker compose exec attaquant bash — steghide, exiftool, binwalk" }
+      ],
+      "tasks": [
+        { "title": "Identifier le fichier", "content": "file image.jpg et exiftool image.jpg. Parfois le flag ou un indice est dans les métadonnées.", "tip": "Les commentaires EXIF peuvent contenir un mot de passe." },
+        { "title": "Binwalk", "content": "binwalk image.jpg pour détecter des fichiers embarqués. binwalk -e image.jpg pour les extraire dans un dossier.", "tip": "Un « .jpg » peut cacher une archive ZIP." },
+        { "title": "Steghide", "content": "steghide info image.jpg pour voir si des données sont cachées. steghide extract -sf image.jpg puis entre le mot de passe si demandé.", "tip": "Mot de passe courant pour les défis du lab : labstego" }
+      ]
+    },
+    {
+      "id": "crypto-intro",
+      "category": "crypto",
+      "title": "Cryptographie – Introduction",
+      "difficulty": "Débutant",
+      "description": "Base64, chiffrement symétrique (OpenSSL), hachage. Télécharge les défis ci-dessous et déchiffre-les.",
+      "objectives": ["Décoder du Base64", "Déchiffrer un fichier OpenSSL (mot de passe à trouver)", "Identifier et casser un hash avec John"],
+      "challengeDownloads": [
+        { "name": "Flag en Base64", "url": "/challenges/crypto/flag_b64.txt", "password": null },
+        { "name": "Fichier chiffré OpenSSL", "url": "/challenges/crypto/flag.enc", "password": "labcrypto" }
+      ],
+      "machines": [
+        { "name": "Tous les défis", "url": "/challenges/crypto/", "note": "Liste des fichiers crypto" },
+        { "name": "Terminal attaquant", "url": "#", "note": "openssl, gpg, base64, john" }
+      ],
+      "tasks": [
+        { "title": "Base64", "content": "echo 'TGFCX0NSWVBUX0ZMQUdfMQ==' | base64 -d pour obtenir le flag.", "tip": "Le flag du défi 1 est encodé en Base64." },
+        { "title": "OpenSSL", "content": "Un fichier .enc est chiffré avec openssl enc -aes-256-cbc. openssl enc -d -aes-256-cbc -in flag.enc -out flag.txt. Mot de passe courant : labcrypto", "tip": "Si le mot de passe est inconnu, utilise une wordlist avec un script ou John (format spécifique)." },
+        { "title": "Hash", "content": "Pour un hash MD5/SHA : identifie le type puis john ou des tables rainbow. Ex: echo -n 'password' | openssl md5 pour vérifier.", "tip": "John : prépare un fichier avec un hash par ligne (format user:hash ou juste hash selon le type)." }
+      ]
+    }
+  ]
+}
