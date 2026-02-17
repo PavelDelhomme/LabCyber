@@ -202,7 +202,7 @@
         return flushWriteQueue();
       })
       .then(function () {
-        if (cache.engagement == null) cache.engagement = { targets: [], proxyNotes: '', notes: '' };
+        if (cache.engagement == null) cache.engagement = { targets: [], proxies: [], proxyNotes: '', notes: '' };
         return true;
       });
     return readyPromise;
@@ -230,12 +230,22 @@
     },
 
     getEngagement: function () {
-      if (cache.engagement == null) return { targets: [], proxyNotes: '', notes: '' };
+      if (cache.engagement == null) return { targets: [], proxies: [], proxyNotes: '', notes: '' };
       var e = cache.engagement;
-      return { targets: (e.targets || []).slice(), proxyNotes: e.proxyNotes || '', notes: e.notes || '' };
+      return {
+        targets: (e.targets || []).slice(),
+        proxies: (e.proxies || []).slice(),
+        proxyNotes: e.proxyNotes || '',
+        notes: e.notes || ''
+      };
     },
     setEngagement: function (data) {
-      cache.engagement = { targets: data.targets || [], proxyNotes: data.proxyNotes || '', notes: data.notes || '' };
+      cache.engagement = {
+        targets: data.targets || [],
+        proxies: data.proxies || [],
+        proxyNotes: data.proxyNotes || '',
+        notes: data.notes || ''
+      };
       writeQueue.push(setData(STORE_DATA, KEY_ENGAGEMENT, cache.engagement));
     },
 

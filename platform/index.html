@@ -47,24 +47,24 @@
       </div>
     </aside>
     <main class="main">
-      <!-- Barre du haut : recherche, filtre, stats, options -->
+      <!-- Barre du haut : titre au-dessus sur mobile, puis ligne drawer + recherche + actions + journal -->
       <header class="topbar">
-        <div class="topbar-brand">
+        <div class="topbar-head">
           <button type="button" class="topbar-btn sidebar-toggle" id="btn-sidebar-toggle" aria-label="Ouvrir le menu" title="Menu">☰</button>
-          <span class="topbar-brand-text" id="topbar-brand-text">Lab Cyber</span>
+          <h1 class="topbar-title" id="topbar-brand-text">Lab Cyber</h1>
         </div>
-        <div class="topbar-left">
+        <div class="topbar-toolbar">
           <input type="search" id="search-input" class="search-input" placeholder="Rechercher scénarios, rooms, docs…" aria-label="Recherche">
           <select id="filter-category" class="filter-category" aria-label="Catégorie">
             <option value="">Toutes les catégories</option>
           </select>
-        </div>
-        <div class="topbar-right">
-          <button type="button" class="topbar-btn" id="btn-terminal-toggle" title="Afficher / masquer le terminal (ou ouvrir dans un onglet)">⌨ Terminal</button>
-          <button type="button" class="topbar-btn" id="btn-stats" title="Statistiques et avancement">📊 Stats</button>
-          <button type="button" class="topbar-btn" id="btn-options" title="Options">⚙️ Options</button>
-          <button type="button" class="topbar-btn" id="btn-log-toggle" title="Ouvrir / fermer le journal d'activité">📋 Journal</button>
-          <button type="button" class="topbar-btn" id="btn-pip-toggle" title="Garder le scénario visible (mini)" style="display:none">📌 PiP</button>
+          <div class="topbar-actions">
+            <button type="button" class="topbar-btn" id="btn-terminal-toggle" title="Terminal">⌨</button>
+            <button type="button" class="topbar-btn" id="btn-stats" title="Statistiques">📊</button>
+            <button type="button" class="topbar-btn" id="btn-options" title="Options">⚙️</button>
+            <button type="button" class="topbar-btn" id="btn-pip-toggle" title="PiP scénario" style="display:none">📌</button>
+            <button type="button" class="topbar-btn topbar-btn-log" id="btn-log-toggle" title="Journal d'activité">📋</button>
+          </div>
         </div>
       </header>
       <div id="topbar-context" class="topbar-context" aria-live="polite"></div>
@@ -113,11 +113,20 @@
           <p class="section-desc">Définis des <strong>cibles</strong>, configure <strong>proxy/VPN</strong> pour isoler tes tests de ta machine, et garde tes <strong>notes et résultats</strong>. Données enregistrées localement.</p>
         </header>
         <section class="dashboard-section">
-          <h3 class="section-title">Proxy / Anonymat</h3>
-          <p class="section-desc">À configurer dans ton environnement (terminal) avant les tests : HTTP_PROXY, HTTPS_PROXY, ou VPN.</p>
+          <h3 class="section-title">Proxies (liste)</h3>
+          <p class="section-desc">Ajoute des proxies à la main (host:port ou http://host:port). Tu peux en ajouter plusieurs et supprimer ceux que tu ne veux plus.</p>
+          <form id="engagement-proxy-form" class="engagement-form">
+            <input type="text" id="engagement-proxy-url" placeholder="Ex: 192.168.1.1:8080 ou http://proxy:3128" required>
+            <input type="text" id="engagement-proxy-notes" placeholder="Notes (optionnel)">
+            <button type="submit" class="topbar-btn">Ajouter le proxy</button>
+          </form>
+          <ul id="engagement-proxies-list" class="engagement-list"></ul>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Proxy / Anonymat (notes)</h3>
+          <p class="section-desc">Notes pour toi : export HTTP_PROXY, VPN, etc.</p>
           <div class="engagement-block">
-            <label>Notes proxy (pour toi)</label>
-            <textarea id="engagement-proxy-notes" class="engagement-notes" rows="3" placeholder="Ex: export HTTP_PROXY=http://proxy:8080&#10;Ou : connexion VPN X avant de lancer les scans..."></textarea>
+            <textarea id="engagement-proxy-notes-global" class="engagement-notes" rows="2" placeholder="Ex: export HTTP_PROXY=http://proxy:8080"></textarea>
           </div>
         </section>
         <section class="dashboard-section">

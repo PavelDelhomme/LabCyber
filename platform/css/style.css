@@ -499,32 +499,49 @@ body {
 
 .task-learn strong { color: var(--accent); }
 
-/* Barre du haut : Lab Cyber + menu, recherche, actions */
+/* Barre du haut : titre (Lab Cyber) puis ligne recherche + actions + journal */
 .topbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 0.75rem 0 0.5rem;
   margin-bottom: 0;
   border-bottom: 1px solid var(--border);
 }
 
-.topbar-brand {
-  display: inline-flex;
+.topbar-head {
+  display: flex;
   align-items: center;
   gap: 0.5rem;
 }
-.topbar-brand .sidebar-toggle {
-  margin-right: 0;
-}
+.topbar-head .sidebar-toggle { margin-right: 0; }
+.topbar-title,
 .topbar-brand-text {
+  margin: 0;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   color: var(--accent);
   letter-spacing: -0.02em;
 }
+
+.topbar-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.topbar-toolbar .search-input {
+  flex: 1;
+  min-width: 120px;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+.topbar-actions .topbar-btn-log { margin-left: 0.25rem; }
+
 .topbar-context {
   width: 100%;
   margin-top: 0.35rem;
@@ -533,8 +550,6 @@ body {
   color: var(--text-muted);
 }
 .topbar-context:empty { display: none; }
-
-.topbar-left, .topbar-right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 
 .search-input {
   width: 100%;
@@ -1087,8 +1102,13 @@ body {
 @media (max-width: 768px) {
   body { font-size: 16px; }
   .app { flex-direction: column; }
-  #btn-log-toggle { display: none !important; }
-  .log-fab { display: flex !important; }
+  .topbar-head { order: 1; }
+  .topbar-toolbar { order: 2; width: 100%; }
+  .topbar-toolbar .search-input { min-width: 0; flex: 1 1 140px; }
+  .topbar-toolbar .filter-category { flex: 0 1 auto; min-width: 100px; }
+  .topbar-actions { margin-left: auto; flex-shrink: 0; }
+  .topbar-actions .topbar-btn { min-width: 44px; min-height: 44px; padding: 0.5rem; }
+  .log-fab { display: none !important; }
   .docs-layout { grid-template-columns: 1fr; }
   .docs-nav { order: 2; }
   .docs-viewer { min-height: 280px; }
@@ -1108,11 +1128,10 @@ body {
     gap: 0.5rem;
     padding: 0.6rem 0.75rem;
   }
-  .topbar-brand-text { font-size: 1.2rem; }
+  .topbar-title, .topbar-brand-text { font-size: 1.35rem; }
   .topbar-context { font-size: 1rem; }
-  .topbar-left, .topbar-right { width: 100%; }
-  .search-input { max-width: none; width: 100%; font-size: 16px; min-height: 44px; }
-  .filter-category { width: 100%; min-height: 44px; font-size: 16px; }
+  .search-input { max-width: none; font-size: 16px; min-height: 44px; }
+  .filter-category { min-height: 44px; font-size: 16px; }
   .topbar-btn, .sidebar-toggle {
     min-height: 44px;
     min-width: 44px;
@@ -1166,9 +1185,7 @@ body {
   .main { max-width: none; padding: 1rem; }
   .main:has(.view-scenario-with-terminal.active) { padding: 1rem; }
   .topbar { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-  .topbar-left { flex-wrap: wrap; }
-  .search-input { max-width: none; }
-  .topbar-right { flex-wrap: wrap; }
+  .topbar-toolbar .search-input { max-width: 320px; }
   .page-header h2 { font-size: 1.35rem; }
   .dashboard-grid { grid-template-columns: 1fr; }
   .card, .scenario-card { padding: 1rem; }
@@ -1188,11 +1205,11 @@ body {
   .nav-section { font-size: 0.9rem; margin: 0.5rem 0 0.25rem; }
   .main { padding: 1rem 0.75rem; }
   .topbar { padding: 0.6rem 0.75rem; }
-  .topbar-brand-text { font-size: 1.25rem; }
-  .topbar-btn, .sidebar-toggle { font-size: 1.05rem; padding: 0.75rem 0.6rem; min-height: 48px; }
-  .filter-category { width: 100%; font-size: 16px; min-height: 48px; }
+  .topbar-title, .topbar-brand-text { font-size: 1.4rem; }
+  .topbar-btn, .sidebar-toggle { font-size: 1.05rem; padding: 0.6rem; min-height: 48px; min-width: 48px; }
+  .filter-category { font-size: 16px; min-height: 48px; }
   .search-input { min-height: 48px; font-size: 16px; }
-  .page-header h2 { font-size: 1.35rem; }
+  .page-header h2 { font-size: 1.4rem; }
   .section-title { font-size: 1.15rem; }
   .card, .scenario-card { padding: 1.1rem; font-size: 1.05rem; }
   .card-title { font-size: 1.15rem; }
@@ -1201,7 +1218,6 @@ body {
   .terminal-container { height: 260px; min-height: 220px; }
   .modal-header h2 { font-size: 1.2rem; }
   .modal-body { padding: 1rem; font-size: 1.05rem; }
-  .log-fab { width: 60px; height: 60px; bottom: 1rem; right: 1rem; font-size: 1.6rem; }
   .docs-list-btn { padding: 0.65rem 0.85rem; font-size: 1rem; }
   .docs-viewer { padding: 1rem; font-size: 1rem; }
 }

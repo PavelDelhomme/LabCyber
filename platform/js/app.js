@@ -154,10 +154,10 @@
     if (Storage) return Storage.getEngagement();
     try {
       var raw = localStorage.getItem(STORAGE_ENGAGEMENT);
-      if (!raw) return { targets: [], proxyNotes: '', notes: '' };
+      if (!raw) return { targets: [], proxies: [], proxyNotes: '', notes: '' };
       var d = JSON.parse(raw);
-      return { targets: d.targets || [], proxyNotes: d.proxyNotes || '', notes: d.notes || '' };
-    } catch (e) { return { targets: [], proxyNotes: '', notes: '' }; }
+      return { targets: d.targets || [], proxies: d.proxies || [], proxyNotes: d.proxyNotes || '', notes: d.notes || '' };
+    } catch (e) { return { targets: [], proxies: [], proxyNotes: '', notes: '' }; }
   }
 
   function saveEngagementData(data) {
@@ -401,9 +401,10 @@
 
   function renderEngagementsView() {
     var data = getEngagementData();
-    var proxyEl = document.getElementById('engagement-proxy-notes');
+    var proxyEl = document.getElementById('engagement-proxy-notes-global');
     var notesEl = document.getElementById('engagement-notes');
     var listEl = document.getElementById('engagement-targets-list');
+    var proxiesListEl = document.getElementById('engagement-proxies-list');
     if (proxyEl) proxyEl.value = data.proxyNotes;
     if (notesEl) notesEl.value = data.notes;
     if (listEl) {
@@ -420,6 +421,25 @@
           var idx = parseInt(this.dataset.index, 10);
           var d = getEngagementData();
           d.targets.splice(idx, 1);
+          saveEngagementData(d);
+          renderEngagementsView();
+        });
+      });
+    }
+    if (proxiesListEl) {
+      proxiesListEl.innerHTML = (data.proxies || []).map(function (p, i) {
+        return '<li class="engagement-target-item engagement-proxy-item" data-proxy-index="' + i + '">' +
+          '<span class="engagement-target-url">' + escapeHtml(p.url || '') + '</span>' +
+          (p.notes ? ' <span class="engagement-target-notes">' + escapeHtml(p.notes) + '</span>' : '') +
+          ' <button type="button" class="topbar-btn danger engagement-proxy-delete" data-proxy-index="' + i + '" title="Supprimer">Supprimer</button>' +
+          '</li>';
+      }).join('');
+      proxiesListEl.querySelectorAll('.engagement-proxy-delete').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var idx = parseInt(this.dataset.proxyIndex, 10);
+          var d = getEngagementData();
+          d.proxies = d.proxies || [];
+          d.proxies.splice(idx, 1);
           saveEngagementData(d);
           renderEngagementsView();
         });
@@ -968,11 +988,26 @@
       if (notesEl) notesEl.value = '';
       renderEngagementsView();
     });
-    var engProxyNotes = document.getElementById('engagement-proxy-notes');
-    if (engProxyNotes) engProxyNotes.addEventListener('change', function() {
+    var engProxyNotesGlobal = document.getElementById('engagement-proxy-notes-global');
+    if (engProxyNotesGlobal) engProxyNotesGlobal.addEventListener('change', function() {
       var d = getEngagementData();
       d.proxyNotes = this.value;
       saveEngagementData(d);
+    });
+    var engProxyForm = document.getElementById('engagement-proxy-form');
+    if (engProxyForm) engProxyForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var urlEl = document.getElementById('engagement-proxy-url');
+      var notesEl = document.getElementById('engagement-proxy-notes');
+      var url = (urlEl && urlEl.value) ? urlEl.value.trim() : '';
+      if (!url) return;
+      var d = getEngagementData();
+      d.proxies = d.proxies || [];
+      d.proxies.push({ url: url, notes: (notesEl && notesEl.value) ? notesEl.value.trim() : '' });
+      saveEngagementData(d);
+      if (urlEl) urlEl.value = '';
+      if (notesEl) notesEl.value = '';
+      renderEngagementsView();
     });
     var engNotes = document.getElementById('engagement-notes');
     if (engNotes) engNotes.addEventListener('change', function() {
