@@ -80,7 +80,7 @@
     } else if (viewId === 'dashboard') el.textContent = 'Accueil';
     else if (viewId === 'docs') el.textContent = 'Documentation projet';
     else if (viewId === 'learning') el.textContent = 'Documentation & Cours';
-    else if (viewId === 'engagements') el.textContent = 'Engagements';
+    else if (viewId === 'engagements') el.textContent = 'Cibles & Proxy';
     else el.textContent = '';
   }
 
@@ -102,7 +102,19 @@
     if (viewId === 'learning') renderLearningView();
     if (viewId === 'engagements') renderEngagementsView();
     updateTopbarContext();
+    updatePipButtonVisibility(viewId);
     logEvent('platform', 'view_changed', { viewId });
+  }
+
+  function updatePipButtonVisibility(viewId) {
+    var btnPip = document.getElementById('btn-pip-toggle');
+    if (!btnPip) return;
+    if (viewId === 'scenario') {
+      btnPip.style.display = '';
+    } else {
+      btnPip.style.display = 'none';
+      hidePipPanel();
+    }
   }
 
   function getTaskDoneKey(scenarioId, taskIndex) {
@@ -463,6 +475,7 @@
     var iframe = container.querySelector('iframe');
     if (!iframe) {
       iframe = document.createElement('iframe');
+      iframe.className = 'terminal-iframe';
       iframe.title = 'Terminal attaquant (ttyd)';
       iframe.src = url;
       iframe.addEventListener('load', function() {
@@ -950,6 +963,17 @@
       d.notes = this.value;
       saveEngagementData(d);
     });
+    var proxyCheckBtn = document.getElementById('proxy-check-btn');
+    var proxyCheckResult = document.getElementById('proxy-check-result');
+    if (proxyCheckBtn && proxyCheckResult) proxyCheckBtn.addEventListener('click', function() {
+      var raw = (document.getElementById('proxy-list-input') || {}).value || '';
+      var lines = raw.split(/\n/).map(function(l) { return l.trim(); }).filter(Boolean);
+      if (lines.length === 0) {
+        proxyCheckResult.textContent = 'Collez une liste de proxies (un par ligne).';
+        return;
+      }
+      proxyCheckResult.textContent = 'À venir : vérification opérationnelle et vitesse (à brancher sur script/API ou cyberman). ' + lines.length + ' proxy(s) saisi(s).';
+    });
   }
 
   function initLogPanel() {
@@ -1046,11 +1070,39 @@
     loadData().then(() => {
       initTopbar();
       initTerminalPanelButtons();
+      initPipResize();
       renderDashboard();
       renderNavRooms();
       renderNavScenarios();
       updateTopbarContext();
       initLogPanel();
+      updatePipButtonVisibility(document.querySelector('.view.active') ? document.querySelector('.view.active').id.replace('view-', '') : 'dashboard');
+    });
+  }
+
+  function initPipResize() {
+    var panel = document.getElementById('pip-panel');
+    var handle = document.getElementById('pip-resize-handle');
+    if (!panel || !handle) return;
+    var startX, startY, startW, startH;
+    handle.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      startX = e.clientX;
+      startY = e.clientY;
+      startW = panel.offsetWidth;
+      startH = panel.offsetHeight;
+      function move(e) {
+        var w = Math.max(220, Math.min(600, startW + e.clientX - startX));
+        var h = Math.max(180, Math.min(500, startH + e.clientY - startY));
+        panel.style.width = w + 'px';
+        panel.style.maxHeight = h + 'px';
+      }
+      function up() {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+      }
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
     });
   }
 

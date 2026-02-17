@@ -230,16 +230,20 @@ body {
   min-height: 280px;
   height: 360px;
   background: #0d1117;
+  border: 1px solid var(--border);
   border-radius: 0 0 var(--radius) var(--radius);
   overflow: hidden;
   position: relative;
 }
 
-.terminal-container iframe {
+.terminal-container iframe,
+.terminal-container .terminal-iframe {
   width: 100%;
   height: 100%;
+  min-height: 200px;
   border: none;
   display: block;
+  background: #0d1117;
 }
 
 .page-header { margin-bottom: 1.75rem; }
@@ -774,6 +778,18 @@ body {
 
 #pip-tasks li:last-child { border-bottom: none; }
 #pip-tasks li.done { color: var(--text-muted); text-decoration: line-through; }
+
+.pip-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--border) 50%);
+  border-radius: 0 0 var(--radius) 0;
+}
+.pip-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%); }
 
 /* Modales (stats, options) */
 .modal {

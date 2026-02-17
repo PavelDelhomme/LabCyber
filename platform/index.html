@@ -33,9 +33,9 @@
           <span class="nav-icon">📖</span>
           <span>Doc &amp; Cours</span>
         </button>
-        <button class="nav-item" data-view="engagements" type="button" title="Engagements réels : cibles, proxy, notes">
+        <button class="nav-item" data-view="engagements" type="button" title="Cibles, proxy/VPN et notes pour vos tests">
           <span class="nav-icon">🎯</span>
-          <span>Engagements</span>
+          <span>Cibles &amp; Proxy</span>
         </button>
         <div class="nav-section">Scénarios guidés</div>
         <div id="nav-scenarios"></div>
@@ -64,19 +64,20 @@
           <button type="button" class="topbar-btn" id="btn-stats" title="Statistiques et avancement">📊 Stats</button>
           <button type="button" class="topbar-btn" id="btn-options" title="Options">⚙️ Options</button>
           <button type="button" class="topbar-btn" id="btn-log-toggle" title="Ouvrir / fermer le journal d'activité">📋 Journal</button>
-          <button type="button" class="topbar-btn" id="btn-pip-toggle" title="Garder le scénario visible (mini)">📌 PiP scénario</button>
+          <button type="button" class="topbar-btn" id="btn-pip-toggle" title="Garder le scénario visible (mini)" style="display:none">📌 PiP</button>
         </div>
       </header>
       <div id="topbar-context" class="topbar-context" aria-live="polite"></div>
-      <!-- Panneau PiP : scénario en miniature (type vidéo réduite) -->
+      <!-- Panneau PiP : scénario en miniature (visible uniquement en vue scénario, redimensionnable) -->
       <div id="pip-panel" class="pip-panel hidden" aria-label="Scénario en cours">
         <div class="pip-header">
           <span id="pip-title" class="pip-title">Scénario</span>
-          <button type="button" id="pip-close" class="pip-close" title="Fermer">×</button>
+          <button type="button" id="pip-close" class="pip-close" title="Fermer" aria-label="Fermer">×</button>
         </div>
         <div class="pip-body">
           <ul id="pip-tasks"></ul>
         </div>
+        <div class="pip-resize-handle" id="pip-resize-handle" title="Redimensionner" aria-label="Redimensionner"></div>
       </div>
       <!-- Dashboard -->
       <div id="view-dashboard" class="view active">
@@ -105,11 +106,11 @@
           <div class="dashboard-grid" id="dashboard-docs-cards"></div>
         </section>
       </div>
-      <!-- Vue Engagements : cibles, proxy, notes (tests réels) -->
+      <!-- Vue Cibles & Proxy : cibles, proxy/VPN, notes (tests réels) -->
       <div id="view-engagements" class="view">
         <header class="page-header">
-          <h2>Engagements réels</h2>
-          <p>Définis des <strong>cibles</strong> (ou groupes), configure un <strong>proxy</strong> pour protéger ton identité, et garde tes <strong>notes et résultats</strong>. Utilise le terminal du lab (ou ton VPS) pour lancer tes tests. Données enregistrées localement.</p>
+          <h2>Cibles &amp; Proxy</h2>
+          <p class="section-desc">Définis des <strong>cibles</strong>, configure <strong>proxy/VPN</strong> pour isoler tes tests de ta machine, et garde tes <strong>notes et résultats</strong>. Données enregistrées localement.</p>
         </header>
         <section class="dashboard-section">
           <h3 class="section-title">Proxy / Anonymat</h3>
@@ -117,6 +118,16 @@
           <div class="engagement-block">
             <label>Notes proxy (pour toi)</label>
             <textarea id="engagement-proxy-notes" class="engagement-notes" rows="3" placeholder="Ex: export HTTP_PROXY=http://proxy:8080&#10;Ou : connexion VPN X avant de lancer les scans..."></textarea>
+          </div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Vérifier des proxies</h3>
+          <p class="section-desc">Colle une liste de proxies (un par ligne : <code>host:port</code> ou <code>http://host:port</code>). Vérification opérationnelle et vitesse à venir (intégrable avec cyberman / scripts).</p>
+          <div class="engagement-block">
+            <label>Liste de proxies</label>
+            <textarea id="proxy-list-input" class="engagement-notes" rows="4" placeholder="Ex:&#10;192.168.1.1:8080&#10;http://proxy.example.com:3128"></textarea>
+            <button type="button" id="proxy-check-btn" class="topbar-btn" style="margin-top:0.5rem">Vérifier (à brancher)</button>
+            <p id="proxy-check-result" class="proxy-check-result text-muted" style="margin-top:0.5rem;font-size:0.9rem"></p>
           </div>
         </section>
         <section class="dashboard-section">
