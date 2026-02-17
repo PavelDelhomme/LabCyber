@@ -11,6 +11,7 @@
   const MAX_ENTRIES_MEMORY = 500;
 
   const LEVELS = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3 };
+  const Storage = typeof global !== 'undefined' && global.LabCyberStorage ? global.LabCyberStorage : null;
 
   function isoNow() {
     return new Date().toISOString();
@@ -31,6 +32,7 @@
   let persist = true;
 
   function loadFromStorage() {
+    if (Storage) return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -44,6 +46,7 @@
 
   function saveToStorage() {
     if (!persist) return;
+    if (Storage) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(memory.slice(-MAX_ENTRIES)));
     } catch (e) {}
@@ -52,7 +55,8 @@
   function append(entry) {
     memory.push(entry);
     if (memory.length > MAX_ENTRIES_MEMORY) memory = memory.slice(-MAX_ENTRIES_MEMORY);
-    saveToStorage();
+    if (Storage) Storage.appendLog(entry).catch(function () {});
+    else saveToStorage();
     if (typeof global.dispatchEvent === 'function') {
       try {
         global.dispatchEvent(new CustomEvent('labcyber-log', { detail: entry }));
@@ -111,14 +115,25 @@
     /** Effacer les logs en mémoire et au stockage */
     clear: function () {
       memory = [];
-      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      if (Storage) Storage.clearLogs().catch(function () {});
+      else try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     },
 
     /** Réinitialiser depuis le stockage (après rechargement page) */
-    load: loadFromStorage
+    load: loadFromStorage,
+
+    /** Hydrater la mémoire depuis IndexedDB (appelé après Storage.ready()) */
+    hydrateFromStorage: function () {
+      if (!Storage) return Promise.resolve();
+      return Storage.ready().then(function () {
+        memory = Storage.getLogs().slice();
+        if (memory.length > MAX_ENTRIES_MEMORY) memory = memory.slice(-MAX_ENTRIES_MEMORY);
+      });
+    }
   };
 
-  loadFromStorage();
+  if (Storage) { /* app appellera hydrateFromStorage après Storage.ready() */ }
+  else loadFromStorage();
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = Logger;

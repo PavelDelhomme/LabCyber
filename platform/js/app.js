@@ -12,6 +12,7 @@
   };
   const log = typeof window !== 'undefined' && window.LabCyberLogger ? window.LabCyberLogger : null;
 
+  const Storage = typeof window !== 'undefined' && window.LabCyberStorage ? window.LabCyberStorage : null;
   const STORAGE_LAST_SCENARIO = 'labcyber-last-scenario';
   const STORAGE_LAST_TASK = 'labcyber-last-task';
   const STORAGE_PIP_AUTO = 'labcyber-pip-auto';
@@ -39,6 +40,8 @@
 
   async function loadData() {
     logEvent('platform', 'data_load_start', {});
+    if (Storage) await Storage.ready();
+    if (log && log.hydrateFromStorage) await log.hydrateFromStorage();
     try {
       const [resRooms, resScenarios, resConfig, resDocs, resLearning] = await Promise.all([
         fetch('data/rooms.json'),
@@ -122,24 +125,33 @@
   }
 
   function isTaskDone(scenarioId, taskIndex) {
+    if (Storage) return Storage.getTaskDone(scenarioId, taskIndex);
     return localStorage.getItem(getTaskDoneKey(scenarioId, taskIndex)) === '1';
   }
 
   function setTaskDone(scenarioId, taskIndex, done) {
+    if (Storage) { Storage.setTaskDone(scenarioId, taskIndex, done); return; }
     if (done) localStorage.setItem(getTaskDoneKey(scenarioId, taskIndex), '1');
     else localStorage.removeItem(getTaskDoneKey(scenarioId, taskIndex));
   }
 
   function saveLastScenario(scenarioId, taskIndex) {
+    if (Storage) {
+      Storage.setLastScenario(scenarioId || null);
+      if (taskIndex != null) Storage.setLastTaskIndex(taskIndex);
+      return;
+    }
     if (scenarioId) localStorage.setItem(STORAGE_LAST_SCENARIO, scenarioId);
     if (taskIndex != null) localStorage.setItem(STORAGE_LAST_TASK, String(taskIndex));
   }
 
   function getLastScenario() {
+    if (Storage) return Storage.getLastScenario() || null;
     return localStorage.getItem(STORAGE_LAST_SCENARIO) || null;
   }
 
   function getEngagementData() {
+    if (Storage) return Storage.getEngagement();
     try {
       var raw = localStorage.getItem(STORAGE_ENGAGEMENT);
       if (!raw) return { targets: [], proxyNotes: '', notes: '' };
@@ -149,9 +161,11 @@
   }
 
   function saveEngagementData(data) {
+    if (Storage) { Storage.setEngagement(data); return; }
     localStorage.setItem(STORAGE_ENGAGEMENT, JSON.stringify(data));
   }
   function getLastTaskIndex() {
+    if (Storage) return Storage.getLastTaskIndex();
     const v = localStorage.getItem(STORAGE_LAST_TASK);
     return v !== null ? parseInt(v, 10) : null;
   }
@@ -514,7 +528,7 @@
     if (termPanel) termPanel.classList.remove('hidden');
     var btnTerm = document.getElementById('btn-terminal-toggle');
     if (btnTerm) btnTerm.setAttribute('title', 'Masquer le terminal');
-    if (localStorage.getItem(STORAGE_PIP_AUTO) === '1') showPipPanel(s);
+    if ((Storage && Storage.getPipAuto()) || (!Storage && localStorage.getItem(STORAGE_PIP_AUTO) === '1')) showPipPanel(s);
     else updatePipPanel(s);
 
     document.getElementById('scenario-title').textContent = s.title;
@@ -835,7 +849,7 @@
     });
     const btnOptions = document.getElementById('btn-options');
     if (btnOptions) btnOptions.addEventListener('click', function() {
-      document.getElementById('opt-pip-auto').checked = localStorage.getItem(STORAGE_PIP_AUTO) === '1';
+      document.getElementById('opt-pip-auto').checked = Storage ? Storage.getPipAuto() : (localStorage.getItem(STORAGE_PIP_AUTO) === '1');
       document.getElementById('modal-options').classList.remove('hidden');
     });
     const btnPip = document.getElementById('btn-pip-toggle');
@@ -907,7 +921,7 @@
 
     const optPipAuto = document.getElementById('opt-pip-auto');
     if (optPipAuto) optPipAuto.addEventListener('change', function() {
-      localStorage.setItem(STORAGE_PIP_AUTO, this.checked ? '1' : '0');
+      if (Storage) Storage.setPipAuto(this.checked); else localStorage.setItem(STORAGE_PIP_AUTO, this.checked ? '1' : '0');
     });
     const optExport = document.getElementById('opt-export-progress');
     if (optExport) optExport.addEventListener('click', function() {
@@ -924,11 +938,14 @@
     const optReset = document.getElementById('opt-reset-progress');
     if (optReset) optReset.addEventListener('click', function() {
       if (confirm('Réinitialiser toute la progression (tâches cochées, scénario en cours) ?')) {
-        (state.scenarios || []).forEach(s => {
-          (s.tasks || []).forEach((_, i) => localStorage.removeItem(getTaskDoneKey(s.id, i)));
-        });
-        localStorage.removeItem(STORAGE_LAST_SCENARIO);
-        localStorage.removeItem(STORAGE_LAST_TASK);
+        if (Storage) Storage.clearProgress();
+        else {
+          (state.scenarios || []).forEach(s => {
+            (s.tasks || []).forEach((_, i) => localStorage.removeItem(getTaskDoneKey(s.id, i)));
+          });
+          localStorage.removeItem(STORAGE_LAST_SCENARIO);
+          localStorage.removeItem(STORAGE_LAST_TASK);
+        }
         renderDashboard();
         if (state.currentScenarioId) openScenario(state.currentScenarioId);
         document.getElementById('modal-options').classList.add('hidden');
