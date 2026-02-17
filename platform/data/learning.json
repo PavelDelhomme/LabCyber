@@ -1,0 +1,183 @@
+{
+  "title": "Documentation & Cours par thème",
+  "description": "Cours et documentation directement dans l'interface, par thème et sous-catégorie. Complété par des liens externes (OWASP, PortSwigger, etc.).",
+  "topics": [
+    {
+      "id": "web",
+      "name": "Sécurité Web",
+      "icon": "🌐",
+      "short": "SQLi, XSS, CSRF, OWASP",
+      "content": "La sécurité des applications web vise à protéger les sites et APIs contre les attaques (injection SQL, XSS, CSRF, etc.). Le référentiel OWASP Top 10 liste les vulnérabilités les plus critiques. Dans le lab, vous pouvez pratiquer sur DVWA, Juice Shop ou bWAPP.",
+      "subcategories": [
+        { "id": "owasp", "name": "OWASP Top 10", "content": "Les 10 vulnérabilités les plus critiques : injection, authentification cassée, exposition de données sensibles, XML externe, contrôle d'accès, mauvaise config, XSS, désérialisation, composants vulnérables, journalisation insuffisante." },
+        { "id": "sqli", "name": "Injection SQL", "content": "Une injection SQL permet d'exécuter du code SQL non prévu en injectant du texte dans une requête. Prévention : requêtes paramétrées, échappement, moindre privilège." },
+        { "id": "xss", "name": "XSS (Cross-Site Scripting)", "content": "Le XSS injecte du JavaScript dans une page vue par d'autres utilisateurs. Types : stocké, réfléchi, DOM-based. Prévention : échappement des sorties, Content-Security-Policy." }
+      ],
+      "documentation": [
+        { "label": "OWASP Top 10", "url": "https://owasp.org/www-project-top-ten/", "desc": "Les 10 vulnérabilités web les plus critiques" },
+        { "label": "OWASP Testing Guide", "url": "https://owasp.org/www-project-web-security-testing-guide/", "desc": "Guide de test d'intrusion web" }
+      ],
+      "courses": [
+        { "label": "PortSwigger Web Security Academy", "url": "https://portswigger.net/web-security", "desc": "Cours gratuit complet avec labs" }
+      ],
+      "tools": [
+        { "name": "Burp Suite", "url": "https://portswigger.net/burp", "desc": "Proxy / scanner web, référence pentest" },
+        { "name": "OWASP ZAP", "url": "https://www.zaproxy.org/", "desc": "Scanner de vulnérabilités open source" },
+        { "name": "sqlmap", "url": "https://sqlmap.org/", "desc": "Automatisation des injections SQL" }
+      ]
+    },
+    {
+      "id": "crypto",
+      "name": "Cryptographie",
+      "icon": "🔐",
+      "short": "AES, RSA, Base64, hachage",
+      "content": "La cryptographie assure confidentialité (chiffrement), intégrité (hachage) et authentification. En pentest et CTF on rencontre souvent Base64, AES, RSA, et des hachages (MD5, SHA) à casser avec John ou hashcat.",
+      "subcategories": [
+        { "id": "chiffrement", "name": "Chiffrement", "content": "Chiffrement symétrique (AES) : une même clé pour chiffrer/déchiffrer. Chiffrement asymétrique (RSA) : paire clé publique/privée. En pratique on combine les deux." },
+        { "id": "hachage", "name": "Hachage", "content": "Une fonction de hachage produit une empreinte fixe (ex. SHA-256). Non réversible ; pour casser un hash on utilise des dictionnaires et du brute-force (John the Ripper, hashcat)." }
+      ],
+      "documentation": [
+        { "label": "OpenSSL", "url": "https://www.openssl.org/docs/", "desc": "Documentation officielle" },
+        { "label": "CTF 101 – Crypto", "url": "https://ctf101.org/cryptography/overview/", "desc": "Bases crypto pour CTF" }
+      ],
+      "courses": [
+        { "label": "CryptoHack", "url": "https://cryptohack.org/", "desc": "Cours crypto interactif gratuit" }
+      ],
+      "tools": [
+        { "name": "OpenSSL", "url": "https://www.openssl.org/", "desc": "Chiffrement AES/RSA, certificats" },
+        { "name": "John the Ripper", "url": "https://www.openwall.com/john/", "desc": "Casseur de mots de passe" },
+        { "name": "CyberChef", "url": "https://gchq.github.io/CyberChef/", "desc": "Encode/decode, Base64, XOR (navigateur)" }
+      ]
+    },
+    {
+      "id": "stego",
+      "name": "Stéganographie",
+      "icon": "🖼️",
+      "short": "Données cachées dans images / audio",
+      "content": "La stéganographie cache des données dans des fichiers (images, audio) sans changer l'apparence. En CTF on utilise steghide, binwalk, exiftool pour extraire les données cachées.",
+      "documentation": [
+        { "label": "Steghide", "url": "https://steghide.sourceforge.io/", "desc": "Cacher/extraire dans JPEG, BMP" },
+        { "label": "0xrick – Steganography", "url": "https://0xrick.com/categories/#steganography", "desc": "Tutoriels stégano CTF" }
+      ],
+      "courses": [],
+      "tools": [
+        { "name": "steghide", "url": "https://steghide.sourceforge.io/", "desc": "Données cachées dans images (mot de passe)" },
+        { "name": "binwalk", "url": "https://github.com/ReFirmLabs/binwalk", "desc": "Fichiers embarqués dans binaires/images" },
+        { "name": "exiftool", "url": "https://exiftool.org/", "desc": "Métadonnées EXIF" }
+      ]
+    },
+    {
+      "id": "phishing",
+      "name": "Phishing & Social Engineering",
+      "icon": "📧",
+      "short": "Hameçonnage, défense",
+      "content": "Le phishing vise à obtenir des identifiants ou des actions via des emails ou sites trompeurs. La défense repose sur la formation et des simulations (ex. Gophish). Usage strictement encadré en formation.",
+      "documentation": [
+        { "label": "ANSSI – Hameçonnage", "url": "https://www.ssi.gouv.fr/entreprise/boite-outils/fiches-pratiques/le-hameconnage-phishing/", "desc": "Fiche pratique française" },
+        { "label": "Cybermalveillance.gouv.fr", "url": "https://www.cybermalveillance.gouv.fr/", "desc": "Signalement et prévention" }
+      ],
+      "courses": [],
+      "tools": [
+        { "name": "Gophish", "url": "https://getgophish.com/", "desc": "Simulation de phishing (campagnes internes)" }
+      ]
+    },
+    {
+      "id": "network",
+      "name": "Réseau & Pentest",
+      "icon": "🔌",
+      "short": "Scan, services, Redis, SSH",
+      "content": "Le pentest réseau consiste à scanner les ports (Nmap), identifier les services, tester les authentifications (Hydra) et les configurations (Redis, SSH). Le lab propose un réseau vulnérable pour s'entraîner.",
+      "documentation": [
+        { "label": "Nmap Reference", "url": "https://nmap.org/book/man.html", "desc": "Documentation Nmap" },
+        { "label": "Redis Security", "url": "https://redis.io/docs/management/security/", "desc": "Sécuriser Redis" }
+      ],
+      "courses": [],
+      "tools": [
+        { "name": "Nmap", "url": "https://nmap.org/", "desc": "Scan de ports et services" },
+        { "name": "Hydra", "url": "https://github.com/vanhauser-thc/thc-hydra", "desc": "Brute-force SSH, HTTP, FTP" }
+      ]
+    },
+    {
+      "id": "api",
+      "name": "Applications & API",
+      "icon": "⚙️",
+      "short": "REST, auth, IDOR",
+      "content": "Les API REST sont des cibles courantes : authentification (JWT, API keys), contrôle d'accès (IDOR), injection, rate limiting. OWASP publie un Top 10 dédié aux API.",
+      "documentation": [
+        { "label": "OWASP API Security Top 10", "url": "https://owasp.org/API-Security/", "desc": "Vulnérabilités API" },
+        { "label": "REST Security Cheat Sheet", "url": "https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html", "desc": "Bonnes pratiques REST" }
+      ],
+      "courses": [
+        { "label": "PortSwigger – API Security", "url": "https://portswigger.net/web-security/api-security", "desc": "Labs API" }
+      ],
+      "tools": [
+        { "name": "Postman", "url": "https://www.postman.com/", "desc": "Tester des API" },
+        { "name": "curl", "url": "https://curl.se/", "desc": "Requêtes HTTP en CLI" }
+      ]
+    },
+    {
+      "id": "forensics",
+      "name": "Forensique",
+      "icon": "🔍",
+      "short": "Pcap, trafic, analyse",
+      "content": "L'analyse forensique réseau repose sur la capture (tcpdump, Wireshark) et l'analyse du trafic (filtres, flux, protocoles). Utile pour comprendre des attaques et retrouver des données exfiltrées.",
+      "documentation": [
+        { "label": "Wireshark User Guide", "url": "https://www.wireshark.org/docs/wsug_html/", "desc": "Guide Wireshark" },
+        { "label": "tshark", "url": "https://www.wireshark.org/docs/man-pages/tshark.html", "desc": "Capture et filtres en CLI" }
+      ],
+      "courses": [],
+      "tools": [
+        { "name": "Wireshark", "url": "https://www.wireshark.org/", "desc": "Analyse de trafic" },
+        { "name": "tcpdump", "url": "https://www.tcpdump.org/", "desc": "Capture de paquets CLI" }
+      ]
+    },
+    {
+      "id": "osint",
+      "name": "OSINT",
+      "icon": "📡",
+      "short": "Reconnaissance, sources ouvertes",
+      "content": "L'OSINT (Open Source Intelligence) recueille des informations depuis des sources publiques : moteurs de recherche, réseaux sociaux, DNS, Shodan. C'est la première phase d'un pentest.",
+      "documentation": [
+        { "label": "OSINT Framework", "url": "https://osintframework.com/", "desc": "Arbre d'outils OSINT" }
+      ],
+      "courses": [],
+      "tools": [
+        { "name": "theHarvester", "url": "https://github.com/laramies/theHarvester", "desc": "Emails, sous-domaines" },
+        { "name": "Shodan", "url": "https://www.shodan.io/", "desc": "Moteur de recherche appareils connectés" }
+      ]
+    },
+    {
+      "id": "red",
+      "name": "Red Team & Pentest",
+      "icon": "🔴",
+      "short": "Test d'intrusion, exploitation",
+      "content": "Le Red Team simule un attaquant pour tester les défenses. Méthodologies : PTES, OSSTM, MITRE ATT&CK. Outils : Kali, Metasploit. TryHackMe et HackTheBox permettent de s'entraîner.",
+      "documentation": [
+        { "label": "PTES", "url": "http://www.pentest-standard.org/", "desc": "Méthodologie pentest" },
+        { "label": "MITRE ATT&CK", "url": "https://attack.mitre.org/", "desc": "Tactiques et techniques d'attaque" }
+      ],
+      "courses": [
+        { "label": "TryHackMe – Pentesting", "url": "https://tryhackme.com/path/outline/pentesting", "desc": "Parcours pentest" },
+        { "label": "HackTheBox", "url": "https://www.hackthebox.com/", "desc": "Machines et challenges" }
+      ],
+      "tools": [
+        { "name": "Kali Linux", "url": "https://www.kali.org/", "desc": "Distribution pentest" },
+        { "name": "Metasploit", "url": "https://www.metasploit.com/", "desc": "Framework d'exploitation" }
+      ]
+    },
+    {
+      "id": "blue",
+      "name": "Blue Team & Détection",
+      "icon": "🔵",
+      "short": "IDS/IPS, SIEM",
+      "content": "Le Blue Team défend et détecte les intrusions. IDS/IPS (ex. Suricata) analysent le trafic et bloquent les menaces. Les SIEM agrègent les logs pour la détection.",
+      "documentation": [
+        { "label": "Suricata", "url": "https://suricata.io/documentation/", "desc": "Moteur IDS/IPS" }
+      ],
+      "courses": [],
+      "tools": [
+        { "name": "Suricata", "url": "https://suricata.io/", "desc": "IDS/IPS" }
+      ]
+    }
+  ]
+}

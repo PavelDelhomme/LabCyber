@@ -8,5 +8,7 @@
     "bwapp": "bwapp.lab",
     "terminal": "terminal.lab"
   },
-  "description": "Tout le lab est accessible sur un seul port via la gateway. Utilise ces hostnames (à ajouter dans /etc/hosts) avec le même port que la plateforme."
+  "terminalPort": 7681,
+  "gatewayHostInLab": "gateway",
+  "description": "Tout le lab est accessible sur un seul port via la gateway. Depuis le conteneur attaquant, la plateforme est joignable à http://gateway."
 }

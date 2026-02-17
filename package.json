@@ -1,0 +1,12 @@
+{
+  "name": "lab-cyber",
+  "description": "Lab Cyber – plateforme d'apprentissage et engagements",
+  "private": true,
+  "scripts": {
+    "dev": "live-server platform --port=3000 --open=/",
+    "dev:no-open": "live-server platform --port=3000"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

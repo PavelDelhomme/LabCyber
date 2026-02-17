@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build test test-full test-require-lab logs shell shell-attacker clean proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports
+.PHONY: help up down build test test-full test-require-lab logs shell shell-attacker clean proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -30,6 +30,9 @@ help:
 	@echo "  make clean        Arrêter et supprimer conteneurs + volumes"
 	@echo "  make ports        Voir qui utilise les ports 8080 et 7681 (si make up échoue)"
 	@echo ""
+	@echo "  make dev          Lancer la plateforme web en mode dev avec hot reload (port 3000)"
+	@echo "  make restart      Redémarrer le lab (down puis up)"
+	@echo ""
 
 # Démarrer le lab (sans proxy ni blue)
 up:
@@ -41,6 +44,17 @@ down:
 	cd $(ROOT) && docker compose down --remove-orphans
 	cd $(ROOT) && COMPOSE_PROJECT_NAME=lab-minimal docker compose -f docker-compose.minimal.yml down --remove-orphans 2>/dev/null || true
 	@echo "Lab arrêté. Ports libérés."
+
+# Redémarrer le lab (arrêt puis redémarrage)
+restart: down
+	cd $(ROOT) && docker compose up -d
+	@echo "Lab redémarré. Plateforme : http://127.0.0.1:8080  |  Terminal : http://localhost:7681"
+
+# Plateforme web en mode dev avec hot reload (port 3000)
+dev:
+	@command -v npm >/dev/null 2>&1 || { echo "Erreur: npm requis (installez Node.js)."; exit 1; }
+	@test -d node_modules || (cd $(ROOT) && npm install)
+	cd $(ROOT) && npm run dev
 
 build:
 	cd $(ROOT) && docker compose build

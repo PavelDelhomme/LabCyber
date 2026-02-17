@@ -1,4 +1,49 @@
 {
+  "categorySources": {
+    "web": [
+      { "label": "OWASP Top 10", "url": "https://owasp.org/www-project-top-ten/" },
+      { "label": "OWASP Testing Guide", "url": "https://owasp.org/www-project-web-security-testing-guide/" },
+      { "label": "PortSwigger Web Security Academy", "url": "https://portswigger.net/web-security" }
+    ],
+    "network": [
+      { "label": "Nmap reference", "url": "https://nmap.org/book/man.html" },
+      { "label": "Redis security", "url": "https://redis.io/docs/management/security/" }
+    ],
+    "api": [
+      { "label": "OWASP API Security Top 10", "url": "https://owasp.org/API-Security/" },
+      { "label": "REST Security", "url": "https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html" }
+    ],
+    "red": [
+      { "label": "PTES (Penetration Testing Execution Standard)", "url": "http://www.pentest-standard.org/" },
+      { "label": "OSCP / Pentesting guides", "url": "https://www.offensive-security.com/documentation/" }
+    ],
+    "blue": [
+      { "label": "Suricata documentation", "url": "https://suricata.io/documentation/" },
+      { "label": "SIEM basics", "url": "https://www.splunk.com/en_us/data-insider/what-is-a-siem.html" }
+    ],
+    "forensics": [
+      { "label": "Wireshark User Guide", "url": "https://www.wireshark.org/docs/wsug_html/" },
+      { "label": "tshark man page", "url": "https://www.wireshark.org/docs/man-pages/tshark.html" },
+      { "label": "SANS Digital Forensics", "url": "https://www.sans.org/cyber-security-courses/digital-forensics-incident-response/" }
+    ],
+    "osint": [
+      { "label": "OSINT Framework", "url": "https://osintframework.com/" },
+      { "label": "theHarvester", "url": "https://github.com/laramies/theHarvester" }
+    ],
+    "stego": [
+      { "label": "Steghide", "url": "https://steghide.sourceforge.io/" },
+      { "label": "CTF steganography", "url": "https://0xrick.com/categories/#steganography" }
+    ],
+    "crypto": [
+      { "label": "OpenSSL enc", "url": "https://www.openssl.org/docs/man1.1.1/man1/enc.html" },
+      { "label": "Base64 & hashes", "url": "https://ctf101.org/cryptography/what-is-encoding/" }
+    ],
+    "phishing": [
+      { "label": "ANSSI – Hameçonnage", "url": "https://www.ssi.gouv.fr/entreprise/boite-outils/fiches-pratiques/le-hameconnage-phishing/" },
+      { "label": "Cybermalveillance.gouv.fr", "url": "https://www.cybermalveillance.gouv.fr/" },
+      { "label": "Signal Spam", "url": "https://www.signal-spam.fr/" }
+    ]
+  },
   "categories": [
     { "id": "web", "name": "Web", "icon": "🌐", "color": "#4ade80" },
     { "id": "network", "name": "Réseau", "icon": "🔌", "color": "#60a5fa" },

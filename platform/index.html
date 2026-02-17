@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Lab Cyber – Plateforme d'apprentissage</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +27,15 @@
         </a>
         <button class="nav-item" data-view="docs" type="button" title="Documentation du projet">
           <span class="nav-icon">📚</span>
-          <span>Documentation</span>
+          <span>Doc. projet</span>
+        </button>
+        <button class="nav-item" data-view="learning" type="button" title="Documentation et cours par thème (crypto, phishing, outils…)">
+          <span class="nav-icon">📖</span>
+          <span>Doc &amp; Cours</span>
+        </button>
+        <button class="nav-item" data-view="engagements" type="button" title="Engagements réels : cibles, proxy, notes">
+          <span class="nav-icon">🎯</span>
+          <span>Engagements</span>
         </button>
         <div class="nav-section">Scénarios guidés</div>
         <div id="nav-scenarios"></div>
@@ -39,6 +47,37 @@
       </div>
     </aside>
     <main class="main">
+      <!-- Barre du haut : recherche, filtre, stats, options -->
+      <header class="topbar">
+        <div class="topbar-brand">
+          <button type="button" class="topbar-btn sidebar-toggle" id="btn-sidebar-toggle" aria-label="Ouvrir le menu" title="Menu">☰</button>
+          <span class="topbar-brand-text" id="topbar-brand-text">Lab Cyber</span>
+        </div>
+        <div class="topbar-left">
+          <input type="search" id="search-input" class="search-input" placeholder="Rechercher scénarios, rooms, docs…" aria-label="Recherche">
+          <select id="filter-category" class="filter-category" aria-label="Catégorie">
+            <option value="">Toutes les catégories</option>
+          </select>
+        </div>
+        <div class="topbar-right">
+          <button type="button" class="topbar-btn" id="btn-terminal-toggle" title="Afficher / masquer le terminal (ou ouvrir dans un onglet)">⌨ Terminal</button>
+          <button type="button" class="topbar-btn" id="btn-stats" title="Statistiques et avancement">📊 Stats</button>
+          <button type="button" class="topbar-btn" id="btn-options" title="Options">⚙️ Options</button>
+          <button type="button" class="topbar-btn" id="btn-log-toggle" title="Ouvrir / fermer le journal d'activité">📋 Journal</button>
+          <button type="button" class="topbar-btn" id="btn-pip-toggle" title="Garder le scénario visible (mini)">📌 PiP scénario</button>
+        </div>
+      </header>
+      <div id="topbar-context" class="topbar-context" aria-live="polite"></div>
+      <!-- Panneau PiP : scénario en miniature (type vidéo réduite) -->
+      <div id="pip-panel" class="pip-panel hidden" aria-label="Scénario en cours">
+        <div class="pip-header">
+          <span id="pip-title" class="pip-title">Scénario</span>
+          <button type="button" id="pip-close" class="pip-close" title="Fermer">×</button>
+        </div>
+        <div class="pip-body">
+          <ul id="pip-tasks"></ul>
+        </div>
+      </div>
       <!-- Dashboard -->
       <div id="view-dashboard" class="view active">
         <header class="page-header">
@@ -66,40 +105,102 @@
           <div class="dashboard-grid" id="dashboard-docs-cards"></div>
         </section>
       </div>
-      <!-- Documentation (liste des docs) -->
-      <div id="view-docs" class="view">
+      <!-- Vue Engagements : cibles, proxy, notes (tests réels) -->
+      <div id="view-engagements" class="view">
         <header class="page-header">
+          <h2>Engagements réels</h2>
+          <p>Définis des <strong>cibles</strong> (ou groupes), configure un <strong>proxy</strong> pour protéger ton identité, et garde tes <strong>notes et résultats</strong>. Utilise le terminal du lab (ou ton VPS) pour lancer tes tests. Données enregistrées localement.</p>
+        </header>
+        <section class="dashboard-section">
+          <h3 class="section-title">Proxy / Anonymat</h3>
+          <p class="section-desc">À configurer dans ton environnement (terminal) avant les tests : HTTP_PROXY, HTTPS_PROXY, ou VPN.</p>
+          <div class="engagement-block">
+            <label>Notes proxy (pour toi)</label>
+            <textarea id="engagement-proxy-notes" class="engagement-notes" rows="3" placeholder="Ex: export HTTP_PROXY=http://proxy:8080&#10;Ou : connexion VPN X avant de lancer les scans..."></textarea>
+          </div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Cibles</h3>
+          <p class="section-desc">Ajoute des cibles (URL, IP, nom) pour ton engagement. Clique sur une cible pour la modifier ou la supprimer.</p>
+          <form id="engagement-target-form" class="engagement-form">
+            <input type="text" id="engagement-target-name" placeholder="Nom (ex: API prod)" required>
+            <input type="text" id="engagement-target-url" placeholder="URL ou IP (ex: https://api.example.com)">
+            <input type="text" id="engagement-target-notes" placeholder="Notes (scope, credentials de test...)">
+            <button type="submit" class="topbar-btn">Ajouter la cible</button>
+          </form>
+          <ul id="engagement-targets-list" class="engagement-list"></ul>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Notes et résultats</h3>
+          <p class="section-desc">Rédige tes observations, commandes utiles, preuves (à copier-coller depuis le terminal).</p>
+          <textarea id="engagement-notes" class="engagement-notes" rows="12" placeholder="Résultats des scans, vulnérabilités trouvées, commandes à rejouer..."></textarea>
+        </section>
+      </div>
+      <!-- Documentation (liste des docs + viewer intégré) -->
+      <div id="view-docs" class="view view-docs">
+        <header class="page-header docs-header">
           <h2 id="docs-title">Documentation du projet</h2>
           <p id="docs-description" class="room-description">Chargement…</p>
         </header>
-        <section class="room-section">
-          <h3>Fichiers de documentation</h3>
-          <ul id="docs-list" class="docs-list"></ul>
-        </section>
-        <section class="room-section">
+        <div class="docs-layout">
+          <nav class="docs-nav">
+            <h3>Fichiers</h3>
+            <ul id="docs-list" class="docs-list"></ul>
+          </nav>
+          <div id="docs-viewer" class="docs-viewer">
+            <div id="docs-viewer-placeholder" class="docs-viewer-placeholder">Choisissez un document dans la liste.</div>
+            <div id="docs-viewer-content" class="docs-viewer-content hidden"></div>
+          </div>
+        </div>
+        <section class="room-section docs-footer">
           <h3>Tests du système</h3>
-          <p>Pour lancer tous les tests depuis le terminal : <code>./lab test</code> ou <code>make test</code>. Voir <a href="/docs/TESTS.md" target="_blank" rel="noopener">TESTS.md</a> pour la matrice complète.</p>
+          <p>Pour lancer tous les tests depuis le terminal : <code>./lab test</code> ou <code>make test</code>. Voir la doc <button type="button" class="link-button" data-doc-file="TESTS.md">TESTS.md</button> pour la matrice complète.</p>
           <p><a href="/test-logs.html" target="_blank" rel="noopener">Page de test du logger</a> (journal d'activité).</p>
         </section>
       </div>
-      <!-- Scenario view (THM/HTB style) -->
-      <div id="view-scenario" class="view">
-        <header class="page-header scenario-header">
-          <div class="room-meta">
-            <span id="scenario-difficulty" class="difficulty-badge"></span>
-            <span id="scenario-time" class="time-badge"></span>
-          </div>
-          <h2 id="scenario-title"></h2>
-          <p id="scenario-description" class="room-description"></p>
+      <!-- Documentation & Cours par thème -->
+      <div id="view-learning" class="view">
+        <header class="page-header">
+          <h2 id="learning-title">Documentation &amp; Cours</h2>
+          <p id="learning-description" class="room-description">Par sujet : documentation officielle, cours complets, et outils détaillés (crypto, phishing, web, forensique, etc.).</p>
         </header>
-        <section class="room-section machines-section">
-          <h3>Déployer / Accéder aux cibles</h3>
-          <div id="scenario-machines" class="machine-cards"></div>
-        </section>
         <section class="room-section">
-          <h3>Tâches</h3>
-          <div id="scenario-tasks" class="tasks-list scenario-tasks"></div>
+          <p class="section-desc">Choisis un thème pour accéder à la <strong>documentation</strong>, aux <strong>cours</strong> et aux <strong>outils</strong>.</p>
+          <div id="learning-topics" class="learning-topics"></div>
         </section>
+      </div>
+      <!-- Scenario view (THM/HTB style) : scénario + terminal intégré -->
+      <div id="view-scenario" class="view view-scenario-with-terminal">
+        <div class="scenario-content-column">
+          <header class="page-header scenario-header">
+            <div class="room-meta">
+              <span id="scenario-difficulty" class="difficulty-badge"></span>
+              <span id="scenario-time" class="time-badge"></span>
+            </div>
+            <h2 id="scenario-title"></h2>
+            <p id="scenario-description" class="room-description"></p>
+            <div id="scenario-resume-banner" class="scenario-resume-banner hidden" role="status"></div>
+          </header>
+          <section class="room-section machines-section">
+            <h3>Déployer / Accéder aux cibles</h3>
+            <div id="scenario-machines" class="machine-cards"></div>
+          </section>
+          <section class="room-section">
+            <h3>Tâches</h3>
+            <div id="scenario-tasks" class="tasks-list scenario-tasks"></div>
+          </section>
+        </div>
+        <aside class="scenario-terminal-panel" id="scenario-terminal-panel">
+          <div class="terminal-panel-header">
+            <h3>⌨ Terminal attaquant</h3>
+            <div class="terminal-panel-actions">
+              <button type="button" id="terminal-open-new-tab" class="topbar-btn" title="Ouvrir dans un nouvel onglet">Nouvel onglet</button>
+              <button type="button" id="terminal-toggle-panel" class="topbar-btn" title="Réduire / agrandir">−</button>
+            </div>
+          </div>
+          <div id="terminal-connect-status" class="terminal-status" aria-live="polite"></div>
+          <div id="terminal-container" class="terminal-container"></div>
+        </aside>
       </div>
       <!-- Room view (existing) -->
       <div id="view-room" class="view">
@@ -111,6 +212,11 @@
           <h2 id="room-title"></h2>
           <p id="room-description" class="room-description"></p>
         </header>
+        <section id="room-reading-section" class="room-section room-reading" hidden>
+          <h3>📖 Lecture recommandée</h3>
+          <p class="section-desc">Documentation sur ce thème pour aller plus loin.</p>
+          <div id="room-reading-links"></div>
+        </section>
         <section class="room-section">
           <h3>Objectifs</h3>
           <ul id="room-objectives"></ul>
@@ -130,22 +236,60 @@
         </section>
       </div>
     </main>
-    <!-- Journal d'activité / Logs (réutilisable partout) -->
-    <aside class="log-panel" id="log-panel">
+    <!-- Modal Statistiques -->
+    <div id="modal-stats" class="modal hidden" role="dialog" aria-labelledby="stats-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="stats-title">Statistiques et avancement</h2>
+          <button type="button" class="modal-close" id="modal-stats-close" aria-label="Fermer">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="stats-summary" class="stats-summary"></div>
+          <h3>Avancement par scénario</h3>
+          <div id="stats-scenarios" class="stats-scenarios"></div>
+          <p class="stats-hint">La progression est enregistrée localement (navigateur).</p>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Options -->
+    <div id="modal-options" class="modal hidden" role="dialog" aria-labelledby="options-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="options-title">Options</h2>
+          <button type="button" class="modal-close" id="modal-options-close" aria-label="Fermer">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="option-row">
+            <label><input type="checkbox" id="opt-pip-auto" /> Ouvrir le PiP scénario quand je lance un scénario</label>
+          </div>
+          <div class="option-row">
+            <button type="button" id="opt-export-progress" class="topbar-btn">Exporter ma progression (JSON)</button>
+          </div>
+          <div class="option-row">
+            <button type="button" id="opt-reset-progress" class="topbar-btn danger">Réinitialiser toute la progression</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Journal d'activité / Logs (fermé par défaut) -->
+    <aside class="log-panel collapsed" id="log-panel">
       <div class="log-panel-header">
         <h3>Journal d'activité</h3>
         <div class="log-panel-actions">
           <button type="button" id="log-export-json" title="Exporter en JSON">Export JSON</button>
           <button type="button" id="log-export-txt" title="Exporter en texte">Export TXT</button>
           <button type="button" id="log-clear" title="Effacer les logs">Effacer</button>
-          <button type="button" id="log-panel-toggle" title="Réduire / agrandir">−</button>
+          <button type="button" id="log-panel-toggle" title="Réduire / agrandir" aria-label="Journal">−</button>
         </div>
       </div>
       <div class="log-panel-body">
         <ul id="log-entries"></ul>
       </div>
     </aside>
+    <!-- Bouton flottant Journal (mobile uniquement) -->
+    <button type="button" class="log-fab" id="log-fab" aria-label="Ouvrir le journal" title="Journal d'activité">📋</button>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/logger.js"></script>
   <script src="js/app.js"></script>
 </body>

