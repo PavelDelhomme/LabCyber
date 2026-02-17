@@ -159,10 +159,12 @@ print('  OK tous running')
   if [ "$code" = "200" ] || [ "$code" = "101" ] || [ "$code" = "000" ]; then echo "  OK terminal.lab $code"; else echo "  WARN terminal $code"; fi
   echo ""
 
-  # ---- 10. Fichiers statiques plateforme ----
-  echo "[10/10] Fichiers statiques (css, data)..."
-  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/css/style.css" 2>/dev/null || echo "000")
-  if [ "$code" = "200" ]; then echo "  OK style.css"; else echo "  FAIL style.css $code"; FAIL=1; fi
+  # ---- 10. Fichiers plateforme (app Vite buildée) ----
+  echo "[10/10] Fichiers plateforme (app, data)..."
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/" 2>/dev/null || echo "000")
+  if [ "$code" = "200" ]; then echo "  OK / (app)"; else echo "  FAIL / $code"; FAIL=1; fi
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/data/rooms.json" 2>/dev/null || echo "000")
+  if [ "$code" = "200" ]; then echo "  OK data/rooms.json"; else echo "  FAIL data/rooms.json $code"; FAIL=1; fi
   echo ""
 fi
 

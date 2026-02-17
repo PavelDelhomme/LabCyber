@@ -90,6 +90,16 @@ Ou : `docker compose exec attaquant bash`.
 
 Depuis ce shell tu peux lancer nmap, nikto, ssh vers vuln-network, redis-cli, curl vers vuln-api, etc. Les hostnames (dvwa, juice-shop, vuln-api, vuln-network) sont résolus sur le réseau Docker.
 
+### 3.3 Démarrer le lab (make dev = make up)
+
+**make dev** et **make up** font la même chose : ils démarrent le lab **via Docker** (aucun run manuel npm/vite). La plateforme (app Preact/Vite) est servie sur **http://127.0.0.1:8080** (port gateway).
+
+```bash
+make up
+# ou
+make dev
+```
+
 ---
 
 ## 4. Résumé des URLs (un seul port)

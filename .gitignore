@@ -40,3 +40,8 @@ temp/
 
 # Binaire C compilé (make lab)
 /lab
+
+# Node / build
+node_modules/
+platform/node_modules/
+platform/dist/

@@ -19,6 +19,7 @@ services:
   attaquant:
     build: ./attacker
     networks: [lab-network]
+    ports: ["${TTYD_PORT:-7681}:7681"]
     expose: ["7681"]
     stdin_open: true
     tty: true

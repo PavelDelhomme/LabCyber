@@ -10,51 +10,39 @@ ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 help:
 	@echo "Lab Cyber – Cibles principales"
 	@echo ""
-	@echo "  make up           Démarrer tout le lab (conteneurs)"
-	@echo "  make down         Arrêter le lab (et lab-minimal), libérer les ports"
-	@echo "  make up-minimal   Démarrer le lab en mode minimal (peu de ressources)"
-	@echo "  make build        Reconstruire les images"
-	@echo "  make status       Afficher l’état des conteneurs"
+	@echo "  make dev          Reconstruire si besoin + démarrer tout (recommandé)"
+	@echo "  make up           Démarrer sans rebuild (rapide)"
+	@echo "  make down         Tout arrêter (lab + lab-minimal)"
+	@echo "  make restart      Arrêter puis redémarrer (down + up)"
+	@echo "  make build        Reconstruire les images (sans démarrer)"
+	@echo "  make status       État des conteneurs"
 	@echo ""
-	@echo "  make test         Lancer tous les tests du système"
-	@echo "  make test-full    Idem mais exige que le lab soit démarré"
-	@echo ""
-	@echo "  make shell        Ouvrir un shell dans le conteneur attaquant (session lab)"
-	@echo "  make logs         Afficher les logs de tous les services"
-	@echo "  make logs-SVC     Logs du service SVC (ex: make logs-platform)"
-	@echo ""
-	@echo "  make lab          Compiler le binaire C ./lab (up, down, test, minimal, shell)"
-	@echo "  make proxy        Démarrer le lab + proxy Squid (port 3128)"
-	@echo "  make blue         Démarrer le lab avec profil Blue Team (Suricata)"
-	@echo ""
-	@echo "  make clean        Arrêter et supprimer conteneurs + volumes"
-	@echo "  make ports        Voir qui utilise les ports 8080 et 7681 (si make up échoue)"
-	@echo ""
-	@echo "  make dev          Lancer la plateforme web en mode dev avec hot reload (port 3000)"
-	@echo "  make restart      Redémarrer le lab (down puis up)"
+	@echo "  make up-minimal   Mode minimal  |  make test  tests  |  make shell  conteneur attaquant"
+	@echo "  make logs         Logs  |  make logs-SVC  (ex: make logs-gateway)"
+	@echo "  make proxy        Lab + Squid (3128)  |  make blue  Blue Team  |  make desktop  Bureau noVNC (XFCE)"
+	@echo "  make clean        Tout arrêter + supprimer volumes  |  make ports  Qui utilise 8080/7681"
 	@echo ""
 
-# Démarrer le lab (sans proxy ni blue)
+# Démarrer sans rebuild (rapide si les images sont déjà à jour)
 up:
 	cd $(ROOT) && docker compose up -d
-	@echo "Lab démarré. Plateforme : http://127.0.0.1:8080  |  Terminal : http://localhost:7681  |  make shell"
+	@echo "Plateforme : http://127.0.0.1:8080  |  Terminal : http://127.0.0.1:8080/terminal/  |  make shell"
 
-# Arrêter le lab (et lab-minimal si actif) pour libérer les ports
+# Tout arrêter (lab + lab-minimal), libérer les ports
 down:
 	cd $(ROOT) && docker compose down --remove-orphans
 	cd $(ROOT) && COMPOSE_PROJECT_NAME=lab-minimal docker compose -f docker-compose.minimal.yml down --remove-orphans 2>/dev/null || true
 	@echo "Lab arrêté. Ports libérés."
 
-# Redémarrer le lab (arrêt puis redémarrage)
+# Tout arrêter puis redémarrer (pas de rebuild)
 restart: down
 	cd $(ROOT) && docker compose up -d
-	@echo "Lab redémarré. Plateforme : http://127.0.0.1:8080  |  Terminal : http://localhost:7681"
+	@echo "Plateforme : http://127.0.0.1:8080  |  Terminal : http://127.0.0.1:8080/terminal/"
 
-# Plateforme web en mode dev avec hot reload (port 3000)
+# Reconstruire les images si besoin + démarrer (tout faire fonctionner, ex. gateway/nginx.conf)
 dev:
-	@command -v npm >/dev/null 2>&1 || { echo "Erreur: npm requis (installez Node.js)."; exit 1; }
-	@test -d node_modules || (cd $(ROOT) && npm install)
-	cd $(ROOT) && npm run dev
+	cd $(ROOT) && docker compose up -d --build
+	@echo "Plateforme : http://127.0.0.1:8080  |  Terminal : http://127.0.0.1:8080/terminal/  |  make shell"
 
 build:
 	cd $(ROOT) && docker compose build
@@ -96,6 +84,11 @@ up-proxy:
 
 down-proxy:
 	cd $(ROOT) && docker compose --profile proxy stop proxy 2>/dev/null || true
+
+# Bureau noVNC (XFCE, type Kali – accès http://127.0.0.1:8080/desktop/)
+desktop:
+	cd $(ROOT) && docker compose --profile desktop up -d
+	@echo "Bureau noVNC : http://127.0.0.1:8080/desktop/  (mot de passe VNC : alpine)"
 
 # Blue Team (Suricata)
 blue:

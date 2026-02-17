@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lab Cyber – Plateforme d'apprentissage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1 class="logo">Lab Cyber</h1>
+        <p class="tagline">Scénarios guidés · Style TryHackMe / HackTheBox</p>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">◆</span>
+          <span>Accueil</span>
+        </button>
+        <a class="nav-item" id="nav-terminal" href="#" target="_blank" rel="noopener" title="Ouvrir le terminal du lab (poste attaquant)">
+          <span class="nav-icon">⌨</span>
+          <span>Terminal lab</span>
+        </a>
+        <button class="nav-item" data-view="docs" type="button" title="Documentation du projet">
+          <span class="nav-icon">📚</span>
+          <span>Doc. projet</span>
+        </button>
+        <button class="nav-item" data-view="learning" type="button" title="Documentation et cours par thème (crypto, phishing, outils…)">
+          <span class="nav-icon">📖</span>
+          <span>Doc &amp; Cours</span>
+        </button>
+        <button class="nav-item" data-view="engagements" type="button" title="Cibles, proxy/VPN et notes pour vos tests">
+          <span class="nav-icon">🎯</span>
+          <span>Cibles &amp; Proxy</span>
+        </button>
+        <div class="nav-section">Scénarios guidés</div>
+        <div id="nav-scenarios"></div>
+        <div class="nav-section">Rooms par catégorie</div>
+        <div id="nav-rooms"></div>
+      </nav>
+      <div class="sidebar-footer">
+        <span>Usage éducatif uniquement</span>
+      </div>
+    </aside>
+    <main class="main">
+      <!-- Barre du haut : titre au-dessus sur mobile, puis ligne drawer + recherche + actions + journal -->
+      <header class="topbar">
+        <div class="topbar-head">
+          <button type="button" class="topbar-btn sidebar-toggle" id="btn-sidebar-toggle" aria-label="Ouvrir le menu" title="Menu">☰</button>
+          <h1 class="topbar-title" id="topbar-brand-text">Lab Cyber</h1>
+        </div>
+        <div class="topbar-toolbar">
+          <input type="search" id="search-input" class="search-input" placeholder="Rechercher scénarios, rooms, docs…" aria-label="Recherche">
+          <select id="filter-category" class="filter-category" aria-label="Catégorie">
+            <option value="">Toutes les catégories</option>
+          </select>
+          <div class="topbar-actions">
+            <button type="button" class="topbar-btn" id="btn-terminal-toggle" title="Terminal">⌨</button>
+            <button type="button" class="topbar-btn" id="btn-stats" title="Statistiques">📊</button>
+            <button type="button" class="topbar-btn" id="btn-options" title="Options">⚙️</button>
+            <button type="button" class="topbar-btn" id="btn-pip-toggle" title="PiP scénario" style="display:none">📌</button>
+            <button type="button" class="topbar-btn topbar-btn-log" id="btn-log-toggle" title="Journal d'activité">📋</button>
+          </div>
+        </div>
+      </header>
+      <div id="topbar-context" class="topbar-context" aria-live="polite"></div>
+      <!-- Panneau PiP : scénario en miniature (visible uniquement en vue scénario, redimensionnable) -->
+      <div id="pip-panel" class="pip-panel hidden" aria-label="Scénario en cours">
+        <div class="pip-header">
+          <span id="pip-title" class="pip-title">Scénario</span>
+          <button type="button" id="pip-close" class="pip-close" title="Fermer" aria-label="Fermer">×</button>
+        </div>
+        <div class="pip-body">
+          <ul id="pip-tasks"></ul>
+        </div>
+        <div class="pip-resize-handle" id="pip-resize-handle" title="Redimensionner" aria-label="Redimensionner"></div>
+      </div>
+      <!-- Dashboard -->
+      <div id="view-dashboard" class="view active">
+        <header class="page-header">
+          <h2>Bienvenue sur le Lab Cyber</h2>
+          <p>Suis des <strong>scénarios guidés</strong> pas à pas (comme sur TryHackMe / HackTheBox) : objectifs concrets, commandes à lancer, ce que tu apprends à chaque étape. Tu peux aussi explorer les <strong>rooms</strong> par catégorie. <strong>Un seul port</strong> pour tout le lab (gateway).</p>
+        </header>
+        <section class="dashboard-section" id="dashboard-mypost">
+          <h3 class="section-title">Mon poste (lab)</h3>
+          <p class="section-desc">Terminal web = conteneur attaquant. En ligne de commande : <code>make shell</code> ou <code>docker compose exec attaquant bash</code>.</p>
+          <div class="dashboard-grid" id="dashboard-terminal-cards"></div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Scénarios guidés</h3>
+          <p class="section-desc">Parcours pas à pas avec tâches, commandes et apprentissages concrets.</p>
+          <div class="dashboard-grid" id="dashboard-scenarios"></div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Rooms</h3>
+          <p class="section-desc">Par thème : Web, Réseau, API, Red/Blue Team, Stégano, Crypto, Phishing…</p>
+          <div class="dashboard-grid" id="dashboard-cards"></div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Documentation et tests</h3>
+          <p class="section-desc">Toute la doc du projet (démarrage, usage, tests, catégories). Voir aussi le <strong>Terminal lab</strong> pour exécuter les attaques depuis le navigateur.</p>
+          <div class="dashboard-grid" id="dashboard-docs-cards"></div>
+        </section>
+      </div>
+      <!-- Vue Cibles & Proxy : cibles, proxy/VPN, notes (tests réels) -->
+      <div id="view-engagements" class="view">
+        <header class="page-header">
+          <h2>Cibles &amp; Proxy</h2>
+          <p class="section-desc">Définis des <strong>cibles</strong>, configure <strong>proxy/VPN</strong> pour isoler tes tests de ta machine, et garde tes <strong>notes et résultats</strong>. Données enregistrées localement.</p>
+        </header>
+        <section class="dashboard-section">
+          <h3 class="section-title">Proxies (liste)</h3>
+          <p class="section-desc">Ajoute des proxies à la main (host:port ou http://host:port). Tu peux en ajouter plusieurs et supprimer ceux que tu ne veux plus.</p>
+          <form id="engagement-proxy-form" class="engagement-form">
+            <input type="text" id="engagement-proxy-url" placeholder="Ex: 192.168.1.1:8080 ou http://proxy:3128" required>
+            <input type="text" id="engagement-proxy-notes" placeholder="Notes (optionnel)">
+            <button type="submit" class="topbar-btn">Ajouter le proxy</button>
+          </form>
+          <ul id="engagement-proxies-list" class="engagement-list"></ul>
+          <div class="engagement-block" style="margin-top:1rem">
+            <h4 class="section-title">Récupérer des proxies disponibles (ProxyScrape)</h4>
+            <p class="section-desc">Charge une liste à jour depuis l’API ProxyScrape (HTTP).</p>
+            <div class="engagement-form">
+              <label>Nombre max à ajouter</label>
+              <input type="number" id="proxy-fetch-max" min="1" max="200" value="30" style="width:80px">
+              <button type="button" id="proxy-fetch-btn" class="topbar-btn">Récupérer des proxies</button>
+            </div>
+            <p id="proxy-fetch-result" class="section-desc" style="margin-top:0.5rem;color:var(--accent)"></p>
+          </div>
+          <div class="engagement-block" style="margin-top:1rem">
+            <h4 class="section-title">Ou depuis free-proxy.cz</h4>
+            <p class="section-desc">Ouvre <a href="http://free-proxy.cz/fr/" target="_blank" rel="noopener nofollow">free-proxy.cz/fr/</a>, copie les proxies (IP:port), colle dans la zone ci-dessous (un par ligne), puis clique sur « Ajouter ces proxies à la liste ».</p>
+          </div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Proxy / Anonymat (notes)</h3>
+          <p class="section-desc">Notes pour toi : export HTTP_PROXY, VPN, etc.</p>
+          <div class="engagement-block">
+            <textarea id="engagement-proxy-notes-global" class="engagement-notes" rows="2" placeholder="Ex: export HTTP_PROXY=http://proxy:8080"></textarea>
+          </div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Liste à coller (free-proxy.cz ou autre)</h3>
+          <p class="section-desc">Colle une liste de proxies (un par ligne : <code>host:port</code> ou <code>http://host:port</code>), puis ajoute-les à ta liste ou vérifie (à brancher).</p>
+          <div class="engagement-block">
+            <label>Liste de proxies</label>
+            <textarea id="proxy-list-input" class="engagement-notes" rows="5" placeholder="Colle ici les proxies (un par ligne)&#10;Ex: 192.168.1.1:8080"></textarea>
+            <button type="button" id="proxy-bulk-add-btn" class="topbar-btn" style="margin-top:0.5rem">Ajouter ces proxies à la liste</button>
+            <button type="button" id="proxy-check-btn" class="topbar-btn" style="margin-top:0.5rem">Vérifier (à brancher)</button>
+            <p id="proxy-check-result" class="proxy-check-result text-muted" style="margin-top:0.5rem;font-size:0.9rem"></p>
+          </div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Cibles</h3>
+          <p class="section-desc">Ajoute des cibles (URL, IP, nom) pour ton engagement. Clique sur une cible pour la modifier ou la supprimer.</p>
+          <form id="engagement-target-form" class="engagement-form">
+            <input type="text" id="engagement-target-name" placeholder="Nom (ex: API prod)" required>
+            <input type="text" id="engagement-target-url" placeholder="URL ou IP (ex: https://api.example.com)">
+            <input type="text" id="engagement-target-notes" placeholder="Notes (scope, credentials de test...)">
+            <button type="submit" class="topbar-btn">Ajouter la cible</button>
+          </form>
+          <ul id="engagement-targets-list" class="engagement-list"></ul>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Notes et résultats</h3>
+          <p class="section-desc">Rédige tes observations, commandes utiles, preuves (à copier-coller depuis le terminal).</p>
+          <textarea id="engagement-notes" class="engagement-notes" rows="12" placeholder="Résultats des scans, vulnérabilités trouvées, commandes à rejouer..."></textarea>
+        </section>
+      </div>
+      <!-- Documentation (liste des docs + viewer intégré) -->
+      <div id="view-docs" class="view view-docs">
+        <header class="page-header docs-header">
+          <h2 id="docs-title">Documentation du projet</h2>
+          <p id="docs-description" class="room-description">Chargement…</p>
+        </header>
+        <div class="docs-layout">
+          <nav class="docs-nav">
+            <h3>Fichiers</h3>
+            <ul id="docs-list" class="docs-list"></ul>
+          </nav>
+          <div id="docs-viewer" class="docs-viewer">
+            <div id="docs-viewer-placeholder" class="docs-viewer-placeholder">Choisissez un document dans la liste.</div>
+            <div id="docs-viewer-content" class="docs-viewer-content hidden"></div>
+          </div>
+        </div>
+        <section class="room-section docs-footer">
+          <h3>Tests du système</h3>
+          <p>Pour lancer tous les tests depuis le terminal : <code>./lab test</code> ou <code>make test</code>. Voir la doc <button type="button" class="link-button" data-doc-file="TESTS.md">TESTS.md</button> pour la matrice complète.</p>
+          <p><a href="/test-logs.html" target="_blank" rel="noopener">Page de test du logger</a> (journal d'activité).</p>
+        </section>
+      </div>
+      <!-- Documentation & Cours par thème -->
+      <div id="view-learning" class="view">
+        <header class="page-header">
+          <h2 id="learning-title">Documentation &amp; Cours</h2>
+          <p id="learning-description" class="room-description">Par sujet : documentation officielle, cours complets, et outils détaillés (crypto, phishing, web, forensique, etc.).</p>
+        </header>
+        <section class="room-section">
+          <p class="section-desc">Choisis un thème pour accéder à la <strong>documentation</strong>, aux <strong>cours</strong> et aux <strong>outils</strong>.</p>
+          <div id="learning-topics" class="learning-topics"></div>
+        </section>
+      </div>
+      <!-- Scenario view (THM/HTB style) : scénario + terminal intégré -->
+      <div id="view-scenario" class="view view-scenario-with-terminal">
+        <div class="scenario-content-column">
+          <header class="page-header scenario-header">
+            <div class="room-meta">
+              <span id="scenario-difficulty" class="difficulty-badge"></span>
+              <span id="scenario-time" class="time-badge"></span>
+            </div>
+            <h2 id="scenario-title"></h2>
+            <p id="scenario-description" class="room-description"></p>
+            <div id="scenario-resume-banner" class="scenario-resume-banner hidden" role="status"></div>
+          </header>
+          <section class="room-section machines-section">
+            <h3>Déployer / Accéder aux cibles</h3>
+            <div id="scenario-machines" class="machine-cards"></div>
+          </section>
+          <section class="room-section">
+            <h3>Tâches</h3>
+            <div id="scenario-tasks" class="tasks-list scenario-tasks"></div>
+          </section>
+        </div>
+        <aside class="scenario-terminal-panel" id="scenario-terminal-panel">
+          <div class="terminal-panel-header">
+            <h3>⌨ Terminal attaquant</h3>
+            <div class="terminal-panel-actions">
+              <button type="button" id="terminal-open-new-tab" class="topbar-btn" title="Ouvrir dans un nouvel onglet">Nouvel onglet</button>
+              <button type="button" id="terminal-toggle-panel" class="topbar-btn" title="Réduire / agrandir">−</button>
+            </div>
+          </div>
+          <div id="terminal-connect-status" class="terminal-status" aria-live="polite"></div>
+          <div id="terminal-container" class="terminal-container"></div>
+        </aside>
+      </div>
+      <!-- Room view (existing) -->
+      <div id="view-room" class="view">
+        <header class="page-header room-header">
+          <div class="room-meta">
+            <span id="room-category-badge" class="badge"></span>
+            <span id="room-difficulty" class="difficulty"></span>
+          </div>
+          <h2 id="room-title"></h2>
+          <p id="room-description" class="room-description"></p>
+        </header>
+        <section id="room-reading-section" class="room-section room-reading" hidden>
+          <h3>📖 Lecture recommandée</h3>
+          <p class="section-desc">Documentation sur ce thème pour aller plus loin.</p>
+          <div id="room-reading-links"></div>
+        </section>
+        <section class="room-section">
+          <h3>Objectifs</h3>
+          <ul id="room-objectives"></ul>
+        </section>
+        <section id="room-challenges-section" class="room-section challenges-section" hidden>
+          <h3>Télécharger les défis</h3>
+          <p class="hint">Télécharge les fichiers puis travaille depuis le conteneur attaquant.</p>
+          <div id="room-challenge-downloads" class="machine-cards"></div>
+        </section>
+        <section class="room-section machines-section">
+          <h3>Accéder aux machines</h3>
+          <div id="room-machines" class="machine-cards"></div>
+        </section>
+        <section class="room-section">
+          <h3>Tâches</h3>
+          <div id="room-tasks" class="tasks-list"></div>
+        </section>
+      </div>
+    </main>
+    <!-- Modal Statistiques -->
+    <div id="modal-stats" class="modal hidden" role="dialog" aria-labelledby="stats-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="stats-title">Statistiques et avancement</h2>
+          <button type="button" class="modal-close" id="modal-stats-close" aria-label="Fermer">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="stats-summary" class="stats-summary"></div>
+          <h3>Avancement par scénario</h3>
+          <div id="stats-scenarios" class="stats-scenarios"></div>
+          <p class="stats-hint">La progression est enregistrée localement (navigateur).</p>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Options -->
+    <div id="modal-options" class="modal hidden" role="dialog" aria-labelledby="options-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="options-title">Options</h2>
+          <button type="button" class="modal-close" id="modal-options-close" aria-label="Fermer">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="option-row">
+            <label><input type="checkbox" id="opt-pip-auto" /> Ouvrir le PiP scénario quand je lance un scénario</label>
+          </div>
+          <div class="option-row">
+            <button type="button" id="opt-export-progress" class="topbar-btn">Exporter ma progression (JSON)</button>
+          </div>
+          <div class="option-row">
+            <button type="button" id="opt-reset-progress" class="topbar-btn danger">Réinitialiser toute la progression</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Journal d'activité / Logs (fermé par défaut) -->
+    <aside class="log-panel collapsed" id="log-panel">
+      <div class="log-panel-header">
+        <h3>Journal d'activité</h3>
+        <div class="log-panel-actions">
+          <button type="button" id="log-export-json" title="Exporter en JSON">Export JSON</button>
+          <button type="button" id="log-export-txt" title="Exporter en texte">Export TXT</button>
+          <button type="button" id="log-clear" title="Effacer les logs">Effacer</button>
+          <button type="button" id="log-panel-toggle" title="Réduire / agrandir" aria-label="Journal">−</button>
+        </div>
+      </div>
+      <div class="log-panel-body">
+        <ul id="log-entries"></ul>
+      </div>
+    </aside>
+    <!-- Bouton flottant Journal (mobile uniquement) -->
+    <button type="button" class="log-fab" id="log-fab" aria-label="Ouvrir le journal" title="Journal d'activité">📋</button>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/logger.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

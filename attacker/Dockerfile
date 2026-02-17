@@ -54,10 +54,11 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     theharvester \
     2>/dev/null || true
 
-# Terminal web (ttyd) – optionnel, pour interface web
+# Terminal web (ttyd) – amd64 et arm64
 ARG TTYD_VERSION=1.7.4
 RUN arch=$(dpkg --print-architecture) && \
     ( [ "$arch" = "amd64" ] && wget -q -O /tmp/ttyd.tar.gz "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.${TTYD_VERSION}.x86_64.tar.gz" || true ) && \
+    ( [ "$arch" = "arm64" ] && wget -q -O /tmp/ttyd.tar.gz "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.${TTYD_VERSION}.aarch64.tar.gz" || true ) && \
     ( [ -f /tmp/ttyd.tar.gz ] && tar -xzf /tmp/ttyd.tar.gz -C /tmp && cp /tmp/ttyd*/ttyd /usr/local/bin/ttyd 2>/dev/null || cp /tmp/ttyd /usr/local/bin/ 2>/dev/null; chmod +x /usr/local/bin/ttyd 2>/dev/null; rm -rf /tmp/ttyd* ) || true
 
 WORKDIR /workspace

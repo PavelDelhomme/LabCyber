@@ -1015,8 +1015,63 @@
       d.notes = this.value;
       saveEngagementData(d);
     });
+    function parseProxyLine(line) {
+      var s = line.trim().replace(/^https?:\/\//i, '');
+      var m = s.match(/^([^\s:]+):(\d+)$/);
+      return m ? m[1] + ':' + m[2] : null;
+    }
+
+    var proxyFetchBtn = document.getElementById('proxy-fetch-btn');
+    var proxyFetchResult = document.getElementById('proxy-fetch-result');
     var proxyCheckBtn = document.getElementById('proxy-check-btn');
     var proxyCheckResult = document.getElementById('proxy-check-result');
+    if (proxyFetchBtn && proxyFetchResult) proxyFetchBtn.addEventListener('click', function() {
+      var maxEl = document.getElementById('proxy-fetch-max');
+      var max = Math.max(1, Math.min(200, parseInt(maxEl && maxEl.value ? maxEl.value : 30, 10) || 30));
+      proxyFetchResult.textContent = 'Chargement…';
+      proxyFetchBtn.disabled = true;
+      fetch('https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all')
+        .then(function(r) { if (!r.ok) throw new Error('Réseau'); return r.text(); })
+        .then(function(text) {
+          var lines = text.split(/\r?\n/).map(parseProxyLine).filter(Boolean);
+          var d = getEngagementData();
+          d.proxies = d.proxies || [];
+          var existing = {};
+          d.proxies.forEach(function(p) { existing[(p.url || '').replace(/^https?:\/\//i, '')] = true; });
+          var added = 0;
+          for (var i = 0; i < lines.length && added < max; i++) {
+            var norm = lines[i].replace(/^https?:\/\//i, '');
+            if (!existing[norm]) { existing[norm] = true; d.proxies.push({ url: lines[i], notes: 'ProxyScrape' }); added++; }
+          }
+          saveEngagementData(d);
+          renderEngagementsView();
+          proxyFetchResult.textContent = added ? added + ' proxy(s) ajouté(s).' : 'Aucun nouveau proxy (déjà en liste ou liste vide).';
+        })
+        .catch(function() {
+          proxyFetchResult.textContent = 'Impossible de récupérer (CORS ou réseau). Utilise « Ajouter ces proxies » avec un copier-coller depuis free-proxy.cz.';
+        })
+        .then(function() { proxyFetchBtn.disabled = false; });
+    });
+
+    var proxyBulkAddBtn = document.getElementById('proxy-bulk-add-btn');
+    if (proxyBulkAddBtn && proxyCheckResult) proxyBulkAddBtn.addEventListener('click', function() {
+      var raw = (document.getElementById('proxy-list-input') || {}).value || '';
+      var lines = raw.split(/\r?\n/).map(parseProxyLine).filter(Boolean);
+      var d = getEngagementData();
+      d.proxies = d.proxies || [];
+      var existing = {};
+      d.proxies.forEach(function(p) { existing[(p.url || '').replace(/^https?:\/\//i, '')] = true; });
+      var added = 0;
+      lines.forEach(function(line) {
+        var norm = (line || '').replace(/^https?:\/\//i, '');
+        if (!existing[norm]) { existing[norm] = true; d.proxies.push({ url: line, notes: 'Import' }); added++; }
+      });
+      saveEngagementData(d);
+      renderEngagementsView();
+      if (document.getElementById('proxy-list-input')) document.getElementById('proxy-list-input').value = '';
+      proxyCheckResult.textContent = added ? added + ' proxy(s) ajouté(s) à la liste.' : 'Aucun proxy valide (format IP:port, un par ligne).';
+    });
+
     if (proxyCheckBtn && proxyCheckResult) proxyCheckBtn.addEventListener('click', function() {
       var raw = (document.getElementById('proxy-list-input') || {}).value || '';
       var lines = raw.split(/\n/).map(function(l) { return l.trim(); }).filter(Boolean);

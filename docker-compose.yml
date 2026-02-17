@@ -12,6 +12,7 @@ services:
     networks: [lab-network]
     depends_on:
       - platform
+      - attaquant
 
   # ========== Plateforme web (accès via gateway) ==========
   platform:
@@ -104,6 +105,17 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command: ["sleep infinity"]
     profiles: [blue]
+
+  # ========== Bureau noVNC (XFCE type Kali, accès via /desktop/) ==========
+  desktop:
+    image: novaspirit/alpine_xfce4_novnc:latest
+    container_name: lab-desktop
+    networks: [lab-network]
+    expose: ["6080"]
+    environment:
+      - VNC_PASSWORD=alpine
+    profiles:
+      - desktop
 
   # ========== PROXY Squid (profil proxy ; port exposé si besoin) ==========
   proxy:
