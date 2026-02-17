@@ -1,0 +1,61 @@
+# Lab Cyber – Profil minimal (peu de ressources, pas de DVWA/Juice/bWAPP)
+# Projet : lab-minimal (pas de conflit avec le lab complet)
+# Usage : ./lab minimal  ou  COMPOSE_PROJECT_NAME=lab-minimal docker compose -f docker-compose.minimal.yml up -d
+
+services:
+  gateway:
+    build: ./gateway
+    container_name: lab-minimal-gateway
+    ports: ["${GATEWAY_PORT:-9080}:80"]
+    networks: [lab-network]
+    depends_on: [platform]
+    mem_limit: 64m
+    mem_reservation: 32m
+
+  platform:
+    build:
+      context: .
+      dockerfile: platform/Dockerfile
+    container_name: lab-minimal-platform
+    networks: [lab-network]
+    expose: ["80"]
+    mem_limit: 128m
+    mem_reservation: 64m
+
+  attaquant:
+    build: ./attacker
+    container_name: lab-minimal-attaquant
+    networks: [lab-network]
+    ports: ["7682:7681"]
+    expose: ["7681"]
+    stdin_open: true
+    tty: true
+    mem_limit: 256m
+    mem_reservation: 128m
+
+  vuln-network:
+    build: ./vuln-network
+    container_name: lab-minimal-vuln-network
+    networks:
+      lab-network:
+        aliases: [vuln-network, vulnbox]
+    expose: ["22", "6379"]
+    mem_limit: 128m
+
+  vuln-api:
+    build: ./vuln-api
+    container_name: lab-minimal-vuln-api
+    networks:
+      lab-network:
+        aliases: [vuln-api, api]
+    expose: ["5000"]
+    volumes: [vuln-api-data:/data]
+    mem_limit: 128m
+
+volumes:
+  vuln-api-data:
+
+networks:
+  lab-network:
+    driver: bridge
+    name: lab-network

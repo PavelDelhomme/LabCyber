@@ -14,30 +14,94 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <h1 class="logo">Lab Cyber</h1>
-        <p class="tagline">Plateforme d'apprentissage cybersécurité</p>
+        <p class="tagline">Scénarios guidés · Style TryHackMe / HackTheBox</p>
       </div>
       <nav class="nav">
         <button class="nav-item active" data-view="dashboard">
-          <span class="nav-icon">◉</span>
-          <span>Tableau de bord</span>
+          <span class="nav-icon">◆</span>
+          <span>Accueil</span>
         </button>
+        <a class="nav-item" id="nav-terminal" href="#" target="_blank" rel="noopener" title="Ouvrir le terminal du lab (poste attaquant)">
+          <span class="nav-icon">⌨</span>
+          <span>Terminal lab</span>
+        </a>
+        <button class="nav-item" data-view="docs" type="button" title="Documentation du projet">
+          <span class="nav-icon">📚</span>
+          <span>Documentation</span>
+        </button>
+        <div class="nav-section">Scénarios guidés</div>
+        <div id="nav-scenarios"></div>
         <div class="nav-section">Rooms par catégorie</div>
         <div id="nav-rooms"></div>
       </nav>
       <div class="sidebar-footer">
-        <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
-        <span>•</span>
         <span>Usage éducatif uniquement</span>
       </div>
     </aside>
     <main class="main">
+      <!-- Dashboard -->
       <div id="view-dashboard" class="view active">
         <header class="page-header">
           <h2>Bienvenue sur le Lab Cyber</h2>
-          <p>Choisis une room pour commencer. Chaque room contient des objectifs, des machines accessibles directement et des tâches avec explications et tips.</p>
+          <p>Suis des <strong>scénarios guidés</strong> pas à pas (comme sur TryHackMe / HackTheBox) : objectifs concrets, commandes à lancer, ce que tu apprends à chaque étape. Tu peux aussi explorer les <strong>rooms</strong> par catégorie. <strong>Un seul port</strong> pour tout le lab (gateway).</p>
         </header>
-        <div class="dashboard-grid" id="dashboard-cards"></div>
+        <section class="dashboard-section" id="dashboard-mypost">
+          <h3 class="section-title">Mon poste (lab)</h3>
+          <p class="section-desc">Terminal web = conteneur attaquant. En ligne de commande : <code>make shell</code> ou <code>docker compose exec attaquant bash</code>.</p>
+          <div class="dashboard-grid" id="dashboard-terminal-cards"></div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Scénarios guidés</h3>
+          <p class="section-desc">Parcours pas à pas avec tâches, commandes et apprentissages concrets.</p>
+          <div class="dashboard-grid" id="dashboard-scenarios"></div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Rooms</h3>
+          <p class="section-desc">Par thème : Web, Réseau, API, Red/Blue Team, Stégano, Crypto, Phishing…</p>
+          <div class="dashboard-grid" id="dashboard-cards"></div>
+        </section>
+        <section class="dashboard-section">
+          <h3 class="section-title">Documentation et tests</h3>
+          <p class="section-desc">Toute la doc du projet (démarrage, usage, tests, catégories). Voir aussi le <strong>Terminal lab</strong> pour exécuter les attaques depuis le navigateur.</p>
+          <div class="dashboard-grid" id="dashboard-docs-cards"></div>
+        </section>
       </div>
+      <!-- Documentation (liste des docs) -->
+      <div id="view-docs" class="view">
+        <header class="page-header">
+          <h2 id="docs-title">Documentation du projet</h2>
+          <p id="docs-description" class="room-description">Chargement…</p>
+        </header>
+        <section class="room-section">
+          <h3>Fichiers de documentation</h3>
+          <ul id="docs-list" class="docs-list"></ul>
+        </section>
+        <section class="room-section">
+          <h3>Tests du système</h3>
+          <p>Pour lancer tous les tests depuis le terminal : <code>./lab test</code> ou <code>make test</code>. Voir <a href="/docs/TESTS.md" target="_blank" rel="noopener">TESTS.md</a> pour la matrice complète.</p>
+          <p><a href="/test-logs.html" target="_blank" rel="noopener">Page de test du logger</a> (journal d'activité).</p>
+        </section>
+      </div>
+      <!-- Scenario view (THM/HTB style) -->
+      <div id="view-scenario" class="view">
+        <header class="page-header scenario-header">
+          <div class="room-meta">
+            <span id="scenario-difficulty" class="difficulty-badge"></span>
+            <span id="scenario-time" class="time-badge"></span>
+          </div>
+          <h2 id="scenario-title"></h2>
+          <p id="scenario-description" class="room-description"></p>
+        </header>
+        <section class="room-section machines-section">
+          <h3>Déployer / Accéder aux cibles</h3>
+          <div id="scenario-machines" class="machine-cards"></div>
+        </section>
+        <section class="room-section">
+          <h3>Tâches</h3>
+          <div id="scenario-tasks" class="tasks-list scenario-tasks"></div>
+        </section>
+      </div>
+      <!-- Room view (existing) -->
       <div id="view-room" class="view">
         <header class="page-header room-header">
           <div class="room-meta">
@@ -53,12 +117,11 @@
         </section>
         <section id="room-challenges-section" class="room-section challenges-section" hidden>
           <h3>Télécharger les défis</h3>
-          <p class="hint">Télécharge les fichiers puis travaille depuis le conteneur attaquant (steghide, openssl, etc.).</p>
+          <p class="hint">Télécharge les fichiers puis travaille depuis le conteneur attaquant.</p>
           <div id="room-challenge-downloads" class="machine-cards"></div>
         </section>
         <section class="room-section machines-section">
           <h3>Accéder aux machines</h3>
-          <p class="hint">Ouvre les cibles dans un nouvel onglet. Les URLs pointent vers localhost (adapte si ton lab tourne ailleurs).</p>
           <div id="room-machines" class="machine-cards"></div>
         </section>
         <section class="room-section">
@@ -67,7 +130,23 @@
         </section>
       </div>
     </main>
+    <!-- Journal d'activité / Logs (réutilisable partout) -->
+    <aside class="log-panel" id="log-panel">
+      <div class="log-panel-header">
+        <h3>Journal d'activité</h3>
+        <div class="log-panel-actions">
+          <button type="button" id="log-export-json" title="Exporter en JSON">Export JSON</button>
+          <button type="button" id="log-export-txt" title="Exporter en texte">Export TXT</button>
+          <button type="button" id="log-clear" title="Effacer les logs">Effacer</button>
+          <button type="button" id="log-panel-toggle" title="Réduire / agrandir">−</button>
+        </div>
+      </div>
+      <div class="log-panel-body">
+        <ul id="log-entries"></ul>
+      </div>
+    </aside>
   </div>
+  <script src="js/logger.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

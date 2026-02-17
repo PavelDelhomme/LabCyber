@@ -15,6 +15,7 @@ Ce document fait le lien entre les **référentiels et types de tests** courants
 | **OSINT** | Reconnaissance légale | theHarvester, dig, recon interne ([07-OSINT.md](07-OSINT.md)) |
 | **Stéganographie** | Données cachées (images, fichiers) | steghide, exiftool, binwalk, défis ([10-STEGANOGRAPHY.md](10-STEGANOGRAPHY.md)) |
 | **Cryptographie** | Chiffrement, hachage, encodage | openssl, gpg, base64, john, défis ([11-CRYPTOGRAPHY.md](11-CRYPTOGRAPHY.md)) |
+| **Phishing / Social Engineering** | Sensibilisation, reconnaissance, simulation (autorisée) | Démo plateforme, doc ([12-SOCIAL-ENGINEERING-PHISHING.md](12-SOCIAL-ENGINEERING-PHISHING.md)) |
 
 ## Types de missions “entreprise” simulables
 
@@ -29,7 +30,7 @@ Ce document fait le lien entre les **référentiels et types de tests** courants
 
 - **Active Directory** : pas de domaine Windows dans ce lab ; pour AD, utiliser des labs dédiés (VMs, Detection Lab, etc.).
 - **Tests mobiles** : pas d’app mobile dans le lab ; à faire sur émulateur / appareil dédié.
-- **Audit physique / social engineering** : hors scope.
+- **Audit physique** : hors scope. **Social engineering / phishing** : le lab couvre la **reconnaissance** et la **sensibilisation** (doc + démo pédagogique) ; les simulations réelles en entreprise doivent être **autorisées** (RSSI, direction).
 - **Conformité complète PCI-DSS / ISO 27001** : le lab donne la **pratique technique** ; la conformité exige processus, documentation, périmètre réel.
 
 ## Checklist “prêt entreprise”
@@ -38,4 +39,5 @@ Ce document fait le lien entre les **référentiels et types de tests** courants
 - [ ] Avoir réalisé un pentest réseau sur vuln-network (scan + exploitation).
 - [ ] Avoir réalisé un scénario Red Team solo avec rapport.
 - [ ] Avoir analysé un pcap avec Suricata/tshark et rédigé une fiche incident (Blue Team).
+- [ ] Avoir lu la doc phishing / spam / social engineering et la démo de la plateforme (reconnaissance).
 - [ ] Connaître le mapping des tests entreprise (ce document) et les docs par catégorie.

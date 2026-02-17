@@ -37,3 +37,6 @@ secrets/
 tmp/
 temp/
 *.tmp
+
+# Binaire C compilé (make lab)
+/lab

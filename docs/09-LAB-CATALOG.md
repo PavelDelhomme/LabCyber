@@ -2,6 +2,8 @@
 
 Liste centralisée des **labs et exercices** que vous pouvez faire dans ce projet, avec la catégorie et la doc associée.
 
+**Depuis la plateforme** (http://localhost:8080) : les **scénarios guidés** (style TryHackMe / HackTheBox) proposent des parcours pas à pas avec tâches et commandes ; les **rooms** par catégorie donnent objectifs, accès aux machines et défis. Voir [GETTING_STARTED.md](GETTING_STARTED.md) et [00-INDEX.md](00-INDEX.md).
+
 ---
 
 ## Web
@@ -97,6 +99,16 @@ Liste centralisée des **labs et exercices** que vous pouvez faire dans ce proje
 | Base64 | Plateforme → Défis crypto | Décoder flag_b64.txt | [11-CRYPTOGRAPHY.md](11-CRYPTOGRAPHY.md) |
 | OpenSSL (AES) | Plateforme → Défis crypto | Déchiffrer flag.enc (mot de passe : labcrypto) | [11-CRYPTOGRAPHY.md](11-CRYPTOGRAPHY.md) |
 | Hachage / John | Conteneur attaquant | Casser un hash avec John the Ripper | [11-CRYPTOGRAPHY.md](11-CRYPTOGRAPHY.md) |
+
+---
+
+## Phishing / Spam / Social Engineering
+
+| Lab | Cible / Outil | Objectif | Doc |
+|-----|----------------|----------|-----|
+| Reconnaître le phishing | Plateforme → room Phishing + démo /demo-phishing.html | Identifier une page type phishing, indices dans l’email | [12-SOCIAL-ENGINEERING-PHISHING.md](12-SOCIAL-ENGINEERING-PHISHING.md) |
+| Spam et arnaques | Plateforme → room Spam | Bonnes pratiques, signalement, ne pas cliquer | [12-SOCIAL-ENGINEERING-PHISHING.md](12-SOCIAL-ENGINEERING-PHISHING.md) |
+| Social engineering | Plateforme → room Social Engineering | Vecteurs (vishing, smishing), principes de défense | [12-SOCIAL-ENGINEERING-PHISHING.md](12-SOCIAL-ENGINEERING-PHISHING.md) |
 
 ---
 

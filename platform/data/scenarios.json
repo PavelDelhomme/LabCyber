@@ -1,0 +1,343 @@
+{
+  "scenarios": [
+    {
+      "id": "scenario-01-scan-reseau",
+      "title": "Scénario 1 : Premier contact – Scan et découverte",
+      "description": "Tu débarques sur un périmètre. Avant toute exploitation, il faut cartographier : quels hôtes ? quels ports ? quels services ? Ce scénario te fait pratiquer la phase de reconnaissance réseau avec nmap.",
+      "difficulty": "Easy",
+      "category": "network",
+      "time": "20 min",
+      "machines": [
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Ou make shell" },
+        { "name": "Cible vuln-network", "url": "#", "note": "Depuis l'attaquant : ssh root@vuln-network" }
+      ],
+      "tasks": [
+        {
+          "title": "Connexion au conteneur attaquant",
+          "content": "Ouvre un terminal sur ta machine. Lance : docker compose exec attaquant bash. Tu es maintenant « dans » la machine d’où tu vas lancer tes outils. Toutes les cibles du lab sont accessibles par leur nom (ex: vuln-network, dvwa).",
+          "command": "docker compose exec attaquant bash",
+          "tip": "Si le lab n’est pas démarré : docker compose up -d puis réessaie.",
+          "learn": "En pentest, on travaille souvent depuis une « boîte attaquant » (VM ou conteneur) pour avoir les outils et un point de vue cohérent sur le réseau."
+        },
+        {
+          "title": "Découverte des hôtes (optionnel en Docker)",
+          "content": "En conditions réelles tu ferais un scan d’adresses (ex: nmap -sn 192.168.1.0/24). Ici les cibles ont des hostnames. Vérifie que tu atteins la cible : ping vuln-network.",
+          "command": "ping -c 2 vuln-network",
+          "tip": "Si ping ne répond pas, vérifie que le conteneur vuln-network est bien up (docker compose ps).",
+          "learn": "La découverte peut être ICMP (ping), ARP, ou scan de ports. En lab Docker, les noms de service = noms d’hôtes."
+        },
+        {
+          "title": "Scan des ports – découverte des services",
+          "content": "Lance un scan des ports ouverts et des versions de services sur vuln-network. Tu dois identifier au moins les ports 22 (SSH) et 6379 (Redis).",
+          "command": "nmap -sV vuln-network",
+          "tip": "nmap -sC ajoute des scripts par défaut. -p- pour tous les ports (plus long).",
+          "learn": "nmap -sV fait du « version detection » : il envoie des probes pour deviner le logiciel (OpenSSH, Redis, etc.). C’est la base de la recon réseau."
+        },
+        {
+          "title": "Noter les résultats",
+          "content": "Note dans un fichier ou un rapport : IP/hostname, port, service, version. Exemple : vuln-network – 22/tcp OpenSSH, 6379/tcp Redis. Cette liste sera la base de ton plan d’exploitation.",
+          "command": null,
+          "tip": "En vrai pentest, on documente tout (screenshots, exports nmap -oN).",
+          "learn": "La documentation en continu évite d’oublier des cibles et permet de justifier les conclusions dans le rapport."
+        }
+      ]
+    },
+    {
+      "id": "scenario-02-sqli-dvwa",
+      "title": "Scénario 2 : Compromission web – Injection SQL sur DVWA",
+      "description": "Une application affiche des données selon un paramètre (ex: id=1). Si le serveur construit la requête SQL en concaténant ton entrée, tu peux « injecter » du SQL et lire toute la base. Ce scénario te guide pas à pas.",
+      "difficulty": "Easy",
+      "category": "web",
+      "time": "25 min",
+      "machines": [
+        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password puis Create/Reset Database" },
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Ou make shell" }
+      ],
+      "tasks": [
+        {
+          "title": "Préparer DVWA",
+          "content": "Ouvre le lien DVWA ci-dessus (même port que la plateforme). Connecte-toi avec admin / password. En bas de page, clique sur « Create / Reset Database ». Va dans le menu « SQL Injection » et mets le niveau sur « Low ».",
+          "command": null,
+          "tip": "Low = aucune protection, pour apprendre. Medium/High ajoutent des filtres à contourner.",
+          "learn": "Les niveaux de difficulté simulent des protections (échappement, requêtes préparées). En prod, il faut toujours des requêtes préparées."
+        },
+        {
+          "title": "Comprendre la requête",
+          "content": "Dans SQL Injection, entre 1 dans le champ et valide. Regarde l’URL : id=1. Le serveur fait sans doute une requête du type SELECT * FROM users WHERE id = '1'. Si tu mets 1' OR '1'='1, la condition devient toujours vraie.",
+          "command": null,
+          "tip": "En Low, tu peux modifier l’URL directement : ...?id=1' OR '1'='1&Submit=Submit",
+          "learn": "L’injection SQL repose sur « casser » la syntaxe de la requête pour en ajouter une autre (UNION SELECT) ou modifier la logique (OR '1'='1')."
+        },
+        {
+          "title": "Tester l’injection manuelle",
+          "content": "Dans le champ, entre : 1' OR '1'='1 puis valide. Tu devrais voir plusieurs lignes (tous les users). Si ça ne marche pas, essaie 1' OR 1=1 -- (le -- commente la fin de la requête).",
+          "command": null,
+          "tip": "Les guillemets dépendent du code : parfois id='1' parfois id=1. Teste avec et sans guillemets.",
+          "learn": "Chaque application est différente. Il faut tester plusieurs payloads (guillemets, commentaires --, #)."
+        },
+        {
+          "title": "Automatiser avec sqlmap (optionnel)",
+          "content": "Depuis l’attaquant, lance sqlmap sur l’URL de la vuln. Tu dois fournir le cookie de session (récupère-le depuis les DevTools du navigateur, onglet Application > Cookies).",
+          "command": "sqlmap -u 'http://dvwa/vulnerabilities/sqli/?id=1&Submit=Submit' --cookie='PHPSESSID=xxx;security=low' --batch",
+          "tip": "Remplace xxx par ton vrai PHPSESSID. --batch évite les questions interactives.",
+          "learn": "sqlmap teste des centaines de payloads et peut dumper des tables. En audit, on documente la vuln manuelle puis on utilise l’outil pour extraire les données."
+        }
+      ]
+    },
+    {
+      "id": "scenario-03-acces-ssh-redis",
+      "title": "Scénario 3 : Accès réseau – Redis et SSH",
+      "description": "Tu as trouvé Redis (port 6379) et SSH (22) sur vuln-network. Redis n’a pas de mot de passe : tu peux te connecter et lire la config. SSH accepte root avec un mot de passe faible. Objectif : obtenir un accès shell.",
+      "difficulty": "Easy",
+      "category": "network",
+      "time": "15 min",
+      "machines": [
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Ou make shell" },
+        { "name": "vuln-network", "url": "#", "note": "Depuis l'attaquant : ssh root@vuln-network" }
+      ],
+      "tasks": [
+        {
+          "title": "Se connecter à Redis sans mot de passe",
+          "content": "Depuis l’attaquant : redis-cli -h vuln-network. Aucune authentification n’est demandée. Tu es « dans » Redis.",
+          "command": "redis-cli -h vuln-network",
+          "tip": "Si redis-cli n’est pas trouvé, installe redis-tools (déjà dans l’image attaquant).",
+          "learn": "Redis par défaut n’a pas de mot de passe. En prod, il faut requirepass et limiter l’écoute (bind)."
+        },
+        {
+          "title": "Explorer Redis",
+          "content": "Tape INFO pour voir les infos du serveur. Puis CONFIG GET dir pour voir le répertoire de travail. KEYS * pour lister les clés (peut être vide).",
+          "command": "INFO\nCONFIG GET dir",
+          "tip": "En exploitation avancée, on peut écrire une clé (ex: clé SSH) dans le répertoire autorisé pour prendre le contrôle du serveur.",
+          "learn": "Un Redis exposé sans auth permet au minimum la lecture de la config et des données. C’est une vuln critique en production."
+        },
+        {
+          "title": "Connexion SSH avec identifiants faibles",
+          "content": "Quitte Redis (exit). Connecte-toi en SSH à vuln-network avec l’utilisateur root et le mot de passe labpassword.",
+          "command": "ssh root@vuln-network",
+          "tip": "Mot de passe : labpassword. Depuis ta machine hôte : ssh root@localhost -p 4222.",
+          "learn": "Les mots de passe par défaut ou faibles sont encore très répandus. En pentest, on teste avec des wordlists (hydra, medusa)."
+        },
+        {
+          "title": "Preuve d’accès",
+          "content": "Une fois connecté en SSH, lance id ou whoami. Tu as un shell root sur la cible. C’est une « preuve d’accès » pour ton rapport.",
+          "command": "id\nwhoami",
+          "tip": "En vrai rapport, on joint un screenshot ou l’output de ces commandes.",
+          "learn": "En pentest / Red Team, on documente chaque accès obtenu (niveau de privilège, méthode) pour le rapport final."
+        }
+      ]
+    },
+    {
+      "id": "scenario-04-api-idor-sqli",
+      "title": "Scénario 4 : API compromise – IDOR et SQLi",
+      "description": "L’API vuln-api expose des endpoints sans contrôle d’accès (IDOR) et une injection SQL. Tu vas extraire des données utilisateurs et produits en suivant les étapes.",
+      "difficulty": "Easy",
+      "category": "api",
+      "time": "20 min",
+      "machines": [
+        { "name": "vuln-api", "urlKey": "api", "note": "admin / admin123" },
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "curl, sqlmap" }
+      ],
+      "tasks": [
+        {
+          "title": "Obtenir un token (login)",
+          "content": "L’API attend un POST /api/login avec login et password. Envoie une requête depuis l’attaquant avec curl. Tu reçois un « token » (factice dans cette API).",
+          "command": "curl -s -X POST http://vuln-api:5000/api/login -H 'Content-Type: application/json' -d '{\"login\":\"admin\",\"password\":\"admin123\"}'",
+          "tip": "Depuis ta machine : remplacer vuln-api par localhost.",
+          "learn": "Les API REST utilisent souvent un token (JWT, session) après login. Si le token n’est pas vérifié côté serveur pour chaque ressource, on peut avoir des IDOR."
+        },
+        {
+          "title": "IDOR – Accéder à tous les utilisateurs",
+          "content": "L’endpoint GET /api/users/<id> retourne les infos de l’utilisateur id. Aucune vérification : tu peux appeler /api/users/1, /api/users/2, etc. Fais des requêtes pour user 1 et 2.",
+          "command": "curl -s http://vuln-api:5000/api/users/1\ncurl -s http://vuln-api:5000/api/users/2",
+          "tip": "IDOR = Insecure Direct Object Reference : on change l’id pour accéder à des objets d’autres utilisateurs.",
+          "learn": "Chaque ressource doit être protégée : vérifier que l’utilisateur connecté a le droit d’accéder à cet id (ownership ou rôle)."
+        },
+        {
+          "title": "SQLi sur /api/products",
+          "content": "GET /api/products?q= recherche des produits par nom. Le paramètre q est concaténé dans une requête SQL. Teste avec q=' OR '1'='1 pour tout récupérer.",
+          "command": "curl -s \"http://vuln-api:5000/api/products?q=' OR '1'='1\"",
+          "tip": "Tu peux aussi utiliser sqlmap : sqlmap -u 'http://vuln-api:5000/api/products?q=1' --batch",
+          "learn": "Les API sont autant vulnérables que les apps web (SQLi, XSS, IDOR). OWASP API Security Top 10 recense les risques."
+        }
+      ]
+    },
+    {
+      "id": "scenario-05-xss-dvwa",
+      "title": "Scénario 5 : Vol de session – XSS sur DVWA",
+      "description": "Une XSS (Cross-Site Scripting) permet d’exécuter du JavaScript dans le navigateur de la victime. En réfléchi, l’attaquant envoie un lien ; en stocké, le script est sauvegardé et vu par tous. Tu vas tester les deux sur DVWA.",
+      "difficulty": "Easy",
+      "category": "web",
+      "time": "20 min",
+      "machines": [
+        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password" }
+      ],
+      "tasks": [
+        {
+          "title": "XSS réfléchie – Premier test",
+          "content": "Dans DVWA, va dans « XSS (Reflected) », niveau Low. Dans le champ, entre : <script>alert(1)</script> et valide. Une alerte s’affiche : le serveur a renvoyé ton script sans l’échapper.",
+          "command": null,
+          "tip": "En Medium/High, des filtres sont appliqués (balises supprimées, events comme onerror). Il faut contourner (ex: <img src=x onerror=alert(1)>).",
+          "learn": "XSS = le serveur renvoie des données utilisateur dans la page sans les échapper. Le navigateur exécute le JavaScript. Protection : échapper HTML (encode) côté sortie."
+        },
+        {
+          "title": "XSS stockée – Script visible par tous",
+          "content": "Va dans « XSS (Stored) », niveau Low. Entre un nom et un message contenant <script>alert('XSS')</script>. Valide. Recharge la page ou ouvre-la dans un autre onglet : l’alerte se déclenche à chaque visite.",
+          "command": null,
+          "tip": "En stocké, le script est en base : tous les visiteurs l’exécutent. C’est plus dangereux que la réfléchie (pas besoin d’envoyer un lien à chaque victime).",
+          "learn": "Stored XSS = persistant. Utilisé pour vol de cookies (document.cookie), keylogging, redirection. Toujours valider et échapper les entrées côté serveur."
+        }
+      ]
+    },
+    {
+      "id": "scenario-06-stego-flag",
+      "title": "Scénario 6 : Stéganographie – Extraire un flag",
+      "description": "Une image peut cacher un fichier (steghide) ou des données dans les bits (LSB). Tu vas télécharger l’image de défi depuis la plateforme, la copier dans le conteneur attaquant, et extraire le flag avec steghide.",
+      "difficulty": "Easy",
+      "category": "stego",
+      "time": "15 min",
+      "machines": [
+        { "name": "Télécharger l’image", "url": "/challenges/stego/image_stego.jpg", "note": "Sur la plateforme : Défis stégano" },
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "steghide, exiftool, binwalk" }
+      ],
+      "tasks": [
+        {
+          "title": "Télécharger et placer l’image",
+          "content": "Télécharge image_stego.jpg depuis http://localhost:8080/challenges/stego/ (ou la room Stéganographie). Copie le fichier dans le conteneur : docker cp image_stego.jpg lab-attaquant:/workspace/ (depuis le répertoire où tu as téléchargé).",
+          "command": "docker cp ./image_stego.jpg lab-attaquant:/workspace/",
+          "tip": "Ou monte un volume entre l’hôte et l’attaquant pour partager des fichiers.",
+          "learn": "En CTF et forensique, on reçoit souvent des fichiers à analyser. Les placer dans un répertoire commun (ex: /workspace) permet d’utiliser les outils du conteneur."
+        },
+        {
+          "title": "Vérifier le type et les métadonnées",
+          "content": "Dans l’attaquant : file /workspace/image_stego.jpg et exiftool /workspace/image_stego.jpg. Habitude à prendre avant d’attaquer avec steghide.",
+          "command": "file /workspace/image_stego.jpg\nexiftool /workspace/image_stego.jpg",
+          "tip": "Parfois le flag ou un indice est dans les métadonnées (commentaire EXIF).",
+          "learn": "file donne le type réel ; exiftool les métadonnées. Souvent suffisant pour trouver un indice ou confirmer qu’il y a du steghide."
+        },
+        {
+          "title": "Extraire avec steghide",
+          "content": "steghide info /workspace/image_stego.jpg pour voir s’il y a des données. Puis steghide extract -sf /workspace/image_stego.jpg. Quand on te demande le mot de passe, entre : labstego.",
+          "command": "steghide extract -sf /workspace/image_stego.jpg",
+          "tip": "Mot de passe du défi : labstego. Un fichier est extrait dans le répertoire courant (souvent le nom du fichier embarqué).",
+          "learn": "steghide cache des données dans des images JPEG/BMP. Sans mot de passe on peut tenter du brute-force (stegseek avec rockyou)."
+        }
+      ]
+    },
+    {
+      "id": "scenario-07-crypto-base64-aes",
+      "title": "Scénario 7 : Cryptographie – Base64 et AES",
+      "description": "Tu reçois deux fichiers : un flag encodé en Base64 et un fichier chiffré avec OpenSSL (AES). Tu vas les télécharger, les décoder/déchiffrer et récupérer les flags.",
+      "difficulty": "Easy",
+      "category": "crypto",
+      "time": "15 min",
+      "machines": [
+        { "name": "Défis crypto", "url": "/challenges/crypto/", "note": "flag_b64.txt et flag.enc" },
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "base64, openssl" }
+      ],
+      "tasks": [
+        {
+          "title": "Décoder le Base64",
+          "content": "Télécharge flag_b64.txt depuis la plateforme. Le contenu est du Base64. Décode-le : base64 -d flag_b64.txt (ou cat flag_b64.txt | base64 -d). Tu obtiens un texte en clair (le flag).",
+          "command": "cat flag_b64.txt | base64 -d",
+          "tip": "Base64 n’est pas du chiffrement : c’est un encodage réversible sans clé. Très courant dans les CTF et les payloads.",
+          "learn": "Reconnaître Base64 : alphabet A-Za-z0-9+/ et souvent = en padding. Toujours identifier le type (file, tête de fichier) avant d’attaquer."
+        },
+        {
+          "title": "Déchiffrer le fichier OpenSSL",
+          "content": "Télécharge flag.enc. Il a été chiffré avec openssl enc -aes-256-cbc. Pour déchiffrer : openssl enc -d -aes-256-cbc -in flag.enc -out flag.txt. Quand on te demande le mot de passe : labcrypto.",
+          "command": "openssl enc -d -aes-256-cbc -in flag.enc -out flag.txt -k labcrypto",
+          "tip": "L’option -k labcrypto évite la demande interactive. En CTF si le mot de passe est inconnu, on utilise des wordlists.",
+          "learn": "OpenSSL enc permet du chiffrement symétrique (AES, etc.). En prod, la gestion des clés est critique ; un mot de passe faible = vulnérabilité."
+        }
+      ]
+    },
+    {
+      "id": "scenario-08-red-team-1h",
+      "title": "Scénario 8 : Red Team en 1h – Du scan au rapport",
+      "description": "Scénario complet : tu as 1h pour cartographier le lab, exploiter au moins une vulnérabilité (web, réseau ou API), et produire une note avec preuves. Pas de solution détaillée : tu appliques ce que tu as vu dans les autres scénarios.",
+      "difficulty": "Medium",
+      "category": "red",
+      "time": "60 min",
+      "machines": [
+        { "name": "Toutes les cibles", "url": "#", "note": "Utiliser les rooms par catégorie (liens ci-dessus)" }
+      ],
+      "tasks": [
+        {
+          "title": "Cartographie (15 min)",
+          "content": "Depuis l’attaquant, scanne dvwa, juice-shop, bwapp, vuln-api, vuln-network avec nmap -sV. Note pour chaque cible : ports, services. Complète avec nikto sur les cibles web si tu veux.",
+          "command": "nmap -sV dvwa\nnmap -sV vuln-network\nnmap -sV vuln-api",
+          "tip": "Priorise les services que tu connais (80/443, 22, 6379, 5000).",
+          "learn": "La recon est la base. Un bon rapport commence par une cartographie claire."
+        },
+        {
+          "title": "Exploitation (30 min)",
+          "content": "Choisis au moins une cible et une vuln (SQLi DVWA, SSH vuln-network, IDOR vuln-api, Redis vuln-network…). Exploite-la et obtiens soit des données (dump, liste users) soit un accès (shell SSH). Documente chaque commande et le résultat.",
+          "command": null,
+          "tip": "Reviens aux scénarios 2, 3, 4 si tu bloques. L’objectif est de faire une chaîne complète toi-même.",
+          "learn": "En Red Team, on enchaîne recon → exploitation → post-exploitation. Ici on s’arrête à la preuve d’accès ou à l’extraction de données."
+        },
+        {
+          "title": "Rédaction (15 min)",
+          "content": "Rédige une note d’une page : Titre, Contexte, Méthode (recon + exploitation), Vulnérabilités trouvées, Preuves (copier-coller d’output ou décrire), Recommandations (une par vuln).",
+          "command": null,
+          "tip": "Structure type : Résumé exécutif / Méthodologie / Résultats / Annexes (screenshots).",
+          "learn": "Le livrable d’un pentest ou Red Team est le rapport. Clarté et preuves sont indispensables."
+        }
+      ]
+    },
+    {
+      "id": "scenario-09-phishing-analyse",
+      "title": "Scénario 9 : Phishing – Analyser une page suspecte",
+      "description": "Tu apprends à reconnaître une page de type phishing (fausse connexion). La plateforme propose une page de démo. Tu identifies les indices qui trahissent une tentative de phishing.",
+      "difficulty": "Easy",
+      "category": "phishing",
+      "time": "15 min",
+      "machines": [
+        { "name": "Page de démo phishing", "url": "/demo-phishing.html", "note": "Exemple pédagogique sur cette plateforme" }
+      ],
+      "tasks": [
+        {
+          "title": "Ouvrir la page de démo",
+          "content": "Clique sur le lien « Page de démo phishing » (ou va sur http://localhost:8080/demo-phishing.html). Tu vois une page qui ressemble à une connexion. En conditions réelles, il n’y aurait pas de bannière rouge.",
+          "command": null,
+          "tip": "La bannière rouge est là pour rappeler que c’est un exercice. En vrai, la page serait identique visuellement à un vrai site.",
+          "learn": "Les pages de phishing imitent des sites légitimes (banque, messagerie). La différence se voit dans l’URL et le certificat."
+        },
+        {
+          "title": "Vérifier l’URL et le certificat",
+          "content": "Regarde la barre d’adresse : tu es sur localhost:8080. Un vrai site de banque aurait un domaine du type www.ma-banque.fr et un cadenas HTTPS valide. Clique sur le cadenas (si présent) pour voir le certificat : il doit correspondre au domaine.",
+          "command": null,
+          "tip": "En phishing réel, l’URL peut être banque-securise.xyz ou un sous-domaine trompeur. Toujours vérifier avant de saisir un mot de passe.",
+          "learn": "Ne jamais cliquer sur un lien de connexion reçu par email : aller sur le site en tapant l’URL ou via un favori."
+        }
+      ]
+    },
+    {
+      "id": "scenario-10-forensics-tshark",
+      "title": "Scénario 10 : Forensique – Capturer et filtrer du trafic",
+      "description": "Tu captures du trafic depuis le conteneur attaquant avec tcpdump, puis tu l’analyses avec tshark pour extraire des requêtes HTTP et identifier des comportements (scan, connexions).",
+      "difficulty": "Medium",
+      "category": "forensics",
+      "time": "25 min",
+      "machines": [
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "tcpdump, tshark" }
+      ],
+      "tasks": [
+        {
+          "title": "Lancer une capture en arrière-plan",
+          "content": "Dans l’attaquant : tcpdump -i eth0 -w /workspace/capture.pcap. Dans un autre terminal (une autre session exec), lance des requêtes : curl http://dvwa, nmap -sV vuln-network. Puis arrête la capture (Ctrl+C dans le premier terminal).",
+          "command": "tcpdump -i eth0 -w /workspace/capture.pcap",
+          "tip": "Limite la durée avec -G 30 -W 1 pour 30 secondes max, ou arrête à la main après quelques requêtes.",
+          "learn": "La capture de trafic est la base de l’analyse forensique réseau. On enregistre tout puis on filtre ensuite."
+        },
+        {
+          "title": "Filtrer les requêtes HTTP avec tshark",
+          "content": "tshark -r /workspace/capture.pcap -Y 'http' -T fields -e frame.number -e ip.src -e ip.dst -e http.request.uri. Tu vois les requêtes HTTP avec source, destination et URI.",
+          "command": "tshark -r /workspace/capture.pcap -Y 'http' -T fields -e ip.src -e ip.dst -e http.request.uri",
+          "tip": "Sans -T fields tu as plus de détails. -Y 'tcp.flags.syn==1' pour les nouvelles connexions TCP.",
+          "learn": "tshark = Wireshark en ligne de commande. Les filtres (-Y) permettent de cibler du HTTP, du DNS, des scans, etc."
+        }
+      ]
+    }
+  ]
+}

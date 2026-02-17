@@ -1,41 +1,30 @@
-# Lab Cyber – Gateway (plateforme + cibles) + Terminal (ttyd) sur port dédié
-# Plateforme : GATEWAY_PORT (défaut 8080) → http://127.0.0.1:8080
-# Terminal   : 7681 → http://localhost:7681 (lancer le terminal direct)
-# /etc/hosts optionnel : 127.0.0.1 lab.local dvwa.lab juice.lab api.lab bwapp.lab terminal.lab
+# Lab Cyber – Multi-instances (sans container_name pour permettre plusieurs labs)
+# Usage : GATEWAY_PORT=8081 COMPOSE_PROJECT_NAME=lab-8081 docker compose -f docker-compose.multi.yml up -d
+# Puis : ./lab up 8081  et  ./lab down 8081
 
 services:
-  # ========== GATEWAY (plateforme + cibles sur ce port) ==========
   gateway:
     build: ./gateway
-    container_name: lab-gateway
     ports: ["${GATEWAY_PORT:-8080}:80"]
     networks: [lab-network]
-    depends_on:
-      - platform
+    depends_on: [platform]
 
-  # ========== Plateforme web (accès via gateway) ==========
   platform:
     build:
       context: .
       dockerfile: platform/Dockerfile
-    container_name: lab-platform
     networks: [lab-network]
     expose: ["80"]
 
-  # ========== Terminal web : http://localhost:TTYD_PORT (ttyd) ==========
   attaquant:
     build: ./attacker
-    container_name: lab-attaquant
     networks: [lab-network]
-    ports: ["${TTYD_PORT:-7681}:7681"]
     expose: ["7681"]
     stdin_open: true
     tty: true
 
-  # ========== WEB (accès via gateway par hostname) ==========
   dvwa:
     image: cytopia/dvwa:latest
-    container_name: lab-dvwa
     networks:
       lab-network:
         aliases: [dvwa]
@@ -49,7 +38,6 @@ services:
 
   dvwa-db:
     image: mariadb:10
-    container_name: lab-dvwa-db
     networks: [lab-network]
     environment:
       - MYSQL_ROOT_PASSWORD=root
@@ -60,7 +48,6 @@ services:
 
   juice-shop:
     image: bkimminich/juice-shop:latest
-    container_name: lab-juice-shop
     networks:
       lab-network:
         aliases: [juice-shop]
@@ -68,35 +55,28 @@ services:
 
   bwapp:
     image: raesene/bwapp:latest
-    container_name: lab-bwapp
     networks:
       lab-network:
         aliases: [bwapp]
     expose: ["80"]
 
-  # ========== RÉSEAU (SSH/Redis accessibles uniquement depuis le lab, ex. attaquant) ==========
   vuln-network:
     build: ./vuln-network
-    container_name: lab-vuln-network
     networks:
       lab-network:
         aliases: [vuln-network, vulnbox]
     expose: ["22", "6379"]
 
-  # ========== API (accès via gateway → api.lab) ==========
   vuln-api:
     build: ./vuln-api
-    container_name: lab-vuln-api
     networks:
       lab-network:
         aliases: [vuln-api, api]
     expose: ["5000"]
     volumes: [vuln-api-data:/data]
 
-  # ========== BLUE TEAM ==========
   blue-suricata:
     image: jasonish/suricata:latest
-    container_name: lab-suricata
     networks: [lab-network]
     volumes:
       - suricata-logs:/var/log/suricata
@@ -105,10 +85,8 @@ services:
     command: ["sleep infinity"]
     profiles: [blue]
 
-  # ========== PROXY Squid (profil proxy ; port exposé si besoin) ==========
   proxy:
     image: ubuntu/squid:latest
-    container_name: lab-proxy
     networks: [lab-network]
     ports: ["3128:3128"]
     volumes: ["./proxy/squid.conf:/etc/squid/squid.conf:ro"]
@@ -123,4 +101,3 @@ volumes:
 networks:
   lab-network:
     driver: bridge
-    name: lab-network

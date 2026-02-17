@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Logger – Lab Cyber</title>
+  <style>
+    body { font-family: sans-serif; margin: 1rem; background: #1a1a2e; color: #eee; }
+    pre { background: #16213e; padding: 1rem; border-radius: 8px; overflow: auto; }
+    .ok { color: #4ade80; }
+    .err { color: #f87171; }
+    button { padding: 0.5rem 1rem; margin: 0.25rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Test du système de logs Lab Cyber</h1>
+  <p>Cette page vérifie que le logger est chargé et enregistre correctement les événements.</p>
+  <button type="button" id="btn-ping">Générer un événement (ping)</button>
+  <button type="button" id="btn-refresh">Rafraîchir l’affichage</button>
+  <h2>État</h2>
+  <div id="state"></div>
+  <h2>Dernières entrées (getEntries)</h2>
+  <pre id="entries"></pre>
+  <script src="js/logger.js"></script>
+  <script>
+    (function() {
+      var stateEl = document.getElementById('state');
+      var entriesEl = document.getElementById('entries');
+
+      function render() {
+        if (typeof window.LabCyberLogger === 'undefined') {
+          stateEl.innerHTML = '<span class="err">LabCyberLogger non défini – logger.js non chargé ?</span>';
+          entriesEl.textContent = 'N/A';
+          return;
+        }
+        var L = window.LabCyberLogger;
+        L.event('test-logs-page', 'page_load', { userAgent: navigator.userAgent.substring(0, 50) });
+        stateEl.innerHTML = '<span class="ok">LabCyberLogger OK</span>';
+        var entries = L.getEntries();
+        entriesEl.textContent = entries.length === 0 ? '(aucune entrée)' : JSON.stringify(entries.slice(-15), null, 2);
+      }
+
+      document.getElementById('btn-ping').addEventListener('click', function() {
+        if (window.LabCyberLogger) {
+          window.LabCyberLogger.event('test-logs-page', 'ping', { at: new Date().toISOString() });
+          render();
+        }
+      });
+      document.getElementById('btn-refresh').addEventListener('click', render);
+      render();
+    })();
+  </script>
+</body>
+</html>
