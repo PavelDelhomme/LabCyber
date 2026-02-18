@@ -157,6 +157,9 @@ export default function NetworkSimulatorView({ storage }) {
         <button type="button" class="btn btn-secondary" onClick={clearTopology}>Effacer tout</button>
       </div>
 
+      {nodes.length === 0 && (
+        <p class="section-desc text-muted" style="margin-bottom:0.75rem">Aucun nœud. Utilise les boutons ci‑dessus pour ajouter des équipements (PC, routeur, switch, serveur), puis relie-les avec « Relier ».</p>
+      )}
       <div class="network-sim-canvas-wrap" ref={svgWrapRef}>
         <svg
           ref={svgRef}

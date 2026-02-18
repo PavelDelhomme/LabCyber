@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build test test-full test-require-lab logs shell shell-attacker clean proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart
+.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -16,7 +16,8 @@ help:
 	@echo "  make dev          Reconstruire si besoin + démarrer tout (recommandé)"
 	@echo "  make up           Démarrer sans rebuild (rapide)"
 	@echo "  make down         Tout arrêter (lab + lab-minimal)"
-	@echo "  make restart      Arrêter puis redémarrer (down + up)"
+	@echo "  make rebuild      Tout arrêter + reconstruire les images + redémarrer (pour tester les modifs)"
+	@echo "  make restart     Arrêter puis redémarrer (down + up, pas de rebuild)"
 	@echo "  make build        Reconstruire les images (sans démarrer)"
 	@echo "  make status       État des conteneurs"
 	@echo ""
@@ -45,6 +46,15 @@ restart: down
 	cd $(ROOT) && docker compose up -d
 	@echo ""
 	@echo "  Interface web (lab) : http://127.0.0.1:8080"
+	@echo "  Terminal : http://127.0.0.1:8080/terminal/  |  make shell"
+	@echo ""
+
+# Tout arrêter + reconstruire les images + redémarrer (pour tester les modifs plateforme, etc.)
+rebuild: down
+	cd $(ROOT) && docker compose build
+	cd $(ROOT) && docker compose up -d
+	@echo ""
+	@echo "  Rebuild terminé. Interface web (lab) : http://127.0.0.1:8080"
 	@echo "  Terminal : http://127.0.0.1:8080/terminal/  |  make shell"
 	@echo ""
 

@@ -65,11 +65,14 @@ export default function CaptureView() {
         <p class="room-description">Visualiseur de fichiers .pcap : liste des paquets et détail (hex). Génère un .pcap depuis le terminal avec <code>tcpdump -i any -w cap.pcap</code>, télécharge-le puis charge-le ici.</p>
       </header>
 
-      <section class="room-section">
+      <section class="room-section capture-upload">
         <label class="btn btn-primary">
           Choisir un fichier .pcap
           <input type="file" accept=".pcap,.cap" onChange={handleFile} style="display:none" />
         </label>
+        {!packets.length && !error && (
+          <p class="section-desc text-muted" style="margin-top:0.75rem">Aucun fichier chargé. Utilise le bouton ci‑dessus pour choisir un fichier .pcap (ex. exporté depuis le terminal avec <code>tcpdump -w cap.pcap</code>).</p>
+        )}
       </section>
 
       {error && <p class="proxy-tools-error">{escapeHtml(error)}</p>}

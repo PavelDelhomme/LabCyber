@@ -70,19 +70,22 @@ export default function Sidebar({
         <p class="tagline">Scénarios guidés · Style TryHackMe / HackTheBox</p>
       </div>
       <nav class="nav">
-        <button
-          class={`nav-item ${view === 'dashboard' ? 'active' : ''}`}
-          onClick={() => onNavigate('dashboard')}
-        >
-          <span class="nav-icon">◆</span>
-          <span>Accueil</span>
-        </button>
-
-        <div class="nav-section nav-section-toggle" onClick={() => setLabsOpen(o => !o)}>
-          <span class="nav-section-label">Labs &amp; outils</span>
-          <span class={`nav-section-chevron ${labsOpen ? 'open' : ''}`}>▼</span>
+        <div class="nav-block">
+          <button
+            class={`nav-item ${view === 'dashboard' ? 'active' : ''}`}
+            onClick={() => onNavigate('dashboard')}
+          >
+            <span class="nav-icon">◆</span>
+            <span>Accueil</span>
+          </button>
         </div>
-        {labsOpen && (
+
+        <div class="nav-block">
+          <div class="nav-section nav-section-toggle" onClick={() => setLabsOpen(o => !o)}>
+            <span class="nav-section-label">Labs &amp; outils</span>
+            <span class={`nav-section-chevron ${labsOpen ? 'open' : ''}`}>▼</span>
+          </div>
+          {labsOpen && (
           <div class="nav-section-content">
             <div class="nav-section-list">
               <button class={`nav-item nav-item-sub ${view === 'labs' ? 'active' : ''}`} onClick={() => onNavigate('labs')}>🧪 Labs (gérer, config)</button>
@@ -93,41 +96,47 @@ export default function Sidebar({
               <button class={`nav-item nav-item-sub ${view === 'capture' ? 'active' : ''}`} onClick={() => onNavigate('capture')}>📡 Capture pcap (Wireshark)</button>
             </div>
           </div>
-        )}
+          )}
+        </div>
 
-        <button class={`nav-item ${view === 'docs' ? 'active' : ''}`} onClick={() => onNavigate('docs')}>📚 Doc. projet</button>
-        <button class={`nav-item ${view === 'learning' ? 'active' : ''}`} onClick={() => onNavigate('learning')}>📖 Doc &amp; Cours</button>
-        <button class={`nav-item ${view === 'engagements' ? 'active' : ''}`} onClick={() => onNavigate('engagements')}>🎯 Cibles &amp; Proxy</button>
-        <button class={`nav-item ${view === 'progression' ? 'active' : ''}`} onClick={() => onNavigate('progression')}>📊 Progression</button>
+        <div class="nav-block">
+          <button class={`nav-item ${view === 'docs' ? 'active' : ''}`} onClick={() => onNavigate('docs')}>📚 Doc. projet</button>
+          <button class={`nav-item ${view === 'learning' ? 'active' : ''}`} onClick={() => onNavigate('learning')}>📖 Doc &amp; Cours</button>
+          <button class={`nav-item ${view === 'engagements' ? 'active' : ''}`} onClick={() => onNavigate('engagements')}>🎯 Cibles &amp; Proxy</button>
+          <button class={`nav-item ${view === 'progression' ? 'active' : ''}`} onClick={() => onNavigate('progression')}>📊 Progression</button>
+        </div>
 
-        <div class="nav-section nav-section-toggle" onClick={() => setScenarioOpen(o => !o)}>
+        <div class="nav-block">
+          <div class="nav-section nav-section-toggle" onClick={() => setScenarioOpen(o => !o)}>
           <span class="nav-section-label">Scénarios guidés</span>
           <span class="nav-section-count">{(scenarios || []).length}</span>
           <span class={`nav-section-chevron ${scenarioOpen ? 'open' : ''}`}>▼</span>
         </div>
         {scenarioOpen && (
           <div class="nav-section-content">
-            <input
-              type="search"
-              class="sidebar-search"
-              placeholder="Rechercher (titre ou catégorie)…"
-              value={scenarioSearch}
-              onInput={e => setScenarioSearch(e.target.value)}
-              onClick={e => e.stopPropagation()}
-            />
-            {scenarioCategories.length > 0 && (
-              <select
-                class="sidebar-search sidebar-category-select"
-                value={scenarioCategory}
-                onInput={e => setScenarioCategory(e.target.value)}
+            <div class="sidebar-filters">
+              <input
+                type="search"
+                class="sidebar-input sidebar-search"
+                placeholder="Rechercher (titre ou catégorie)…"
+                value={scenarioSearch}
+                onInput={e => setScenarioSearch(e.target.value)}
                 onClick={e => e.stopPropagation()}
-              >
-                <option value="">Toutes les catégories</option>
-                {scenarioCategories.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            )}
+              />
+              {scenarioCategories.length > 0 && (
+                <select
+                  class="sidebar-input sidebar-category-select"
+                  value={scenarioCategory}
+                  onInput={e => setScenarioCategory(e.target.value)}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <option value="">Toutes les catégories</option>
+                  {scenarioCategories.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              )}
+            </div>
             <div class="nav-section-list">
               {filteredScenarios.length === 0 && <span class="sidebar-empty">Aucun scénario</span>}
               {filteredScenarios.map(s => (
@@ -143,17 +152,19 @@ export default function Sidebar({
             </div>
           </div>
         )}
-
-        <div class="nav-section nav-section-toggle" onClick={() => setRoomOpen(o => !o)}>
-          <span class="nav-section-label">Rooms</span>
-          <span class="nav-section-count">{rooms.length}</span>
-          <span class={`nav-section-chevron ${roomOpen ? 'open' : ''}`}>▼</span>
         </div>
-        {roomOpen && (
+
+        <div class="nav-block">
+          <div class="nav-section nav-section-toggle" onClick={() => setRoomOpen(o => !o)}>
+            <span class="nav-section-label">Rooms</span>
+            <span class="nav-section-count">{rooms.length}</span>
+            <span class={`nav-section-chevron ${roomOpen ? 'open' : ''}`}>▼</span>
+          </div>
+          {roomOpen && (
           <div class="nav-section-content">
             <input
               type="search"
-              class="sidebar-search"
+              class="sidebar-input sidebar-search"
               placeholder="Rechercher une room…"
               value={roomSearch}
               onInput={e => setRoomSearch(e.target.value)}
@@ -189,7 +200,8 @@ export default function Sidebar({
                   )}
             </div>
           </div>
-        )}
+          )}
+        </div>
       </nav>
       <div class="sidebar-footer"><span>Usage éducatif uniquement</span></div>
     </aside>

@@ -54,6 +54,9 @@ services:
       - MYSQL_DATABASE=dvwa
       - MYSQL_USERNAME=dvwa
       - MYSQL_PASSWORD=p@ssw0rd
+      # Supprime le warning Apache "Could not reliably determine the server's fully qualified domain name"
+      # (si le warning persiste, l'image peut ne pas utiliser cette variable ; ignorable.)
+      - APACHE_SERVER_NAME=dvwa.lab
     depends_on: [dvwa-db]
 
   dvwa-db:
@@ -76,7 +79,8 @@ services:
     expose: ["3000"]
 
   bwapp:
-    image: raesene/bwapp:latest
+    build: ./bwapp
+    image: labcyber-bwapp:latest
     container_name: lab-bwapp
     networks:
       lab-network:
@@ -91,6 +95,7 @@ services:
       lab-network:
         aliases: [vuln-network, vulnbox]
     expose: ["22", "6379"]
+    # Note: si Redis affiche "Memory overcommit must be enabled", sur l'hôte : sudo sysctl vm.overcommit_memory=1
 
   # ========== API (accès via gateway → api.lab) ==========
   vuln-api:

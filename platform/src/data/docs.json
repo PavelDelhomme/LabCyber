@@ -1,0 +1,28 @@
+{
+  "title": "Documentation du projet",
+  "description": "Accès à toute la documentation du lab : démarrage, usage, tests, logs, catégories (Web, Réseau, API, Red/Blue Team, Forensique, OSINT, Stégano, Crypto, Phishing).",
+  "entries": [
+    { "id": "00-INDEX", "name": "Index et parcours", "file": "00-INDEX.md" },
+    { "id": "USAGE", "name": "Comment faire quoi (usage)", "file": "USAGE.md" },
+    { "id": "GETTING_STARTED", "name": "Démarrage pas à pas", "file": "GETTING_STARTED.md" },
+    { "id": "TESTS", "name": "Tests du système (matrice complète)", "file": "TESTS.md" },
+    { "id": "LOGGING", "name": "Système de logs", "file": "LOGGING.md" },
+    { "id": "PROXY-VPN", "name": "Proxy et VPN / tunnel", "file": "PROXY-VPN.md" },
+    { "id": "09-LAB-CATALOG", "name": "Catalogue des labs", "file": "09-LAB-CATALOG.md" },
+    { "id": "08-ENTERPRISE", "name": "Tests entreprise", "file": "08-ENTERPRISE-TESTS.md" },
+    { "id": "01-WEB", "name": "Web (DVWA, Juice Shop, bWAPP)", "file": "01-WEB.md" },
+    { "id": "02-RESEAU", "name": "Réseau (vuln-network)", "file": "02-RESEAU.md" },
+    { "id": "03-APPLICATIONS", "name": "Applications / API", "file": "03-APPLICATIONS.md" },
+    { "id": "04-RED-TEAM", "name": "Red Team", "file": "04-RED-TEAM.md" },
+    { "id": "05-BLUE-TEAM", "name": "Blue Team", "file": "05-BLUE-TEAM.md" },
+    { "id": "06-FORENSIQUE", "name": "Forensique", "file": "06-FORENSIQUE.md" },
+    { "id": "07-OSINT", "name": "OSINT", "file": "07-OSINT.md" },
+    { "id": "10-STEGANOGRAPHY", "name": "Stéganographie", "file": "10-STEGANOGRAPHY.md" },
+    { "id": "11-CRYPTOGRAPHY", "name": "Cryptographie", "file": "11-CRYPTOGRAPHY.md" },
+    { "id": "12-SOCIAL", "name": "Phishing / Social Engineering", "file": "12-SOCIAL-ENGINEERING-PHISHING.md" },
+    { "id": "CIBLES", "name": "Cibles du lab (targets)", "file": "CIBLES.md" },
+    { "id": "CHALLENGES", "name": "Challenges", "file": "CHALLENGES.md" },
+    { "id": "13-SNIFFING", "name": "Réseau : sniffing, spoofing, paquets", "file": "13-RESEAU-SNIFFING-SPOOFING.md" },
+    { "id": "14-TOPOLOGIE", "name": "Topologie et réseau du lab", "file": "14-TOPOLOGIE-RESEAU.md" }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "title": "Cibles du lab",
+  "description": "Toutes les machines et services exposés pour les scénarios et challenges. Utilise la machine attaquant (terminal) pour les cibles réseau.",
+  "targets": [
+    {
+      "id": "dvwa",
+      "name": "DVWA",
+      "type": "web",
+      "description": "Damn Vulnerable Web Application – OWASP Top 10 (SQLi, XSS, CSRF, upload, etc.).",
+      "url": "http://dvwa.lab:8080",
+      "urlNote": "Ajoute 127.0.0.1 dvwa.lab dans /etc/hosts. Port gateway 8080.",
+      "credentials": "admin / password",
+      "access": "Navigateur (lien room) ou depuis attaquant : curl http://dvwa.lab:8080"
+    },
+    {
+      "id": "juice-shop",
+      "name": "OWASP Juice Shop",
+      "type": "web",
+      "description": "Application web volontairement vulnérable – défis XSS, auth, injection, etc.",
+      "url": "http://juice.lab:8080",
+      "urlNote": "Hostname juice.lab (voir /etc/hosts).",
+      "credentials": "Divers (voir défis dans l’app)",
+      "access": "Navigateur ou curl depuis attaquant"
+    },
+    {
+      "id": "bwapp",
+      "name": "bWAPP",
+      "type": "web",
+      "description": "Buggy Web Application – vulnérabilités web classiques pour l’entraînement.",
+      "url": "http://bwapp.lab:8080",
+      "credentials": "bee / bug",
+      "access": "Navigateur"
+    },
+    {
+      "id": "vuln-api",
+      "name": "vuln-api",
+      "type": "api",
+      "description": "API REST volontairement vulnérable : auth faible, IDOR, SQLi (paramètre q sur /api/products). Pour apprendre l’OWASP API Security.",
+      "url": "http://api.lab:8080",
+      "internal": "http://vuln-api:5000",
+      "credentials": "admin / admin123  ou  user / user123",
+      "endpoints": ["/api/login", "/api/users/<id>", "/api/products?q=", "/api/health"],
+      "access": "Navigateur (api.lab:8080) ou depuis attaquant : curl http://vuln-api:5000"
+    },
+    {
+      "id": "vuln-network",
+      "name": "vuln-network",
+      "type": "network",
+      "description": "Cible réseau : SSH (mot de passe faible) et Redis (sans authentification). Pentest réseau, brute force, exploitation Redis.",
+      "url": null,
+      "hostname": "vuln-network ou vulnbox",
+      "ports": "22 (SSH), 6379 (Redis)",
+      "credentials": "SSH : root / labpassword. Redis : pas de mot de passe.",
+      "access": "Uniquement depuis la machine attaquant (terminal) : ssh root@vuln-network, redis-cli -h vuln-network"
+    },
+    {
+      "id": "desktop",
+      "name": "Bureau noVNC (XFCE)",
+      "type": "desktop",
+      "description": "Bureau graphique à distance pour utiliser des outils en GUI (optionnel).",
+      "url": "http://127.0.0.1:8080/desktop/",
+      "credentials": "VNC : labcyber",
+      "access": "Navigateur uniquement"
+    },
+    {
+      "id": "attaquant",
+      "name": "Machine attaquant (Kali)",
+      "type": "attaquant",
+      "description": "Terminal avec outils pentest (nmap, hydra, sqlmap, tcpdump, scapy, etc.). Point de départ pour scanner et exploiter les cibles.",
+      "url": "http://127.0.0.1:8080/terminal/",
+      "access": "Terminal web (lien plateforme) ou make shell"
+    }
+  ]
+}

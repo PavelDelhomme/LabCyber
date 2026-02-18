@@ -1,18 +1,19 @@
 import { escapeHtml } from '../lib/store';
+import { EMBEDDED_LEARNING } from '../lib/defaultData';
 
 export default function LearningView({ learning }) {
-  const topics = learning?.topics || [];
-  const learningLoaded = learning !== null;
+  const source = learning && (learning.topics?.length || learning.title) ? learning : EMBEDDED_LEARNING;
+  const topics = source?.topics || [];
 
   return (
     <div id="view-learning" class="view">
       <header class="page-header">
-        <h2>{learning?.title || 'Documentation & Cours'}</h2>
-        <p class="room-description">{learning?.description || 'Cours et documentation par thème (Web, Crypto, Stégano, Phishing, etc.).'} Chaque thème liste des liens vers OWASP, PortSwigger, outils (Burp, Wireshark, etc.).</p>
+        <h2>{source?.title || 'Documentation & Cours'}</h2>
+        <p class="room-description">{source?.description || 'Cours et documentation par thème (Web, Crypto, Stégano, Phishing, etc.).'} Chaque thème liste des liens vers OWASP, PortSwigger, outils (Burp, Wireshark, etc.).</p>
       </header>
       <section class="room-section">
         <div id="learning-topics" class="learning-topics">
-          {topics.length === 0 && <p class="section-desc text-muted">Aucun thème chargé. Vérifiez que <code>/data/learning.json</code> est accessible.</p>}
+          {topics.length === 0 && <p class="section-desc text-muted">Aucun thème disponible pour le moment.</p>}
           {topics.map(t => (
             <article key={t.id} class="learning-topic">
               <h3 class="learning-topic-title">{t.icon || ''} {escapeHtml(t.name)}</h3>

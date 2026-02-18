@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { useStore, useStorage, getTerminalUrl } from './lib/store';
 import Topbar from './components/Topbar';
 import Sidebar from './components/Sidebar';
@@ -69,9 +69,14 @@ export default function App() {
   const [filterCategory, setFilterCategory] = useState('');
   const [currentScenarioId, setCurrentScenarioId] = useState(null);
   const [currentRoomId, setCurrentRoomId] = useState(null);
+  const skipNextHashChange = useRef(false);
 
   useEffect(() => {
     const apply = () => {
+      if (skipNextHashChange.current) {
+        skipNextHashChange.current = false;
+        return;
+      }
       const { view: v, scenarioId: sid, roomId: rid } = parseHash();
       setViewState(v);
       setCurrentScenarioId(sid);
@@ -83,18 +88,21 @@ export default function App() {
   }, []);
 
   const setView = (v) => {
+    skipNextHashChange.current = true;
     setViewState(v);
     setCurrentScenarioId(null);
     setCurrentRoomId(null);
     window.location.hash = hashFor(v, null, null);
   };
   const onOpenScenario = (id) => {
+    skipNextHashChange.current = true;
     setCurrentScenarioId(id);
     setViewState('scenario');
     setCurrentRoomId(null);
     window.location.hash = hashFor('scenario', id, null);
   };
   const onOpenRoom = (id) => {
+    skipNextHashChange.current = true;
     setCurrentRoomId(id);
     setViewState('room');
     setCurrentScenarioId(null);
@@ -136,19 +144,14 @@ export default function App() {
           onTerminal={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
         />
         <div id="topbar-context" class="topbar-context" aria-live="polite">
-          {view === 'scenario' && currentScenario ? `Scénario : ${currentScenario.title}` : ''}
-          {view === 'dashboard' ? 'Accueil' : ''}
-          {view === 'docs' ? 'Documentation projet' : ''}
-          {view === 'learning' ? 'Documentation & Cours' : ''}
-          {view === 'engagements' ? 'Cibles & Proxy' : ''}
-          {view === 'progression' ? 'Ma progression' : ''}
-          {view === 'labs' ? 'Labs' : ''}
-          {view === 'network-sim' ? 'Simulateur réseau' : ''}
-          {view === 'proxy-tools' ? 'Proxy / Requêtes' : ''}
-          {view === 'capture' ? 'Capture pcap' : ''}
+          {view === 'scenario' && currentScenario
+            ? `Scénario : ${currentScenario.title}`
+            : view === 'room' && currentRoomId
+              ? (data?.rooms?.find(r => r.id === currentRoomId)?.title || 'Room')
+              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', 'network-sim': 'Simulateur réseau', 'proxy-tools': 'Proxy / Requêtes', capture: 'Capture pcap' }[view] || view)}
         </div>
         {loaded && (
-          <div class="view active">
+          <div class="view active" key={view}>
             <ViewComponent
               view={view}
               data={data}

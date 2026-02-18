@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
+import { EMBEDDED_DOCS, EMBEDDED_LEARNING, EMBEDDED_TARGETS } from './defaultData';
 
 const storage = typeof window !== 'undefined' ? window.LabCyberStorage : null;
 
@@ -32,30 +33,32 @@ export function useStore() {
   const [data, setData] = useState({ rooms: [], categories: [] });
   const [scenarios, setScenarios] = useState([]);
   const [config, setConfig] = useState({ hostnames: {}, terminalPort: 7681 });
-  const [docs, setDocs] = useState(null);
-  const [learning, setLearning] = useState(null);
-  const [targets, setTargets] = useState(null);
-  const [challenges, setChallenges] = useState(null);
-  const [loaded, setLoaded] = useState(false);
+  const [docs, setDocs] = useState(EMBEDDED_DOCS);
+  const [learning, setLearning] = useState(EMBEDDED_LEARNING);
+  const [targets, setTargets] = useState(EMBEDDED_TARGETS);
+  const [challenges, setChallenges] = useState([]);
+  const [loaded, setLoaded] = useState(true);
 
   useEffect(() => {
     const base = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
     const get = (path) => fetch(base + path).then(r => (r.ok ? r.json() : null)).catch(() => null);
-    Promise.all([
+    Promise.allSettled([
       get('/data/rooms.json').then(x => x || { rooms: [], categories: [] }),
       get('/data/scenarios.json').then(x => (x && x.scenarios) || (Array.isArray(x) ? x : [])),
       get('/data/config.json').then(x => x || {}),
-      get('/data/docs.json').then(x => x && typeof x === 'object' ? x : { title: 'Documentation du projet', description: 'Liste non chargée.', entries: [] }),
-      get('/data/learning.json').then(x => x && typeof x === 'object' ? x : { title: 'Doc & Cours', description: 'Liste non chargée.', topics: [] }),
+      get('/data/docs.json').then(x => x && typeof x === 'object' && Array.isArray(x.entries) ? x : null),
+      get('/data/learning.json').then(x => x && typeof x === 'object' && Array.isArray(x.topics) ? x : null),
       get('/data/targets.json').then(x => x),
       get('/data/challenges.json').then(x => x),
-    ]).then(([roomsData, scenarioList, cfg, docsList, learningData, targetsData, challengesData]) => {
+    ]).then((results) => {
+      const [roomsData, scenarioList, cfg, docsList, learningData, targetsData, challengesData] = results.map(r => r.status === 'fulfilled' ? r.value : null);
       setData(roomsData && (roomsData.rooms || roomsData.categories) ? roomsData : { rooms: [], categories: [] });
       setScenarios((scenarioList && scenarioList.scenarios) || (Array.isArray(scenarioList) ? scenarioList : []));
       setConfig(cfg || {});
-      setDocs(docsList);
-      setLearning(learningData);
-      setTargets(Array.isArray(targetsData) ? targetsData : (targetsData && Array.isArray(targetsData.targets) ? targetsData.targets : []));
+      if (docsList) setDocs(docsList);
+      if (learningData) setLearning(learningData);
+      const t = Array.isArray(targetsData) ? targetsData : (targetsData?.targets);
+      if (t && t.length) setTargets(t);
       setChallenges(challengesData && Array.isArray(challengesData.challenges) ? challengesData.challenges : []);
       setLoaded(true);
     });

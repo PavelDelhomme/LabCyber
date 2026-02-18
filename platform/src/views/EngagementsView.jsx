@@ -205,7 +205,7 @@ export default function EngagementsView({ storage, targets, onNavigate }) {
   };
 
   const sessions = engagement.sessions || [];
-  const labTargets = Array.isArray(targets) ? targets : [];
+  const labTargets = Array.isArray(targets) ? targets : (targets?.targets ? targets.targets : []);
 
   return (
     <div id="view-engagements" class="view">

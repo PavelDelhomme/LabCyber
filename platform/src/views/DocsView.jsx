@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { escapeHtml } from '../lib/store';
+import { EMBEDDED_DOCS } from '../lib/defaultData';
 
 export default function DocsView({ docs }) {
   const [viewerContent, setViewerContent] = useState(null);
@@ -7,6 +8,8 @@ export default function DocsView({ docs }) {
   const [showRaw, setShowRaw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const docSource = docs && (docs.entries?.length || docs.title) ? docs : EMBEDDED_DOCS;
 
   const openDoc = (file) => {
     setViewerContent(null);
@@ -34,7 +37,6 @@ export default function DocsView({ docs }) {
   };
 
   const entries = docs?.entries || [];
-  const docsLoaded = docs !== null;
 
   return (
     <div id="view-docs" class="view view-docs">
@@ -46,7 +48,7 @@ export default function DocsView({ docs }) {
         <nav class="docs-nav">
           <h3>Fichiers</h3>
           <ul id="docs-list" class="docs-list">
-            {entries.length === 0 && <li class="text-muted">Aucun document dans la liste. Vérifiez que <code>/data/docs.json</code> et le dossier <code>/docs/</code> sont servis (ex. via <code>public/</code>).</li>}
+            {entries.length === 0 && <li class="text-muted">Aucun document disponible. Les fichiers sont servis depuis <code>/docs/</code>.</li>}
             {entries.map(e => (
               <li key={e.id}>
                 <button type="button" class="docs-list-btn" onClick={() => openDoc(e.file)}>{escapeHtml(e.name)}</button>
