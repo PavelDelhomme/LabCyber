@@ -22,6 +22,18 @@
   const KEY_LABS = 'labs';
   const KEY_CURRENT_LAB = 'currentLabId';
   const KEY_TOPOLOGIES = 'topologies';
+  const KEY_TERMINAL_HISTORY = 'terminalHistory';
+  const KEY_UI_SESSION = 'uiSession';
+  const KEY_CAPTURE_META_PREFIX = 'captureMeta_';
+  const KEY_CAPTURE_BLOB_PREFIX = 'captureBlob_';
+  const KEY_CAPTURE_SESSIONS_LIST_PREFIX = 'captureSessionsList_';
+  const KEY_CAPTURE_SESSION_META_PREFIX = 'captureSessionMeta_';
+  const KEY_CAPTURE_SESSION_BLOB_PREFIX = 'captureSessionBlob_';
+  const KEY_NETWORK_SIMULATIONS = 'networkSimulations';
+  const KEY_PROXIES = 'proxies';
+  const KEY_REQUEST_DATA = 'requestData';
+  const KEY_LAB_NOTES = 'labNotes';
+  const MAX_TERMINAL_HISTORY = 500;
 
   const LEGACY_KEYS = {
     'labcyber-last-scenario': KV_LAST_SCENARIO,
@@ -42,7 +54,13 @@
     labs: [],
     currentLabId: null,
     topologies: {},
-    logs: []
+    logs: [],
+    terminalHistory: [],
+    uiSession: null,
+    networkSimulations: {},
+    proxies: {},
+    requestData: {},
+    labNotes: {}
   };
   let readyPromise = null;
   let writeQueue = [];
@@ -109,6 +127,12 @@
             case KEY_LABS: cache.labs = Array.isArray(row.v) ? row.v : []; break;
             case KEY_CURRENT_LAB: cache.currentLabId = row.v != null ? row.v : null; break;
             case KEY_TOPOLOGIES: cache.topologies = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_TERMINAL_HISTORY: cache.terminalHistory = Array.isArray(row.v) ? row.v : []; break;
+            case KEY_UI_SESSION: cache.uiSession = row.v && typeof row.v === 'object' ? row.v : null; break;
+            case KEY_NETWORK_SIMULATIONS: cache.networkSimulations = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_PROXIES: cache.proxies = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_REQUEST_DATA: cache.requestData = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_LAB_NOTES: cache.labNotes = row.v && typeof row.v === 'object' ? row.v : {}; break;
             default: break;
           }
         });
@@ -281,7 +305,7 @@
 
     getScenarioStatus: function (scenarioId) {
       var status = (cache.scenarioStatus && cache.scenarioStatus[scenarioId]) || 'not_started';
-      return status === 'in_progress' || status === 'completed' || status === 'abandoned' ? status : 'not_started';
+      return (status === 'in_progress' || status === 'completed' || status === 'abandoned' || status === 'paused') ? status : 'not_started';
     },
     setScenarioStatus: function (scenarioId, status) {
       if (!cache.scenarioStatus) cache.scenarioStatus = {};
@@ -316,6 +340,146 @@
       if (!cache.topologies || typeof cache.topologies !== 'object') cache.topologies = {};
       cache.topologies[labId] = data;
       writeQueue.push(setData(STORE_DATA, KEY_TOPOLOGIES, cache.topologies));
+    },
+
+    getTerminalHistory: function () {
+      return Array.isArray(cache.terminalHistory) ? cache.terminalHistory.slice() : [];
+    },
+    appendTerminalHistory: function (entry) {
+      if (!Array.isArray(cache.terminalHistory)) cache.terminalHistory = [];
+      cache.terminalHistory.push({ id: String(Date.now()), ts: new Date().toISOString(), text: entry.text || '' });
+      if (cache.terminalHistory.length > MAX_TERMINAL_HISTORY) cache.terminalHistory = cache.terminalHistory.slice(-MAX_TERMINAL_HISTORY);
+      writeQueue.push(setData(STORE_DATA, KEY_TERMINAL_HISTORY, cache.terminalHistory));
+    },
+    clearTerminalHistory: function () {
+      cache.terminalHistory = [];
+      writeQueue.push(setData(STORE_DATA, KEY_TERMINAL_HISTORY, cache.terminalHistory));
+    },
+
+    getUiSession: function () {
+      if (cache.uiSession && typeof cache.uiSession === 'object') return Object.assign({}, cache.uiSession);
+      return null;
+    },
+    setUiSession: function (obj) {
+      if (!obj || typeof obj !== 'object') { cache.uiSession = null; writeQueue.push(setData(STORE_DATA, KEY_UI_SESSION, null)); return; }
+      cache.uiSession = {
+        terminalPanelOpen: !!obj.terminalPanelOpen,
+        labPanelOpen: !!obj.labPanelOpen,
+        capturePanelOpen: !!obj.capturePanelOpen,
+        terminalTabs: Array.isArray(obj.terminalTabs) && obj.terminalTabs.length > 0 ? obj.terminalTabs : undefined,
+        activeTerminalTabId: obj.activeTerminalTabId != null ? obj.activeTerminalTabId : undefined,
+        terminalPanelMinimized: !!obj.terminalPanelMinimized,
+        terminalPanelWidth: typeof obj.terminalPanelWidth === 'number' && obj.terminalPanelWidth >= 320 ? obj.terminalPanelWidth : undefined
+      };
+      writeQueue.push(setData(STORE_DATA, KEY_UI_SESSION, cache.uiSession));
+    },
+
+    getCaptureState: function (labId) {
+      if (!db || !labId) return Promise.resolve(null);
+      var metaKey = KEY_CAPTURE_META_PREFIX + labId;
+      var blobKey = KEY_CAPTURE_BLOB_PREFIX + labId;
+      return Promise.all([getData(null, metaKey), getData(null, blobKey)]).then(function (results) {
+        var meta = results[0];
+        var blob = results[1];
+        if (!meta && !blob) return null;
+        return Object.assign({ blob: blob || null }, meta || {});
+      });
+    },
+    setCaptureState: function (labId, state) {
+      if (!labId || !state) return;
+      var metaKey = KEY_CAPTURE_META_PREFIX + labId;
+      var blobKey = KEY_CAPTURE_BLOB_PREFIX + labId;
+      var meta = { fileName: state.fileName || '', selectedIndex: state.selectedIndex != null ? state.selectedIndex : 0, filter: state.filter || '' };
+      writeQueue.push(setData(STORE_DATA, metaKey, meta));
+      writeQueue.push(setData(STORE_DATA, blobKey, state.blob != null ? state.blob : null));
+    },
+
+    getCaptureSessionsList: function (labId) {
+      if (!labId) return Promise.resolve([]);
+      return getData(null, KEY_CAPTURE_SESSIONS_LIST_PREFIX + labId).then(function (arr) { return Array.isArray(arr) ? arr : []; });
+    },
+    setCaptureSession: function (labId, sessionId, state) {
+      if (!labId || !sessionId || !state) return;
+      var listKey = KEY_CAPTURE_SESSIONS_LIST_PREFIX + labId;
+      var metaKey = KEY_CAPTURE_SESSION_META_PREFIX + labId + '_' + sessionId;
+      var blobKey = KEY_CAPTURE_SESSION_BLOB_PREFIX + labId + '_' + sessionId;
+      var entry = { id: sessionId, name: state.name || 'Capture ' + sessionId, updatedAt: new Date().toISOString() };
+      getData(null, listKey).then(function (arr) {
+        var list = Array.isArray(arr) ? arr.slice() : [];
+        var idx = list.findIndex(function (e) { return e.id === sessionId; });
+        if (idx >= 0) list[idx] = entry; else list.push(entry);
+        writeQueue.push(setData(STORE_DATA, listKey, list));
+      });
+      writeQueue.push(setData(STORE_DATA, metaKey, { fileName: state.fileName || '', selectedIndex: state.selectedIndex != null ? state.selectedIndex : 0, filter: state.filter || '' }));
+      writeQueue.push(setData(STORE_DATA, blobKey, state.blob != null ? state.blob : null));
+    },
+    getCaptureSession: function (labId, sessionId) {
+      if (!db || !labId || !sessionId) return Promise.resolve(null);
+      var metaKey = KEY_CAPTURE_SESSION_META_PREFIX + labId + '_' + sessionId;
+      var blobKey = KEY_CAPTURE_SESSION_BLOB_PREFIX + labId + '_' + sessionId;
+      return Promise.all([getData(null, metaKey), getData(null, blobKey)]).then(function (results) {
+        var meta = results[0];
+        var blob = results[1];
+        if (!meta && !blob) return null;
+        return Object.assign({ blob: blob || null }, meta || {});
+      });
+    },
+    deleteCaptureSession: function (labId, sessionId) {
+      if (!labId || !sessionId) return;
+      var listKey = KEY_CAPTURE_SESSIONS_LIST_PREFIX + labId;
+      var metaKey = KEY_CAPTURE_SESSION_META_PREFIX + labId + '_' + sessionId;
+      var blobKey = KEY_CAPTURE_SESSION_BLOB_PREFIX + labId + '_' + sessionId;
+      getData(null, listKey).then(function (arr) {
+        var list = (Array.isArray(arr) ? arr : []).filter(function (e) { return e.id !== sessionId; });
+        writeQueue.push(setData(STORE_DATA, listKey, list));
+      });
+      writeQueue.push(setData(STORE_DATA, metaKey, null));
+      writeQueue.push(setData(STORE_DATA, blobKey, null));
+    },
+
+    getNetworkSimulations: function (labId) {
+      var raw = (cache.networkSimulations && cache.networkSimulations[labId]) || null;
+      if (!raw) return { simulations: [], currentId: null };
+      var sims = Array.isArray(raw.simulations) ? raw.simulations.slice() : [];
+      return { simulations: sims, currentId: raw.currentId != null ? raw.currentId : (sims[0] && sims[0].id) || null };
+    },
+    setNetworkSimulations: function (labId, data) {
+      if (!cache.networkSimulations) cache.networkSimulations = {};
+      cache.networkSimulations[labId] = data;
+      writeQueue.push(setData(STORE_DATA, KEY_NETWORK_SIMULATIONS, cache.networkSimulations));
+    },
+
+    getProxies: function (labId) {
+      var arr = (cache.proxies && cache.proxies[labId]) || [];
+      return Array.isArray(arr) ? arr.slice() : [];
+    },
+    setProxies: function (labId, arr) {
+      if (!cache.proxies) cache.proxies = {};
+      cache.proxies[labId] = Array.isArray(arr) ? arr.slice() : [];
+      writeQueue.push(setData(STORE_DATA, KEY_PROXIES, cache.proxies));
+    },
+
+    getRequestData: function (labId) {
+      var raw = (cache.requestData && cache.requestData[labId]) || {};
+      return {
+        collections: Array.isArray(raw.collections) ? raw.collections.slice() : [],
+        history: Array.isArray(raw.history) ? raw.history.slice() : []
+      };
+    },
+    setRequestData: function (labId, data) {
+      if (!cache.requestData) cache.requestData = {};
+      cache.requestData[labId] = { collections: data.collections || [], history: data.history || [] };
+      writeQueue.push(setData(STORE_DATA, KEY_REQUEST_DATA, cache.requestData));
+    },
+
+    getLabNotes: function (labId) {
+      var notes = (cache.labNotes && cache.labNotes[labId]);
+      return notes != null ? String(notes) : '';
+    },
+    setLabNotes: function (labId, text) {
+      if (!cache.labNotes) cache.labNotes = {};
+      cache.labNotes[labId] = text != null ? String(text) : '';
+      writeQueue.push(setData(STORE_DATA, KEY_LAB_NOTES, cache.labNotes));
     },
 
     getLogs: function () { return cache.logs.slice(); },

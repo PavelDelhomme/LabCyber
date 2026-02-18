@@ -12,7 +12,7 @@ Après `docker compose up -d`, ouvre **http://localhost:8080** pour accéder au 
 - **Défis stégano / crypto** : téléchargement des fichiers depuis les rooms concernées.
 - **Journal d’activité** : panneau latéral avec les logs (navigation, scénarios, rooms, copie de commandes, etc.) ; export JSON / TXT, effacement.
 - **Démo phishing** : http://localhost:8080/demo-phishing.html (page pédagogique).
-- **Terminal lab** : http://terminal.lab:PORT (terminal dans le navigateur) ou `make shell` en CLI.
+- **Terminal lab** : dans la plateforme, panneau Lab → Terminal (ouvrir en panneau ou en nouvel onglet `#/terminal-full`) ; ou http://…/terminal/ en direct ; ou `make shell` en CLI. **Notes du lab** : dans le panneau Lab, zone de notes par lab (fichiers, IP, commandes). **CVE** : bouton CVE → recherche par ID ou par mot-clé (NVD), résultats et détails dans l’interface.
 - **Test du logger** : http://lab.local:8080/test-logs.html.
 
 ## Vue d’ensemble des catégories
@@ -87,3 +87,4 @@ Sans Makefile : `docker compose up -d`, `docker compose --profile blue up -d`, `
 | **TESTS.md** | Tests automatisés : `make test` / `scripts/run-tests.sh`, test manuel du logger. |
 | **LOGGING.md** | Système de logs : format, plateforme (frontend), vuln-api, export, tests. |
 | **PROXY-VPN.md** | Proxy Squid (make proxy), accès distant (tunnel SSH, VPN sur l’hôte). |
+| **15-LINUX-RESEAU.md** | Linux en profondeur (fichiers, processus, réseau), connexion (proxy, VPN), intégration lab. |

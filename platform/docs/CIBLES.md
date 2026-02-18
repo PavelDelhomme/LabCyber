@@ -50,3 +50,10 @@ Ce document décrit **toutes les cibles** exposées dans le lab : à quoi elles 
 - Tu peux utiliser la **vue Engagements** (plateforme) pour noter tes objectifs, cibles personnalisées (URL, notes), sessions et historique.
 - Depuis l’attaquant, tu peux lancer tes propres outils, enregistrer des captures (tcpdump, tshark), et documenter dans une session d’engagement.
 - Pour ajouter de **nouvelles cibles** au lab (nouvelles images Docker), ajoute un service dans `docker-compose.yml`, expose-le sur le réseau `lab-network`, et documente-le ici ou dans une room.
+
+## Outils du lab (plateforme)
+
+- **Simulateur réseau** : plusieurs cartes (topologies) par lab, config IP (PC, routeur, switch, serveur), types de service (Web, DNS, Mail…) et switch (L2/L3). Type Packet Tracer, intégré aux scénarios.
+- **Proxy (config)** : configure un ou plusieurs proxies (HTTP, HTTPS, SOCKS) ou VPN pour le lab ; export des variables pour le terminal (`http_proxy`, etc.).
+- **Requêtes API (Postman)** : envoi de requêtes HTTP, collections, historique ; tout enregistré par lab.
+- **Capture pcap** : visualiseur type Wireshark, session (fichier, filtre) enregistrée par lab.

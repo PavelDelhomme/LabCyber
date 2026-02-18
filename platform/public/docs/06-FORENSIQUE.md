@@ -14,6 +14,8 @@ Pas d’outil forensique disque (type Autopsy/Volatility) dans le conteneur par 
 
 ## Analyse de trafic (pcap)
 
+La plateforme propose une **vue Capture (pcap)** (menu Capture ou panneau 📡) : chargement d’un fichier .pcap, liste des paquets avec colonnes **Time, Source, Destination, Protocol, Length** (type Wireshark), filtre par n°, heure, IP ou protocole, détail hex par paquet. Les sessions peuvent être enregistrées et restaurées par lab.
+
 ### Capturer du trafic
 
 Sur la machine hôte (accès au réseau Docker) :

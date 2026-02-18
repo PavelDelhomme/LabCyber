@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { escapeHtml, getTerminalUrl } from '../lib/store';
 
-export default function ScenarioView({ scenarios, config, currentScenarioId, storage }) {
+export default function ScenarioView({ scenarios, config, currentScenarioId, storage, onOpenTerminalInPanel }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
   const [taskIndex, setTaskIndex] = useState(0);
 
@@ -27,11 +27,19 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
   };
   const termUrl = getTerminalUrl(config);
 
-  const startScenario = () => storage?.setScenarioStatus(scenario.id, 'in_progress');
+  const startScenario = () => {
+    storage?.setScenarioStatus(scenario.id, 'in_progress');
+    onOpenTerminalInPanel?.();
+  };
+  const prepareScenario = () => {
+    onOpenTerminalInPanel?.();
+  };
+  const pauseScenario = () => storage?.setScenarioStatus(scenario.id, 'paused');
+  const resumeScenario = () => storage?.setScenarioStatus(scenario.id, 'in_progress');
   const abandonScenario = () => storage?.setScenarioStatus(scenario.id, 'abandoned');
   const resetScenario = () => storage?.setScenarioStatus(scenario.id, 'not_started');
 
-  const statusLabel = { not_started: 'Non commencé', in_progress: 'En cours', completed: 'Terminé', abandoned: 'Abandonné' }[status] || status;
+  const statusLabel = { not_started: 'Non commencé', in_progress: 'En cours', completed: 'Terminé', abandoned: 'Abandonné', paused: 'En pause' }[status] || status;
 
   return (
     <div id="view-scenario" class="view view-scenario-with-terminal active">
@@ -45,10 +53,22 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
           <p class="scenario-mode-hint">Tu peux faire les étapes depuis le navigateur (cibles, Proxy / Requêtes dans le menu) ou depuis le terminal à côté — pas besoin de te connecter au conteneur attaquant si tu préfères rester dans le navigateur.</p>
           <div class="scenario-actions">
             {status === 'not_started' && (
-              <button type="button" class="btn btn-primary" onClick={startScenario}>Démarrer le scénario</button>
+              <>
+                <button type="button" class="btn btn-primary" onClick={startScenario}>Démarrer le scénario</button>
+                <button type="button" class="btn btn-secondary" onClick={prepareScenario}>Préparer l'environnement (ouvrir le terminal)</button>
+              </>
             )}
-            {(status === 'in_progress' || status === 'completed') && (
-              <button type="button" class="topbar-btn" onClick={abandonScenario}>J'abandonne ce scénario</button>
+            {status === 'in_progress' && (
+              <>
+                <button type="button" class="btn btn-secondary" onClick={pauseScenario}>Mettre en pause</button>
+                <button type="button" class="topbar-btn" onClick={abandonScenario}>J'abandonne ce scénario</button>
+              </>
+            )}
+            {status === 'paused' && (
+              <>
+                <button type="button" class="btn btn-primary" onClick={resumeScenario}>Reprendre le scénario</button>
+                <button type="button" class="topbar-btn" onClick={abandonScenario}>Abandonner</button>
+              </>
             )}
             {status === 'abandoned' && (
               <button type="button" class="topbar-btn" onClick={resetScenario}>Reprendre (réinitialiser le statut)</button>

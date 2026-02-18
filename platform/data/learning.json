@@ -184,7 +184,7 @@
       "name": "CVE & Vulnérabilités",
       "icon": "⚠️",
       "short": "Bases CVE, NVD, recherche",
-      "content": "Les CVE identifient des vulnérabilités publiques. NVD (NIST) et CVE.mitre.org permettent de rechercher par logiciel ou identifiant. Utilise le bouton CVE flottant (en bas à droite) sur n'importe quelle page pour ouvrir un CVE sur NVD.",
+      "content": "Les CVE identifient des vulnérabilités publiques. Dans la plateforme : bouton CVE (flottant) → recherche par ID ou par mot-clé (logiciel, OS, application, version) ; résultats et détails (résumé, score CVSS) dans l'interface, lien vers NVD. NVD et CVE.mitre.org restent les références officielles.",
       "documentation": [
         { "label": "NVD (NIST)", "url": "https://nvd.nist.gov/vuln/search", "desc": "Recherche et fiches CVE" },
         { "label": "CVE.mitre.org", "url": "https://cve.mitre.org/", "desc": "Liste officielle CVE" }
@@ -200,12 +200,19 @@
       "name": "Systèmes & Réseau",
       "icon": "🖥️",
       "short": "Linux, protocoles",
-      "content": "Bases des systèmes (Linux) et des protocoles réseau (TCP/IP, DNS, HTTP). Le lab utilise des conteneurs Linux ; le terminal attaquant (Kali) et les cibles permettent de pratiquer en CLI et en réseau.",
+      "content": "Bases des systèmes (Linux) et des protocoles réseau (TCP/IP, DNS, HTTP). Le lab utilise des conteneurs Linux ; le terminal attaquant (Kali) et les cibles permettent de pratiquer en CLI et en réseau. Pour aller plus loin : fichiers et permissions, processus, réseau (ip, ss), connexion (proxy, VPN). Voir la doc Lab (UTILISER_LE_LAB, PROXY-VPN) et les scénarios pentest.",
+      "subcategories": [
+        { "id": "linux-fichiers", "name": "Linux : fichiers et permissions", "content": "Système de fichiers (/, /etc, /var), permissions (chmod, chown), utilisateurs et groupes. En pentest : lecture de configs, élévation de privilèges." },
+        { "id": "linux-processus", "name": "Linux : processus et services", "content": "Processus (ps, top), services (systemd), logs (/var/log). Utile pour comprendre ce qui tourne sur une cible." },
+        { "id": "linux-reseau", "name": "Réseau sous Linux", "content": "Interfaces (ip addr), routage, DNS (/etc/resolv.conf), connexion (proxy : variables http_proxy ; VPN : voir PROXY-VPN)." }
+      ],
       "documentation": [
         { "label": "Linux man pages", "url": "https://man7.org/linux/man-pages/", "desc": "Documentation commandes Linux" },
         { "label": "RFC Editor", "url": "https://www.rfc-editor.org/", "desc": "Protocoles réseau" }
       ],
-      "courses": [],
+      "courses": [
+        { "label": "Linux Journey", "url": "https://linuxjourney.com/", "desc": "Apprentissage Linux en profondeur" }
+      ],
       "tools": [
         { "name": "Kali (lab)", "url": "#", "desc": "Terminal attaquant du lab" },
         { "name": "Wireshark", "url": "https://www.wireshark.org/", "desc": "Analyse de paquets" }

@@ -88,12 +88,36 @@ export function useStorage() {
   const getPipAuto = useCallback(() => storage ? storage.getPipAuto() : false, []);
   const setPipAuto = useCallback((v) => storage && storage.setPipAuto(v), []);
   const clearProgress = useCallback(() => storage && storage.clearProgress(), []);
+  const getTerminalHistory = useCallback(() => (storage ? storage.getTerminalHistory() : []) || [], []);
+  const appendTerminalHistory = useCallback((entry) => storage && storage.appendTerminalHistory(entry), []);
+  const clearTerminalHistory = useCallback(() => storage && storage.clearTerminalHistory(), []);
+  const getUiSession = useCallback(() => (storage && storage.getUiSession) ? storage.getUiSession() : null, []);
+  const setUiSession = useCallback((obj) => storage && storage.setUiSession && storage.setUiSession(obj), []);
+  const getCaptureState = useCallback((labId) => (storage && storage.getCaptureState) ? storage.getCaptureState(labId) : Promise.resolve(null), []);
+  const setCaptureState = useCallback((labId, state) => storage && storage.setCaptureState && storage.setCaptureState(labId, state), []);
+  const getCaptureSessionsList = useCallback((labId) => (storage && storage.getCaptureSessionsList) ? storage.getCaptureSessionsList(labId) : Promise.resolve([]), []);
+  const setCaptureSession = useCallback((labId, sessionId, state) => storage && storage.setCaptureSession && storage.setCaptureSession(labId, sessionId, state), []);
+  const getCaptureSession = useCallback((labId, sessionId) => (storage && storage.getCaptureSession) ? storage.getCaptureSession(labId, sessionId) : Promise.resolve(null), []);
+  const deleteCaptureSession = useCallback((labId, sessionId) => storage && storage.deleteCaptureSession && storage.deleteCaptureSession(labId, sessionId), []);
+  const getNetworkSimulations = useCallback((labId) => (storage && storage.getNetworkSimulations) ? storage.getNetworkSimulations(labId) : { simulations: [], currentId: null }, []);
+  const setNetworkSimulations = useCallback((labId, data) => storage && storage.setNetworkSimulations && storage.setNetworkSimulations(labId, data), []);
+  const getProxies = useCallback((labId) => (storage && storage.getProxies) ? storage.getProxies(labId) : [], []);
+  const setProxies = useCallback((labId, arr) => storage && storage.setProxies && storage.setProxies(labId, arr), []);
+  const getRequestData = useCallback((labId) => (storage && storage.getRequestData) ? storage.getRequestData(labId) : { collections: [], history: [] }, []);
+  const setRequestData = useCallback((labId, data) => storage && storage.setRequestData && storage.setRequestData(labId, data), []);
+  const getLabNotes = useCallback((labId) => (storage && storage.getLabNotes) ? storage.getLabNotes(labId) : '', []);
+  const setLabNotes = useCallback((labId, text) => storage && storage.setLabNotes && storage.setLabNotes(labId, text), []);
 
   return {
     getEngagement, setEngagement, getLastScenario, setLastScenario, getLastTaskIndex,
     getTaskDone, setTaskDone, getScenarioStatus, setScenarioStatus, getChallengesDone, setChallengeDone,
     getLabs, setLabs, getCurrentLabId, setCurrentLabId, getTopologies, setTopology,
     getPipAuto, setPipAuto, clearProgress,
+    getTerminalHistory, appendTerminalHistory, clearTerminalHistory,
+    getUiSession, setUiSession, getCaptureState, setCaptureState,
+    getCaptureSessionsList, setCaptureSession, getCaptureSession, deleteCaptureSession,
+    getLabNotes, setLabNotes,
+    getNetworkSimulations, setNetworkSimulations, getProxies, setProxies, getRequestData, setRequestData,
   };
 }
 

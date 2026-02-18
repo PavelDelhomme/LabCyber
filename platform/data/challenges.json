@@ -88,9 +88,18 @@
       "title": "Scapy : envoyer un ICMP (optionnel)",
       "category": "network",
       "difficulty": "Facile",
-      "description": "Depuis l’attaquant, en Python avec Scapy, envoie un paquet ICMP (ping) vers vuln-network et affiche la réponse.",
+      "description": "Depuis l'attaquant, en Python avec Scapy, envoie un paquet ICMP (ping) vers vuln-network et affiche la réponse.",
       "hint": "from scapy.all import *; sr1(IP(dst=\"vuln-network\")/ICMP())",
       "validation": "Tu reçois une réponse ICMP (type 0)."
+    },
+    {
+      "id": "chall-11-cve-recherche",
+      "title": "CVE : rechercher une vulnérabilité",
+      "category": "documentation",
+      "difficulty": "Débutant",
+      "description": "Utilise le bouton CVE (ou Doc & Cours → CVE) pour comprendre le fonctionnement des CVE. Ouvre NVD, cherche un CVE pour un logiciel de ton choix (ex. Redis, OpenSSH) et note son score CVSS et sa description.",
+      "hint": "Bouton CVE en haut à droite ; nvd.nist.gov ; format CVE-ANNÉE-NNNNN",
+      "validation": "Tu as trouvé un CVE, noté son ID, le produit concerné et le score CVSS."
     }
   ]
 }

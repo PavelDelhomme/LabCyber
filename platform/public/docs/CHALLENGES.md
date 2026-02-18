@@ -34,4 +34,4 @@ Défis à valider pour progresser (style CTF / TryHackMe). La liste complète es
 
 ---
 
-Après chaque challenge, note ce que tu as appris (commande, vuln, correction possible). Tu peux utiliser la vue **Engagements** pour enregistrer tes sessions et objectifs.
+Après chaque challenge, note ce que tu as appris (commande, vuln, correction possible). Tu peux utiliser la vue **Engagements** pour enregistrer tes sessions et objectifs. Pour les outils : **Simulateur réseau** (plusieurs cartes, config IP, type Packet Tracer), **Proxy (config)** pour définir des proxies par lab, **Requêtes API (Postman)** pour les appels HTTP et collections, **Capture pcap** pour analyser les paquets. Tout est enregistré par lab et restauré au rechargement.

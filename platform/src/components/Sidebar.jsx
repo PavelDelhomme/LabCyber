@@ -92,7 +92,8 @@ export default function Sidebar({
               <a class="nav-item nav-item-sub" href={termUrl} target="_blank" rel="noopener" title="Terminal Kali">⌨ Terminal Kali</a>
               <a class="nav-item nav-item-sub" href={desktopUrl} target="_blank" rel="noopener" title="Bureau noVNC">🖥 Bureau noVNC</a>
               <button class={`nav-item nav-item-sub ${view === 'network-sim' ? 'active' : ''}`} onClick={() => onNavigate('network-sim')}>🔌 Simulateur réseau</button>
-              <button class={`nav-item nav-item-sub ${view === 'proxy-tools' ? 'active' : ''}`} onClick={() => onNavigate('proxy-tools')}>📤 Proxy / Requêtes</button>
+              <button class={`nav-item nav-item-sub ${view === 'proxy-config' ? 'active' : ''}`} onClick={() => onNavigate('proxy-config')}>🔧 Proxy (config)</button>
+              <button class={`nav-item nav-item-sub ${view === 'api-client' || view === 'proxy-tools' ? 'active' : ''}`} onClick={() => onNavigate('api-client')}>📤 Requêtes API (Postman)</button>
               <button class={`nav-item nav-item-sub ${view === 'capture' ? 'active' : ''}`} onClick={() => onNavigate('capture')}>📡 Capture pcap (Wireshark)</button>
             </div>
           </div>

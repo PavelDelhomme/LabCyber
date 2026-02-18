@@ -22,7 +22,8 @@ help:
 	@echo "  make status       État des conteneurs"
 	@echo ""
 	@echo "  make up-minimal   Mode minimal  |  make test  tests  |  make shell  conteneur attaquant"
-	@echo "  make logs         Logs  |  make logs-SVC  (ex: make logs-gateway)"
+	@echo "  make logs         Suivi des logs (Ctrl+C pour arrêter ; après make rebuild, relancer make logs)"
+	@echo "  make logs-SVC     Logs d'un service (ex: make logs-gateway)"
 	@echo "  make proxy        Lab + Squid (3128)  |  make blue  Blue Team  |  Bureau noVNC inclus (make dev) : /desktop/"
 	@echo "  make clean        Tout arrêter + supprimer volumes  |  make ports  Voir qui utilise 8080/7681"
 	@echo ""
@@ -89,11 +90,11 @@ shell: shell-attacker
 shell-attacker:
 	cd $(ROOT) && docker compose exec attaquant bash
 
-# Logs
+# Logs : suivi en direct. Ctrl+C pour arrêter. Après make rebuild, relancer make logs pour les nouveaux conteneurs.
 logs:
 	cd $(ROOT) && docker compose logs -f
 
-# Règle générique logs-<service>
+# Règle générique logs-<service> (ex: make logs-gateway)
 logs-%:
 	cd $(ROOT) && docker compose logs -f $*
 

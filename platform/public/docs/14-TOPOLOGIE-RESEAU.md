@@ -55,4 +55,8 @@ Depuis le terminal (http://127.0.0.1:8080/terminal/ ou `make shell`), les **host
 - `vuln-api` (ou `api`) → API (port 5000)
 - `dvwa`, `juice-shop`, `bwapp` → cibles web (si tu les appelles par leur nom de service, ex. `curl http://vuln-api:5000`)
 
-Il n’y a **pas** de sous-réseaux ni de VLAN dans ce lab : un seul segment pour garder la configuration simple. Pour des topologies plus complexes (type Packet Tracer), on peut documenter l’usage de GNS3/Eve-NG en complément.
+Il n’y a **pas** de sous-réseaux ni de VLAN dans ce lab : un seul segment pour garder la configuration simple.
+
+## Simulateur de topologie (dans l’interface)
+
+La plateforme inclut un **simulateur réseau** (menu **Labs → Simulateur réseau**) : tu peux dessiner une topologie type Packet Tracer en ajoutant des nœuds (PC, routeur, switch, serveur), les relier par des liens, et enregistrer la topologie par lab. Pour le trafic réel, utilise le **Terminal** (tcpdump, tshark) ou l’outil **Capture** (upload d’un fichier .pcap). Pour des simulations complètes avec VLAN et routage, des outils comme GNS3 ou Eve-NG restent complémentaires.

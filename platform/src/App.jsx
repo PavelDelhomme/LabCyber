@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { useStore, useStorage, getTerminalUrl } from './lib/store';
+import { useStore, useStorage, getTerminalUrl, getDesktopUrl } from './lib/store';
+
+const DEFAULT_LAB = { id: 'default', name: 'Lab par défaut', description: '' };
 import Topbar from './components/Topbar';
 import Sidebar from './components/Sidebar';
 import LogPanel from './components/LogPanel';
@@ -15,8 +17,11 @@ import RoomView from './views/RoomView';
 import ProgressionView from './views/ProgressionView';
 import LabsView from './views/LabsView';
 import NetworkSimulatorView from './views/NetworkSimulatorView';
-import ProxyToolsView from './views/ProxyToolsView';
+import ProxyConfigView from './views/ProxyConfigView';
+import ApiClientView from './views/ApiClientView';
 import CaptureView from './views/CaptureView';
+import TerminalFullView from './views/TerminalFullView';
+import CvePanel from './components/CvePanel';
 
 const VIEWS = {
   dashboard: Dashboard,
@@ -26,8 +31,11 @@ const VIEWS = {
   progression: ProgressionView,
   labs: LabsView,
   'network-sim': NetworkSimulatorView,
-  'proxy-tools': ProxyToolsView,
+  'proxy-tools': ApiClientView,
+  'proxy-config': ProxyConfigView,
+  'api-client': ApiClientView,
   capture: CaptureView,
+  'terminal-full': TerminalFullView,
   scenario: ScenarioView,
   room: RoomView,
 };
@@ -61,15 +69,55 @@ export default function App() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [cvePanelOpen, setCvePanelOpen] = useState(false);
-  const [cveSearchId, setCveSearchId] = useState('');
   const [terminalPanelOpen, setTerminalPanelOpen] = useState(false);
   const [terminalTabs, setTerminalTabs] = useState([{ id: '1', name: 'Session 1' }]);
   const [activeTerminalTabId, setActiveTerminalTabId] = useState('1');
+  const [terminalPanelMinimized, setTerminalPanelMinimized] = useState(false);
+  const [terminalPanelWidth, setTerminalPanelWidth] = useState(520);
+  const [editingTerminalTabId, setEditingTerminalTabId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [currentScenarioId, setCurrentScenarioId] = useState(null);
   const [currentRoomId, setCurrentRoomId] = useState(null);
+  const [currentLabId, setCurrentLabId] = useState('default');
+  const [labPanelOpen, setLabPanelOpen] = useState(false);
+  const [capturePanelOpen, setCapturePanelOpen] = useState(false);
+  const [terminalHistory, setTerminalHistory] = useState([]);
+  const [terminalJournalInput, setTerminalJournalInput] = useState('');
+  const [labNotes, setLabNotesState] = useState('');
   const skipNextHashChange = useRef(false);
+  const terminalResizeRef = useRef({ active: false, startX: 0, startW: 0 });
+
+  useEffect(() => {
+    if (!storage) return;
+    const init = () => {
+      const id = storage.getCurrentLabId();
+      if (id != null && id !== '') setCurrentLabId(id);
+      const ui = storage.getUiSession?.();
+      if (ui) {
+        setTerminalPanelOpen(!!ui.terminalPanelOpen);
+        setLabPanelOpen(!!ui.labPanelOpen);
+        setCapturePanelOpen(!!ui.capturePanelOpen);
+        if (Array.isArray(ui.terminalTabs) && ui.terminalTabs.length > 0) {
+          setTerminalTabs(ui.terminalTabs);
+          setActiveTerminalTabId(ui.activeTerminalTabId || ui.terminalTabs[0].id);
+        }
+        if (typeof ui.terminalPanelMinimized === 'boolean') setTerminalPanelMinimized(ui.terminalPanelMinimized);
+        if (typeof ui.terminalPanelWidth === 'number' && ui.terminalPanelWidth >= 320) setTerminalPanelWidth(ui.terminalPanelWidth);
+      }
+    };
+    if (storage.ready) storage.ready().then(init);
+    else init();
+  }, [storage]);
+
+  const labs = storage ? [DEFAULT_LAB, ...(storage.getLabs() || [])] : [DEFAULT_LAB];
+  const currentLab = labs.find(l => l.id === currentLabId) || DEFAULT_LAB;
+
+  const onLabChange = (id) => {
+    const next = id || 'default';
+    setCurrentLabId(next);
+    storage?.setCurrentLabId?.(next);
+  };
 
   useEffect(() => {
     const apply = () => {
@@ -86,6 +134,49 @@ export default function App() {
     window.addEventListener('hashchange', apply);
     return () => window.removeEventListener('hashchange', apply);
   }, []);
+
+  const persistUiSession = (patch) => {
+    if (storage?.setUiSession) storage.setUiSession({ terminalPanelOpen, labPanelOpen, capturePanelOpen, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth, ...patch });
+  };
+
+  const openTerminalPanel = () => {
+    const ui = storage?.getUiSession?.();
+    const savedTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
+    const savedActive = ui?.activeTerminalTabId && savedTabs.some(t => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : savedTabs[0].id;
+    setTerminalTabs(savedTabs);
+    setActiveTerminalTabId(savedActive);
+    setTerminalPanelOpen(true);
+    setLabPanelOpen(false);
+    setTerminalHistory(storage?.getTerminalHistory?.() || []);
+    storage?.setUiSession?.({ terminalPanelOpen: true, labPanelOpen: false, terminalTabs: savedTabs, activeTerminalTabId: savedActive });
+  };
+
+  useEffect(() => {
+    if (terminalPanelOpen && storage) setTerminalHistory(storage.getTerminalHistory() || []);
+  }, [terminalPanelOpen, storage]);
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!terminalResizeRef.current.active) return;
+      const delta = terminalResizeRef.current.startX - e.clientX;
+      const next = Math.min(900, Math.max(320, terminalResizeRef.current.startW + delta));
+      setTerminalPanelWidth(next);
+    };
+    const onUp = () => {
+      if (terminalResizeRef.current.active) {
+        terminalResizeRef.current.active = false;
+        persistUiSession({ terminalPanelWidth });
+      }
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, []);
+
+  useEffect(() => {
+    if (!terminalPanelOpen || !storage?.setUiSession) return;
+    storage.setUiSession({ terminalPanelOpen, labPanelOpen, capturePanelOpen, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth });
+  }, [terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth]);
 
   const setView = (v) => {
     skipNextHashChange.current = true;
@@ -111,6 +202,7 @@ export default function App() {
 
   const currentScenario = currentScenarioId ? scenarios.find(s => s.id === currentScenarioId) : null;
   const showPipButton = view === 'scenario';
+  const getViewUrl = (v) => `${typeof window !== 'undefined' ? window.location.origin + (window.location.pathname || '/') : ''}#/${v}`;
 
   const ViewComponent = VIEWS[view] || Dashboard;
 
@@ -134,6 +226,10 @@ export default function App() {
           searchQuery={searchQuery}
           filterCategory={filterCategory}
           showPipButton={showPipButton}
+          currentLab={currentLab}
+          labPanelOpen={labPanelOpen}
+          onLabPanelToggle={() => { setLabPanelOpen(o => !o); persistUiSession({ labPanelOpen: !labPanelOpen }); }}
+          onLabPanelClose={() => { setLabPanelOpen(false); persistUiSession({ labPanelOpen: false }); }}
           onSearchChange={setSearchQuery}
           onFilterChange={setFilterCategory}
           onSidebarToggle={() => window.innerWidth <= 768 ? setSidebarOpen(o => !o) : setSidebarCollapsed(c => !c)}
@@ -142,13 +238,23 @@ export default function App() {
           onStats={() => setStatsOpen(true)}
           onOptions={() => setOptionsOpen(true)}
           onTerminal={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
+          onTerminalInPanel={openTerminalPanel}
+          capturePanelOpen={capturePanelOpen}
+          onCapturePanelToggle={() => { const next = !capturePanelOpen; setCapturePanelOpen(next); persistUiSession({ capturePanelOpen: next }); }}
+          onDeactivateLab={() => { storage?.setCurrentLabId('default'); setCurrentLabId('default'); setLabPanelOpen(false); }}
+          onNavigate={setView}
+          getTerminalUrl={getTerminalUrl}
+          getDesktopUrl={getDesktopUrl}
+          getViewUrl={getViewUrl}
+          labNotes={labNotes}
+          onLabNotesChange={(text) => { setLabNotesState(text); storage?.setLabNotes?.(currentLabId, text); }}
         />
         <div id="topbar-context" class="topbar-context" aria-live="polite">
           {view === 'scenario' && currentScenario
             ? `Scénario : ${currentScenario.title}`
             : view === 'room' && currentRoomId
               ? (data?.rooms?.find(r => r.id === currentRoomId)?.title || 'Room')
-              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', 'network-sim': 'Simulateur réseau', 'proxy-tools': 'Proxy / Requêtes', capture: 'Capture pcap' }[view] || view)}
+              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', 'network-sim': 'Simulateur réseau', 'proxy-tools': 'Requêtes API', 'proxy-config': 'Proxy (config)', 'api-client': 'Requêtes API (Postman)', capture: 'Capture pcap' }[view] || view)}
         </div>
         {loaded && (
           <div class="view active" key={view}>
@@ -169,8 +275,10 @@ export default function App() {
               onOpenScenario={onOpenScenario}
               onOpenRoom={onOpenRoom}
               storage={storage}
+              currentLabId={currentLabId}
+              onLabChange={onLabChange}
               onOpenTerminalInNewTab={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
-              onOpenTerminalInPanel={() => { setTerminalTabs([{ id: '1', name: 'Session 1' }]); setActiveTerminalTabId('1'); setTerminalPanelOpen(true); }}
+              onOpenTerminalInPanel={openTerminalPanel}
             />
           </div>
         )}
@@ -181,70 +289,96 @@ export default function App() {
       <OptionsModal open={optionsOpen} onClose={() => setOptionsOpen(false)} storage={storage} />
       <button type="button" class="log-fab" onClick={() => setLogOpen(true)} aria-label="Ouvrir le journal" title="Journal d'activité">📋</button>
       <button type="button" class="cve-fab" onClick={() => setCvePanelOpen(true)} aria-label="Recherche CVE" title="Rechercher un CVE">CVE</button>
-      {cvePanelOpen && (
-        <div class="cve-panel-overlay" onClick={() => setCvePanelOpen(false)}>
-          <div class="cve-panel" onClick={e => e.stopPropagation()} role="dialog" aria-label="Recherche CVE">
-            <header class="cve-panel-header">
-              <h3>Recherche CVE</h3>
-              <button type="button" class="cve-panel-close" onClick={() => setCvePanelOpen(false)} aria-label="Fermer">×</button>
-            </header>
-            <p class="cve-panel-desc">Saisis un identifiant (ex. CVE-2024-1234) pour l’ouvrir sur NVD.</p>
-            <div class="cve-panel-form">
-              <input
-                type="text"
-                class="cve-panel-input"
-                placeholder="CVE-2024-1234"
-                value={cveSearchId}
-                onInput={e => setCveSearchId(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { const id = (cveSearchId || '').trim().toUpperCase(); if (id) window.open('https://nvd.nist.gov/vuln/detail/' + id, '_blank'); } }}
-              />
-              <button
-                type="button"
-                class="btn btn-primary"
-                onClick={() => { const id = (cveSearchId || '').trim().toUpperCase(); if (id) window.open('https://nvd.nist.gov/vuln/detail/' + id, '_blank'); }}
-              >
-                Ouvrir NVD
-              </button>
-            </div>
-            <p class="cve-panel-links">
-              <a href="https://nvd.nist.gov/vuln/search" target="_blank" rel="noopener">NVD Search</a>
-              {' · '}
-              <a href="https://cve.mitre.org/" target="_blank" rel="noopener">CVE.mitre.org</a>
-            </p>
-          </div>
-        </div>
-      )}
+      <CvePanel open={cvePanelOpen} onClose={() => setCvePanelOpen(false)} />
       {showPipButton && <PipPanel open={pipOpen} scenario={currentScenario} onClose={() => setPipOpen(false)} />}
       {terminalPanelOpen && (
-        <div class="terminal-side-panel" role="dialog" aria-label="Terminal web attaquant">
+        <div
+          class={`terminal-side-panel ${terminalPanelMinimized ? 'terminal-side-panel-minimized' : ''}`}
+          role="dialog"
+          aria-label="Terminal web attaquant"
+          style={{ width: terminalPanelMinimized ? 48 : terminalPanelWidth }}
+        >
+          <div
+            class="terminal-side-panel-resize-handle"
+            aria-label="Redimensionner"
+            onMouseDown={(e) => { if (!terminalPanelMinimized) { e.preventDefault(); terminalResizeRef.current = { active: true, startX: e.clientX, startW: terminalPanelWidth }; } }}
+          />
           <header class="terminal-side-panel-header">
-            <h3>Terminal web (attaquant)</h3>
-            <div class="terminal-side-panel-tabs">
-              {terminalTabs.map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  class={`terminal-tab-btn ${activeTerminalTabId === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTerminalTabId(tab.id)}
-                  title={tab.name}
-                >
-                  {tab.name}
-                  {terminalTabs.length > 1 && (
-                    <span class="terminal-tab-close" onClick={(e) => { e.stopPropagation(); const rest = terminalTabs.filter(x => x.id !== tab.id); setTerminalTabs(rest); if (activeTerminalTabId === tab.id) setActiveTerminalTabId(rest[0]?.id || ''); }} aria-label="Fermer">×</span>
-                  )}
-                </button>
-              ))}
-              <button type="button" class="terminal-tab-add" onClick={() => { const id = String(Date.now()); setTerminalTabs(t => [...t, { id, name: `Session ${t.length + 1}` }]); setActiveTerminalTabId(id); }} title="Nouvel onglet">+</button>
-            </div>
-            <button type="button" class="terminal-side-panel-close" onClick={() => setTerminalPanelOpen(false)} aria-label="Fermer le panneau">×</button>
+            <h3>{terminalPanelMinimized ? '⌨' : 'Terminal web (attaquant)'}</h3>
+            {!terminalPanelMinimized && (
+              <div class="terminal-side-panel-tabs">
+                {terminalTabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    class={`terminal-tab-btn ${activeTerminalTabId === tab.id ? 'active' : ''}`}
+                    onClick={() => setActiveTerminalTabId(tab.id)}
+                    title={tab.name}
+                  >
+                    {editingTerminalTabId === tab.id ? (
+                      <input
+                        type="text"
+                        class="terminal-tab-rename-input"
+                        value={tab.name}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                        onBlur={() => setEditingTerminalTabId(null)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { const val = (e.target.value || '').trim(); setTerminalTabs(t => t.map(x => x.id === tab.id ? { ...x, name: val || x.name } : x)); setEditingTerminalTabId(null); e.target.blur(); } }}
+                        onChange={(e) => setTerminalTabs(t => t.map(x => x.id === tab.id ? { ...x, name: e.target.value } : x))}
+                      />
+                    ) : (
+                      <span onDoubleClick={(e) => { e.stopPropagation(); setEditingTerminalTabId(tab.id); }} title="Double-clic pour renommer">{tab.name}</span>
+                    )}
+                    {terminalTabs.length > 1 && (
+                      <span class="terminal-tab-close" onClick={(e) => { e.stopPropagation(); const rest = terminalTabs.filter(x => x.id !== tab.id); setTerminalTabs(rest); if (activeTerminalTabId === tab.id) setActiveTerminalTabId(rest[0]?.id || ''); }} aria-label="Fermer">×</span>
+                    )}
+                  </button>
+                ))}
+                <button type="button" class="terminal-tab-add" onClick={() => { const id = String(Date.now()); setTerminalTabs(t => [...t, { id, name: `Session ${t.length + 1}` }]); setActiveTerminalTabId(id); }} title="Nouvel onglet">+</button>
+              </div>
+            )}
+            <button type="button" class="terminal-side-panel-minimize" onClick={() => { setTerminalPanelMinimized(m => !m); persistUiSession({ terminalPanelMinimized: !terminalPanelMinimized }); }} title={terminalPanelMinimized ? 'Afficher le panneau' : 'Réduire (cacher sans fermer)'} aria-label={terminalPanelMinimized ? 'Agrandir' : 'Réduire'}>{terminalPanelMinimized ? '▶' : '◀'}</button>
+            <button type="button" class="terminal-side-panel-close" onClick={() => { setTerminalPanelOpen(false); persistUiSession({ terminalPanelOpen: false }); }} aria-label="Fermer le panneau">×</button>
           </header>
-          <p class="terminal-side-panel-hint">En cas d'erreur 502 : le terminal peut mettre 15–20 s à démarrer. Rouvrez le panneau ou utilisez « Ouvrir dans un nouvel onglet ».</p>
+          {!terminalPanelMinimized && (
+            <>
+          <p class="terminal-side-panel-hint">En cas d'erreur 502 : le terminal peut mettre 15–20 s à démarrer. Double-clic sur un onglet pour le renommer.</p>
           <div class="terminal-side-panel-body">
             {terminalTabs.map(tab => (
               <div key={tab.id} class="terminal-tab-pane" style={{ display: activeTerminalTabId === tab.id ? 'flex' : 'none' }}>
                 <iframe src={getTerminalUrl()} title={tab.name} class="terminal-side-panel-iframe" />
               </div>
             ))}
+          </div>
+          <div class="terminal-journal">
+            <h4 class="terminal-journal-title">Journal de session (historique enregistré)</h4>
+            <p class="terminal-journal-desc">Ajoute une ligne (commande ou note) pour la garder en mémoire.</p>
+            <form class="terminal-journal-form" onSubmit={(e) => { e.preventDefault(); const t = terminalJournalInput.trim(); if (t) { storage?.appendTerminalHistory?.({ text: t }); setTerminalHistory(storage?.getTerminalHistory?.() || []); setTerminalJournalInput(''); } }}>
+              <input type="text" class="terminal-journal-input" value={terminalJournalInput} onInput={e => setTerminalJournalInput(e.target.value)} placeholder="Commande ou note à enregistrer" />
+              <button type="submit" class="btn btn-secondary">Ajouter</button>
+            </form>
+            <ul class="terminal-journal-list">
+              {(terminalHistory.length ? terminalHistory.slice().reverse() : []).slice(0, 50).map(entry => (
+                <li key={entry.id} class="terminal-journal-entry">
+                  <span class="terminal-journal-ts">{entry.ts ? new Date(entry.ts).toLocaleTimeString('fr-FR') : ''}</span>
+                  <span class="terminal-journal-text">{entry.text}</span>
+                </li>
+              ))}
+            </ul>
+            {terminalHistory.length === 0 && <p class="terminal-journal-empty">Aucune entrée. Ajoute une commande ou une note ci-dessus.</p>}
+          </div>
+            </>
+          )}
+        </div>
+      )}
+      {capturePanelOpen && (
+        <div class="terminal-side-panel capture-side-panel" role="dialog" aria-label="Capture pcap (lab actif)">
+          <header class="terminal-side-panel-header">
+            <h3>Capture pcap (lab : {currentLab.name})</h3>
+            <button type="button" class="terminal-side-panel-close" onClick={() => { setCapturePanelOpen(false); persistUiSession({ capturePanelOpen: false }); }} aria-label="Fermer">×</button>
+          </header>
+          <div class="terminal-side-panel-body capture-panel-body">
+            <CaptureView currentLabId={currentLabId} storage={storage} isPanel />
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 import { render } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
-import './style.css';
+import '../css/style.css';
 import App from './App';
 
 const storage = typeof window !== 'undefined' ? window.LabCyberStorage : null;
