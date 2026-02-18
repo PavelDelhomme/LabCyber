@@ -10,6 +10,9 @@ ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 help:
 	@echo "Lab Cyber – Cibles principales"
 	@echo ""
+	@echo "  Interface web (lab) : http://127.0.0.1:8080  (après make dev ou make up)"
+	@echo "  Port 5000 = vuln-api (interne), pas l'interface ; tout passe par le port 8080."
+	@echo ""
 	@echo "  make dev          Reconstruire si besoin + démarrer tout (recommandé)"
 	@echo "  make up           Démarrer sans rebuild (rapide)"
 	@echo "  make down         Tout arrêter (lab + lab-minimal)"
@@ -19,14 +22,17 @@ help:
 	@echo ""
 	@echo "  make up-minimal   Mode minimal  |  make test  tests  |  make shell  conteneur attaquant"
 	@echo "  make logs         Logs  |  make logs-SVC  (ex: make logs-gateway)"
-	@echo "  make proxy        Lab + Squid (3128)  |  make blue  Blue Team  |  make desktop  Bureau noVNC (XFCE)"
-	@echo "  make clean        Tout arrêter + supprimer volumes  |  make ports  Qui utilise 8080/7681"
+	@echo "  make proxy        Lab + Squid (3128)  |  make blue  Blue Team  |  Bureau noVNC inclus (make dev) : /desktop/"
+	@echo "  make clean        Tout arrêter + supprimer volumes  |  make ports  Voir qui utilise 8080/7681"
 	@echo ""
 
 # Démarrer sans rebuild (rapide si les images sont déjà à jour)
 up:
 	cd $(ROOT) && docker compose up -d
-	@echo "Plateforme : http://127.0.0.1:8080  |  Terminal : http://127.0.0.1:8080/terminal/  |  make shell"
+	@echo ""
+	@echo "  Interface web (lab) : http://127.0.0.1:8080"
+	@echo "  Terminal (navigateur) : http://127.0.0.1:8080/terminal/  |  CLI : make shell"
+	@echo ""
 
 # Tout arrêter (lab + lab-minimal), libérer les ports
 down:
@@ -37,12 +43,19 @@ down:
 # Tout arrêter puis redémarrer (pas de rebuild)
 restart: down
 	cd $(ROOT) && docker compose up -d
-	@echo "Plateforme : http://127.0.0.1:8080  |  Terminal : http://127.0.0.1:8080/terminal/"
+	@echo ""
+	@echo "  Interface web (lab) : http://127.0.0.1:8080"
+	@echo "  Terminal : http://127.0.0.1:8080/terminal/  |  make shell"
+	@echo ""
 
 # Reconstruire les images si besoin + démarrer (tout faire fonctionner, ex. gateway/nginx.conf)
 dev:
 	cd $(ROOT) && docker compose up -d --build
-	@echo "Plateforme : http://127.0.0.1:8080  |  Terminal : http://127.0.0.1:8080/terminal/  |  make shell"
+	@echo ""
+	@echo "  Interface web (lab) : http://127.0.0.1:8080"
+	@echo "  Terminal (navigateur) : http://127.0.0.1:8080/terminal/  |  CLI : make shell"
+	@echo "  (Tout le lab passe par le port 8080 ; le port 5000 est l'API vuln interne, pas l'interface.)"
+	@echo ""
 
 build:
 	cd $(ROOT) && docker compose build
@@ -85,9 +98,9 @@ up-proxy:
 down-proxy:
 	cd $(ROOT) && docker compose --profile proxy stop proxy 2>/dev/null || true
 
-# Bureau noVNC (XFCE, type Kali – accès http://127.0.0.1:8080/desktop/)
+# Bureau noVNC (démarre avec make dev ; cible pour rappel)
 desktop:
-	cd $(ROOT) && docker compose --profile desktop up -d
+	cd $(ROOT) && docker compose up -d
 	@echo "Bureau noVNC : http://127.0.0.1:8080/desktop/  (mot de passe VNC : alpine)"
 
 # Blue Team (Suricata)
@@ -113,11 +126,9 @@ lab:
 
 # Voir quel processus utilise les ports du lab (en cas d'erreur "port already allocated")
 ports:
-	@echo "Port 8080 (gateway) :"
-	@ss -tlnp 2>/dev/null | grep :8080 || lsof -i :8080 2>/dev/null || echo "  (rien ou pas de droit)"
-	@echo "Port 7681 (terminal ttyd) :"
-	@ss -tlnp 2>/dev/null | grep :7681 || lsof -i :7681 2>/dev/null || echo "  (rien ou pas de droit)"
-	@echo "Pour libérer : make down. Si besoin, change GATEWAY_PORT ou TTYD_PORT dans .env"
+	@echo "Qui utilise les ports du lab (8080, 7681) ?"
+	@ss -tlnp 2>/dev/null | grep -E ':8080|:7681' || true
+	@echo "Pour libérer : make down. Pour changer : .env (GATEWAY_PORT, TTYD_PORT) puis make up."
 
 # Nettoyage complet (conteneurs + volumes)
 clean:

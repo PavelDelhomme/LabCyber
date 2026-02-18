@@ -1,0 +1,14 @@
+{
+  "gateway": true,
+  "hostnames": {
+    "platform": "lab.local",
+    "dvwa": "dvwa.lab",
+    "juice": "juice.lab",
+    "api": "api.lab",
+    "bwapp": "bwapp.lab",
+    "terminal": "terminal.lab"
+  },
+  "terminalPort": 7681,
+  "gatewayHostInLab": "gateway",
+  "description": "Tout le lab est accessible sur un seul port via la gateway. Depuis le conteneur attaquant, la plateforme est joignable à http://gateway."
+}

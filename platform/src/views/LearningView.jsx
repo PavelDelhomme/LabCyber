@@ -8,12 +8,11 @@ export default function LearningView({ learning }) {
     <div id="view-learning" class="view">
       <header class="page-header">
         <h2>{learning?.title || 'Documentation & Cours'}</h2>
-        <p class="room-description">{learning?.description || 'Cours et documentation par thème (Web, Crypto, Stégano, Phishing, etc.).'}</p>
+        <p class="room-description">{learning?.description || 'Cours et documentation par thème (Web, Crypto, Stégano, Phishing, etc.).'} Chaque thème liste des liens vers OWASP, PortSwigger, outils (Burp, Wireshark, etc.).</p>
       </header>
       <section class="room-section">
         <div id="learning-topics" class="learning-topics">
-          {learningLoaded && topics.length === 0 && <p class="section-desc text-muted">Aucun thème dans /data/learning.json.</p>}
-          {!learningLoaded && <p class="section-desc text-muted">Chargement des thèmes…</p>}
+          {topics.length === 0 && <p class="section-desc text-muted">Aucun thème chargé. Vérifiez que <code>/data/learning.json</code> est accessible.</p>}
           {topics.map(t => (
             <article key={t.id} class="learning-topic">
               <h3 class="learning-topic-title">{t.icon || ''} {escapeHtml(t.name)}</h3>

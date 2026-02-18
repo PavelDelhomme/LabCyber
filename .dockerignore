@@ -1,0 +1,8 @@
+# Éviter de copier node_modules et build dans l'image
+platform/node_modules
+platform/dist
+.git
+*.md
+.env
+.env.*
+!.env.example

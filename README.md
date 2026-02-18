@@ -21,6 +21,15 @@ git push -u origin main
 
 (Remplacez `VOTRE_USER` par votre identifiant GitHub.)
 
+## Ports
+
+| Port | Rôle |
+|------|------|
+| **8080** | Interface web : **http://127.0.0.1:8080** (plateforme, terminal, bureau noVNC) |
+| 7681 | Terminal ttyd direct (optionnel) |
+
+Si un port est pris : copie `.env.example` en `.env`, change `GATEWAY_PORT` ou `TTYD_PORT`, puis `make up`. `make ports` affiche qui utilise 8080/7681.
+
 ## Démarrage rapide
 
 **Un seul port** pour tout le lab (gateway). Aucun conflit avec les ports déjà utilisés sur ta machine.
@@ -35,11 +44,18 @@ git push -u origin main
    git clone <url-du-repo> && cd LabCyber
    make up
    ```
-4. Ouvre **http://127.0.0.1:8080** (plateforme) et **http://localhost:7681** pour le **terminal web** (poste attaquant, ttyd) — pas besoin de /etc/hosts pour le terminal.
+4. Ouvre **http://127.0.0.1:8080** dans le navigateur : c’est l’**interface web du lab** (plateforme, scénarios, terminal intégré). Le terminal est aussi à **http://127.0.0.1:8080/terminal/**.
 
-**Terminal direct** : ouvre **http://localhost:7681** dans le navigateur pour lancer le terminal (conteneur attaquant). **CLI** : `make shell`.
+**Terminal en CLI** : `make shell`. (Le port 5000 ne sert pas à l’interface ; c’est l’API vuln, accessible via api.lab:8080.)
+
+**Bureau noVNC** : **http://127.0.0.1:8080/desktop/** (mot de passe VNC : `labcyber`). Le conteneur bureau met ~30 s à démarrer ; la gateway attend qu’il réponde avant d’accepter les requêtes.
 
 **Documentation** : [docs/USAGE.md](docs/USAGE.md) (comment faire quoi) · [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) · [docs/00-INDEX.md](docs/00-INDEX.md) · [docs/TESTS.md](docs/TESTS.md) · [docs/LOGGING.md](docs/LOGGING.md).
+
+### Si 502 sur /desktop/ ou /terminal/
+
+- **/desktop/** : le bureau (noVNC) peut prendre 30–60 s au premier démarrage. Si 502 persiste : `docker compose logs desktop` puis `docker compose logs gateway`.
+- **/terminal/** : `docker compose logs attaquant` puis `docker compose logs gateway`.
 
 ## Catégories couvertes
 
@@ -62,7 +78,7 @@ git push -u origin main
 | Composant | Rôle |
 |-----------|------|
 | **gateway** | Port **8080** (défaut). Plateforme + cibles (lab.local, dvwa.lab, etc. si /etc/hosts). **http://127.0.0.1:8080** = plateforme. |
-| **attaquant** | Terminal web **ttyd** sur port **7681** : **http://localhost:7681** = lancer le terminal (sans /etc/hosts). CLI : `make shell` |
+| **attaquant** | **Kali Linux** – terminal web (ttyd) sur **http://127.0.0.1:8080/terminal/** ou port 7681. Outils : nmap, hydra, sqlmap, tcpdump, tshark, scapy. CLI : `make shell` |
 | **platform** | Interface web – scénarios, rooms, défis (accès via gateway:8080) |
 | **dvwa, juice-shop, bwapp, vuln-api** | Cibles web/API (accès via gateway, aucun port exposé) |
 | **vuln-network** | SSH, Redis – pentest (accès uniquement depuis le lab, ex. attaquant) |
@@ -103,7 +119,8 @@ LabCyber/
 ├── attacker/               # Conteneur attaquant + ttyd (terminal web)
 ├── vuln-network/, vuln-api/  # Cibles
 ├── proxy/                  # Squid (profil proxy)
-├── docs/                   # USAGE.md (comment faire quoi), 00-INDEX, GETTING_STARTED, …
+├── docs/                   # Copie de la doc (source réelle : platform/docs/, servie sous /docs/ par la plateforme)
+├── platform/docs/          # Source des fichiers servis à http://127.0.0.1:8080/docs/ et dans « Doc. projet »
 ├── scripts/run-tests.sh    # Tests (gateway, JSON, logs, …)
 ├── Makefile                # make up, down, test, shell, lab, up-minimal, …
 ├── docker-compose.minimal.yml  # Profil minimal (faible consommation)

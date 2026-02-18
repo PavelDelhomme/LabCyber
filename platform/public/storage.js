@@ -17,6 +17,11 @@
   const KV_PIP_AUTO = 'pipAuto';
   const KEY_ENGAGEMENT = 'engagement';
   const KEY_TASK_DONE_MAP = 'taskDoneMap';
+  const KEY_SCENARIO_STATUS = 'scenarioStatus';
+  const KEY_CHALLENGES_DONE = 'challengesDone';
+  const KEY_LABS = 'labs';
+  const KEY_CURRENT_LAB = 'currentLabId';
+  const KEY_TOPOLOGIES = 'topologies';
 
   const LEGACY_KEYS = {
     'labcyber-last-scenario': KV_LAST_SCENARIO,
@@ -32,6 +37,11 @@
     pipAuto: false,
     engagement: null,
     taskDoneMap: Object.create(null),
+    scenarioStatus: {},
+    challengesDone: [],
+    labs: [],
+    currentLabId: null,
+    topologies: {},
     logs: []
   };
   let readyPromise = null;
@@ -94,6 +104,11 @@
             case KV_PIP_AUTO: cache.pipAuto = row.v === true || row.v === '1'; break;
             case KEY_ENGAGEMENT: cache.engagement = row.v; break;
             case KEY_TASK_DONE_MAP: cache.taskDoneMap = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_SCENARIO_STATUS: cache.scenarioStatus = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_CHALLENGES_DONE: cache.challengesDone = Array.isArray(row.v) ? row.v : []; break;
+            case KEY_LABS: cache.labs = Array.isArray(row.v) ? row.v : []; break;
+            case KEY_CURRENT_LAB: cache.currentLabId = row.v != null ? row.v : null; break;
+            case KEY_TOPOLOGIES: cache.topologies = row.v && typeof row.v === 'object' ? row.v : {}; break;
             default: break;
           }
         });
@@ -238,7 +253,8 @@
         proxies: (e.proxies || []).slice(),
         proxyNotes: e.proxyNotes || '',
         notes: e.notes || '',
-        sessions: Array.isArray(e.sessions) ? e.sessions.map(function (s) { return { id: s.id, name: s.name, tag: s.tag, targets: (s.targets || []).slice(), proxies: (s.proxies || []).slice(), proxyNotes: s.proxyNotes || '', notes: s.notes || '', createdAt: s.createdAt }; }) : []
+        dataCollected: e.dataCollected || '',
+        sessions: Array.isArray(e.sessions) ? e.sessions.map(function (s) { return { id: s.id, name: s.name, tag: s.tag, targets: (s.targets || []).slice(), proxies: (s.proxies || []).slice(), proxyNotes: s.proxyNotes || '', notes: s.notes || '', dataCollected: s.dataCollected || '', createdAt: s.createdAt }; }) : []
       };
     },
     setEngagement: function (data) {
@@ -247,7 +263,8 @@
         proxies: data.proxies || [],
         proxyNotes: data.proxyNotes || '',
         notes: data.notes || '',
-        sessions: Array.isArray(data.sessions) ? data.sessions.map(function (s) { return { id: s.id, name: s.name, tag: s.tag, targets: (s.targets || []).slice(), proxies: (s.proxies || []).slice(), proxyNotes: s.proxyNotes || '', notes: s.notes || '', createdAt: s.createdAt }; }) : []
+        dataCollected: data.dataCollected || '',
+        sessions: Array.isArray(data.sessions) ? data.sessions.map(function (s) { return { id: s.id, name: s.name, tag: s.tag, targets: (s.targets || []).slice(), proxies: (s.proxies || []).slice(), proxyNotes: s.proxyNotes || '', notes: s.notes || '', dataCollected: s.dataCollected || '', createdAt: s.createdAt }; }) : []
       };
       writeQueue.push(setData(STORE_DATA, KEY_ENGAGEMENT, cache.engagement));
     },
@@ -260,6 +277,45 @@
       if (done) cache.taskDoneMap[key] = true;
       else delete cache.taskDoneMap[key];
       writeQueue.push(setData(STORE_DATA, KEY_TASK_DONE_MAP, cache.taskDoneMap));
+    },
+
+    getScenarioStatus: function (scenarioId) {
+      var status = (cache.scenarioStatus && cache.scenarioStatus[scenarioId]) || 'not_started';
+      return status === 'in_progress' || status === 'completed' || status === 'abandoned' ? status : 'not_started';
+    },
+    setScenarioStatus: function (scenarioId, status) {
+      if (!cache.scenarioStatus) cache.scenarioStatus = {};
+      if (status === 'not_started') delete cache.scenarioStatus[scenarioId];
+      else cache.scenarioStatus[scenarioId] = status;
+      writeQueue.push(setData(STORE_DATA, KEY_SCENARIO_STATUS, cache.scenarioStatus));
+    },
+
+    getChallengesDone: function () {
+      return Array.isArray(cache.challengesDone) ? cache.challengesDone.slice() : [];
+    },
+    setChallengeDone: function (challengeId, done) {
+      if (!Array.isArray(cache.challengesDone)) cache.challengesDone = [];
+      var idx = cache.challengesDone.indexOf(challengeId);
+      if (done && idx === -1) cache.challengesDone.push(challengeId);
+      else if (!done && idx !== -1) cache.challengesDone.splice(idx, 1);
+      writeQueue.push(setData(STORE_DATA, KEY_CHALLENGES_DONE, cache.challengesDone));
+    },
+
+    getLabs: function () { return Array.isArray(cache.labs) ? cache.labs.slice() : []; },
+    setLabs: function (arr) {
+      cache.labs = Array.isArray(arr) ? arr.slice() : [];
+      writeQueue.push(setData(STORE_DATA, KEY_LABS, cache.labs));
+    },
+    getCurrentLabId: function () { return cache.currentLabId; },
+    setCurrentLabId: function (id) {
+      cache.currentLabId = id != null ? id : null;
+      writeQueue.push(setData(STORE_DATA, KEY_CURRENT_LAB, cache.currentLabId));
+    },
+    getTopologies: function () { return cache.topologies && typeof cache.topologies === 'object' ? Object.assign({}, cache.topologies) : {}; },
+    setTopology: function (labId, data) {
+      if (!cache.topologies || typeof cache.topologies !== 'object') cache.topologies = {};
+      cache.topologies[labId] = data;
+      writeQueue.push(setData(STORE_DATA, KEY_TOPOLOGIES, cache.topologies));
     },
 
     getLogs: function () { return cache.logs.slice(); },
@@ -289,9 +345,13 @@
 
     clearProgress: function () {
       cache.taskDoneMap = Object.create(null);
+      cache.scenarioStatus = {};
+      cache.challengesDone = [];
       cache.lastScenario = null;
       cache.lastTask = null;
       writeQueue.push(setData(STORE_DATA, KEY_TASK_DONE_MAP, cache.taskDoneMap));
+      writeQueue.push(setData(STORE_DATA, KEY_SCENARIO_STATUS, cache.scenarioStatus));
+      writeQueue.push(setData(STORE_DATA, KEY_CHALLENGES_DONE, cache.challengesDone));
       writeQueue.push(setData(STORE_DATA, KV_LAST_SCENARIO, null));
       writeQueue.push(setData(STORE_DATA, KV_LAST_TASK, null));
     }

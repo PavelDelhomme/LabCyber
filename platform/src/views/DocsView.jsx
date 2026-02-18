@@ -40,14 +40,13 @@ export default function DocsView({ docs }) {
     <div id="view-docs" class="view view-docs">
       <header class="page-header docs-header">
         <h2 id="docs-title">{docs?.title || 'Documentation du projet'}</h2>
-        <p id="docs-description" class="room-description">{docs?.description || 'Accès à la documentation du lab (démarrage, usage, tests, catégories).'}</p>
+        <p id="docs-description" class="room-description">{docs?.description || 'Accès à la documentation du lab (démarrage, usage, tests, catégories).'} Clique sur un fichier dans la liste pour l’ouvrir.</p>
       </header>
       <div class="docs-layout">
         <nav class="docs-nav">
           <h3>Fichiers</h3>
           <ul id="docs-list" class="docs-list">
-            {docsLoaded && entries.length === 0 && <li class="text-muted">Aucun document dans la liste (fichier /data/docs.json vide ou absent).</li>}
-            {!docsLoaded && <li class="text-muted">Chargement de la liste…</li>}
+            {entries.length === 0 && <li class="text-muted">Aucun document dans la liste. Vérifiez que <code>/data/docs.json</code> et le dossier <code>/docs/</code> sont servis (ex. via <code>public/</code>).</li>}
             {entries.map(e => (
               <li key={e.id}>
                 <button type="button" class="docs-list-btn" onClick={() => openDoc(e.file)}>{escapeHtml(e.name)}</button>

@@ -14,14 +14,14 @@ WORKDIR /app
 COPY platform/package*.json ./
 RUN npm ci
 COPY platform/ ./
-RUN npm run build
+RUN npm run build && cp -r /app/docs /app/dist/docs
 
 # Stage 3: servir avec nginx
 FROM nginx:alpine
 COPY --from=challenges /challenges /usr/share/nginx/html/challenges
 COPY --from=app /app/dist /usr/share/nginx/html
-COPY --from=app /app/data /usr/share/nginx/html/data
-COPY --from=app /app/docs /usr/share/nginx/html/docs
+COPY --from=app /app/dist/data /usr/share/nginx/html/data
+COPY --from=app /app/dist/docs /usr/share/nginx/html/docs
 COPY platform/demo-phishing.html platform/test-logs.html /usr/share/nginx/html/
 COPY platform/nginx-default.conf /etc/nginx/conf.d/default.conf
 RUN chown -R nginx:nginx /usr/share/nginx/html/challenges 2>/dev/null || true

@@ -11,8 +11,9 @@ services:
     ports: ["${GATEWAY_PORT:-8080}:80"]
     networks: [lab-network]
     depends_on:
-      - platform
-      - attaquant
+      platform: { condition: service_started }
+      attaquant: { condition: service_healthy }
+      desktop: { condition: service_healthy }
 
   # ========== Plateforme web (accès via gateway) ==========
   platform:
@@ -32,6 +33,13 @@ services:
     expose: ["7681"]
     stdin_open: true
     tty: true
+    healthcheck:
+      # OK si ttyd répond ; sinon OK si ttyd absent (autre arch) pour ne pas bloquer la gateway
+      test: ["CMD", "sh", "-c", "wget -q -O /dev/null http://127.0.0.1:7681/ || [ ! -x /usr/local/bin/ttyd ]"]
+      interval: 5s
+      timeout: 3s
+      retries: 8
+      start_period: 20s
 
   # ========== WEB (accès via gateway par hostname) ==========
   dvwa:
@@ -106,16 +114,21 @@ services:
     command: ["sleep infinity"]
     profiles: [blue]
 
-  # ========== Bureau noVNC (XFCE type Kali, accès via /desktop/) ==========
+  # ========== Bureau noVNC (XFCE, accès via /desktop/) ==========
+  # accetto : noVNC + websockify sur 6901. Gateway attend que le bureau réponde (healthcheck).
   desktop:
-    image: novaspirit/alpine_xfce4_novnc:latest
+    image: accetto/ubuntu-vnc-xfce:latest
     container_name: lab-desktop
     networks: [lab-network]
-    expose: ["6080"]
+    expose: ["6901"]
     environment:
-      - VNC_PASSWORD=alpine
-    profiles:
-      - desktop
+      - VNC_PW=labcyber
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:6901/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
 
   # ========== PROXY Squid (profil proxy ; port exposé si besoin) ==========
   proxy:

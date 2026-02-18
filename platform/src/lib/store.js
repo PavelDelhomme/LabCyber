@@ -9,11 +9,23 @@ export function getTerminalUrl() {
   return `${base}/terminal/`;
 }
 
-/** URL du bureau noVNC (XFCE) : /desktop/ sur la gateway. Activer avec : make desktop */
+/** URL du bureau noVNC (XFCE) : /desktop/ sur la gateway. */
 export function getDesktopUrl() {
   if (typeof window === 'undefined') return '#';
   const base = window.location.origin.replace(/\/$/, '');
   return `${base}/desktop/`;
+}
+
+/** URL d’une machine depuis son urlKey (dvwa, juice, api, bwapp, terminal). */
+export function getMachineUrl(urlKey) {
+  if (typeof window === 'undefined') return { url: '#', label: '' };
+  const base = window.location.origin.replace(/\/$/, '');
+  const port = window.location.port || '80';
+  if (urlKey === 'terminal') return { url: `${base}/terminal/`, label: `Terminal (${base}/terminal/)` };
+  if (urlKey === 'desktop') return { url: `${base}/desktop/`, label: `Bureau (${base}/desktop/)` };
+  const hostnames = { dvwa: 'dvwa.lab', juice: 'juice.lab', api: 'api.lab', bwapp: 'bwapp.lab' };
+  const host = hostnames[urlKey] || urlKey + '.lab';
+  return { url: `${window.location.protocol}//${host}:${port}`, label: `${host}:${port} (ajoute 127.0.0.1 ${host} dans /etc/hosts)` };
 }
 
 export function useStore() {
@@ -22,6 +34,8 @@ export function useStore() {
   const [config, setConfig] = useState({ hostnames: {}, terminalPort: 7681 });
   const [docs, setDocs] = useState(null);
   const [learning, setLearning] = useState(null);
+  const [targets, setTargets] = useState(null);
+  const [challenges, setChallenges] = useState(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -31,19 +45,23 @@ export function useStore() {
       get('/data/rooms.json').then(x => x || { rooms: [], categories: [] }),
       get('/data/scenarios.json').then(x => (x && x.scenarios) || (Array.isArray(x) ? x : [])),
       get('/data/config.json').then(x => x || {}),
-      get('/data/docs.json'),
-      get('/data/learning.json'),
-    ]).then(([roomsData, scenarioList, cfg, docsList, learningData]) => {
+      get('/data/docs.json').then(x => x && typeof x === 'object' ? x : { title: 'Documentation du projet', description: 'Liste non chargée.', entries: [] }),
+      get('/data/learning.json').then(x => x && typeof x === 'object' ? x : { title: 'Doc & Cours', description: 'Liste non chargée.', topics: [] }),
+      get('/data/targets.json').then(x => x),
+      get('/data/challenges.json').then(x => x),
+    ]).then(([roomsData, scenarioList, cfg, docsList, learningData, targetsData, challengesData]) => {
       setData(roomsData && (roomsData.rooms || roomsData.categories) ? roomsData : { rooms: [], categories: [] });
       setScenarios((scenarioList && scenarioList.scenarios) || (Array.isArray(scenarioList) ? scenarioList : []));
       setConfig(cfg || {});
       setDocs(docsList);
       setLearning(learningData);
+      setTargets(Array.isArray(targetsData) ? targetsData : (targetsData && Array.isArray(targetsData.targets) ? targetsData.targets : []));
+      setChallenges(challengesData && Array.isArray(challengesData.challenges) ? challengesData.challenges : []);
       setLoaded(true);
     });
   }, []);
 
-  return { data, scenarios, config, docs, learning, loaded };
+  return { data, scenarios, config, docs, learning, targets, challenges, loaded };
 }
 
 export function useStorage() {
@@ -54,13 +72,25 @@ export function useStorage() {
   const getLastTaskIndex = useCallback(() => storage ? storage.getLastTaskIndex() : null, []);
   const getTaskDone = useCallback((sid, idx) => storage ? storage.getTaskDone(sid, idx) : false, []);
   const setTaskDone = useCallback((sid, idx, done) => storage && storage.setTaskDone(sid, idx, done), []);
+  const getScenarioStatus = useCallback((sid) => storage ? storage.getScenarioStatus(sid) : 'not_started', []);
+  const setScenarioStatus = useCallback((sid, status) => storage && storage.setScenarioStatus(sid, status), []);
+  const getChallengesDone = useCallback(() => (storage ? storage.getChallengesDone() : []) || [], []);
+  const setChallengeDone = useCallback((id, done) => storage && storage.setChallengeDone(id, done), []);
+  const getLabs = useCallback(() => (storage ? storage.getLabs() : []) || [], []);
+  const setLabs = useCallback((arr) => storage && storage.setLabs(arr), []);
+  const getCurrentLabId = useCallback(() => storage ? storage.getCurrentLabId() : null, []);
+  const setCurrentLabId = useCallback((id) => storage && storage.setCurrentLabId(id), []);
+  const getTopologies = useCallback(() => (storage ? storage.getTopologies() : {}) || {}, []);
+  const setTopology = useCallback((labId, data) => storage && storage.setTopology(labId, data), []);
   const getPipAuto = useCallback(() => storage ? storage.getPipAuto() : false, []);
   const setPipAuto = useCallback((v) => storage && storage.setPipAuto(v), []);
   const clearProgress = useCallback(() => storage && storage.clearProgress(), []);
 
   return {
     getEngagement, setEngagement, getLastScenario, setLastScenario, getLastTaskIndex,
-    getTaskDone, setTaskDone, getPipAuto, setPipAuto, clearProgress,
+    getTaskDone, setTaskDone, getScenarioStatus, setScenarioStatus, getChallengesDone, setChallengeDone,
+    getLabs, setLabs, getCurrentLabId, setCurrentLabId, getTopologies, setTopology,
+    getPipAuto, setPipAuto, clearProgress,
   };
 }
 

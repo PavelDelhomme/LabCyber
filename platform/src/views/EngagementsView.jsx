@@ -15,12 +15,13 @@ const defaultEngagement = () => ({
   proxies: [],
   proxyNotes: '',
   notes: '',
+  dataCollected: '',
   sessions: [],
   todos: [],
   history: [],
 });
 
-export default function EngagementsView({ storage }) {
+export default function EngagementsView({ storage, targets, onNavigate }) {
   const storageReady = useStorageReady();
   const [engagement, setEngagement] = useState(defaultEngagement());
   const [proxyUrl, setProxyUrl] = useState('');
@@ -64,6 +65,7 @@ export default function EngagementsView({ storage }) {
       proxies: (engagement.proxies || []).map(p => ({ ...p })),
       proxyNotes: engagement.proxyNotes || '',
       notes: engagement.notes || '',
+      dataCollected: engagement.dataCollected || '',
       todos: (engagement.todos || []).map(t => ({ ...t })),
       history: (engagement.history || []).map(h => ({ ...h })),
       createdAt: new Date().toISOString(),
@@ -80,6 +82,7 @@ export default function EngagementsView({ storage }) {
       proxies: (s.proxies || []).map(p => ({ ...p })),
       proxyNotes: s.proxyNotes || '',
       notes: s.notes || '',
+      dataCollected: s.dataCollected || '',
       todos: (s.todos || []).map(t => ({ ...t })),
       history: (s.history || []).map(h => ({ ...h })),
     };
@@ -202,13 +205,35 @@ export default function EngagementsView({ storage }) {
   };
 
   const sessions = engagement.sessions || [];
+  const labTargets = Array.isArray(targets) ? targets : [];
 
   return (
     <div id="view-engagements" class="view">
       <header class="page-header">
         <h2>Cibles &amp; Proxy</h2>
-        <p class="section-desc">Cibles, proxy/VPN, notes et sessions. Tout est enregistré localement.</p>
+        <p class="section-desc">Gère tes cibles (machines, URLs), sessions d’engagement, notes et données récupérées. Tout est enregistré localement. Utilise les raccourcis ci-dessous pour les outils intégrés.</p>
+        <div class="engagement-shortcuts">
+          <button type="button" class="btn btn-primary" onClick={() => onNavigate?.('proxy-tools')}>📤 Proxy / Requêtes HTTP</button>
+          <button type="button" class="btn topbar-btn" onClick={() => onNavigate?.('capture')}>📡 Capture pcap (Wireshark)</button>
+          <button type="button" class="btn topbar-btn" onClick={() => onNavigate?.('progression')}>📊 Ma progression</button>
+        </div>
       </header>
+      {labTargets.length > 0 && (
+        <section class="dashboard-section">
+          <h3 class="section-title">Cibles du lab (machines disponibles)</h3>
+          <p class="section-desc">URLs des cibles pour tes tests. Utilise Proxy/Requêtes pour envoyer des requêtes (configurer /etc/hosts si besoin).</p>
+          <ul class="engagement-list engagement-targets-lab">
+            {labTargets.map(t => (
+              <li key={t.id} class="engagement-target-item">
+                <span class="engagement-target-name">{escapeHtml(t.name || t.id)}</span>
+                {t.url && <a href={t.url} target="_blank" rel="noopener nofollow" class="engagement-target-url">{escapeHtml(t.url)}</a>}
+                {t.credentials && <span class="engagement-target-notes">Identifiants : {escapeHtml(t.credentials)}</span>}
+                {t.description && <span class="section-desc" style="display:block; margin-top:0.25rem">{escapeHtml(t.description)}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section class="dashboard-section">
         <h3 class="section-title">Sessions</h3>
         <p class="section-desc">Enregistre l’état actuel (cibles, proxies, notes) sous un nom et un tag pour le retrouver plus tard.</p>
@@ -341,13 +366,24 @@ export default function EngagementsView({ storage }) {
         </ul>
       </section>
       <section class="dashboard-section">
-        <h3 class="section-title">Notes et résultats (bloc libre)</h3>
+        <h3 class="section-title">Notes (bloc libre)</h3>
         <textarea
           class="engagement-notes"
-          rows={12}
+          rows={6}
           value={engagement.notes || ''}
           onInput={e => save({ ...engagement, notes: e.target.value })}
-          placeholder="Résultats des scans, observations..."
+          placeholder="Notes générales, observations..."
+        />
+      </section>
+      <section class="dashboard-section">
+        <h3 class="section-title">Données récupérées</h3>
+        <p class="section-desc">Colle ici les données extraites (flags, hashes, extraits de base, etc.) pour les garder avec la session.</p>
+        <textarea
+          class="engagement-notes"
+          rows={8}
+          value={engagement.dataCollected || ''}
+          onInput={e => save({ ...engagement, dataCollected: e.target.value })}
+          placeholder="Ex: flag{...}, hash récupéré, extrait SQL..."
         />
       </section>
     </div>

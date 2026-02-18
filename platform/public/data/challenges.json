@@ -1,0 +1,96 @@
+{
+  "title": "Challenges",
+  "description": "Défis à valider pour progresser (style CTF / TryHackMe). Chaque challenge correspond à une compétence ou un objectif du lab.",
+  "challenges": [
+    {
+      "id": "chall-01-redis-info",
+      "title": "Redis : récupérer INFO",
+      "category": "network",
+      "difficulty": "Débutant",
+      "description": "Depuis la machine attaquant, connecte-toi à Redis sur vuln-network et exécute la commande INFO. Note la version de Redis.",
+      "hint": "redis-cli -h vuln-network puis INFO",
+      "validation": "Tu as vu la section # Server avec la version Redis."
+    },
+    {
+      "id": "chall-02-ssh-root",
+      "title": "SSH : accès root sur vuln-network",
+      "category": "network",
+      "difficulty": "Débutant",
+      "description": "Ouvre une session SSH en tant que root sur vuln-network depuis l’attaquant.",
+      "hint": "ssh root@vuln-network — mot de passe : labpassword",
+      "validation": "Tu obtiens un shell root sur la cible."
+    },
+    {
+      "id": "chall-03-api-login",
+      "title": "API : login admin sur vuln-api",
+      "category": "api",
+      "difficulty": "Débutant",
+      "description": "Envoie une requête POST /api/login à vuln-api avec les identifiants admin et récupère le token.",
+      "hint": "curl -X POST http://vuln-api:5000/api/login -H 'Content-Type: application/json' -d '{\"login\":\"admin\",\"password\":\"admin123\"}'",
+      "validation": "La réponse JSON contient un champ \"token\"."
+    },
+    {
+      "id": "chall-04-idor-user2",
+      "title": "IDOR : lire l’utilisateur 2 (vuln-api)",
+      "category": "api",
+      "difficulty": "Facile",
+      "description": "Sans te connecter, accède à /api/users/2 et récupère les infos du second utilisateur (IDOR = accès non autorisé).",
+      "hint": "GET http://vuln-api:5000/api/users/2",
+      "validation": "Tu vois login et role de l’utilisateur 2."
+    },
+    {
+      "id": "chall-05-sqli-products",
+      "title": "SQLi : extraire des produits (vuln-api)",
+      "category": "api",
+      "difficulty": "Facile",
+      "description": "Le paramètre q de /api/products est vulnérable à l’injection SQL. Trouve un payload pour lister tous les produits ou provoquer une erreur SQL.",
+      "hint": "Ex: q=1' OR '1'='1 ou q=1 UNION SELECT 1,2,3--",
+      "validation": "Tu obtiens des données supplémentaires ou un message d’erreur SQL."
+    },
+    {
+      "id": "chall-06-dvwa-sqli",
+      "title": "DVWA : SQL Injection (Low)",
+      "category": "web",
+      "difficulty": "Débutant",
+      "description": "Sur DVWA, module SQL Injection niveau Low, extraire plus d’un utilisateur avec une injection (ex: 1' OR '1'='1).",
+      "hint": "Créer la base puis SQL Injection > Low.",
+      "validation": "Plusieurs lignes utilisateur s’affichent."
+    },
+    {
+      "id": "chall-07-nmap-ports",
+      "title": "Découverte : lister les ports de vuln-network",
+      "category": "network",
+      "difficulty": "Débutant",
+      "description": "Depuis l’attaquant, lance nmap sur vuln-network et identifie les ports 22 et 6379 ouverts.",
+      "hint": "nmap -sV vuln-network",
+      "validation": "Tu notes 22/tcp (SSH) et 6379/tcp (Redis)."
+    },
+    {
+      "id": "chall-08-sniff-traffic",
+      "title": "Sniffing : capturer du trafic (tcpdump)",
+      "category": "network",
+      "difficulty": "Facile",
+      "description": "Depuis l’attaquant, lance tcpdump pendant que tu fais un curl vers vuln-api. Arrête la capture et vérifie que tu vois des paquets.",
+      "hint": "tcpdump -i any -w /workspace/cap.pcap host vuln-api &  puis curl http://vuln-api:5000/api/health",
+      "validation": "Un fichier cap.pcap contient des paquets."
+    },
+    {
+      "id": "chall-09-hydra-ssh",
+      "title": "Brute force : Hydra sur SSH (vuln-network)",
+      "category": "red",
+      "difficulty": "Moyen",
+      "description": "Utilise Hydra pour tester une wordlist sur le SSH de vuln-network (utilisateur root). En lab la wordlist peut être courte (ex: 3–5 mots).",
+      "hint": "hydra -l root -P wordlist.txt ssh://vuln-network -t 4",
+      "validation": "Hydra trouve le mot de passe (labpassword)."
+    },
+    {
+      "id": "chall-10-scapy-ping",
+      "title": "Scapy : envoyer un ICMP (optionnel)",
+      "category": "network",
+      "difficulty": "Facile",
+      "description": "Depuis l’attaquant, en Python avec Scapy, envoie un paquet ICMP (ping) vers vuln-network et affiche la réponse.",
+      "hint": "from scapy.all import *; sr1(IP(dst=\"vuln-network\")/ICMP())",
+      "validation": "Tu reçois une réponse ICMP (type 0)."
+    }
+  ]
+}

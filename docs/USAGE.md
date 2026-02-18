@@ -2,6 +2,11 @@
 
 Tout le lab est accessible via **un seul port** (par défaut 8080). Tu peux tout faire depuis l’**interface web** ou en **ligne de commande**.
 
+**À retenir :**
+- **Interface web du lab** : **http://127.0.0.1:8080** (après `make dev` ou `make up`). C’est le seul accès dont tu as besoin dans le navigateur.
+- **Terminal** : **http://127.0.0.1:8080/terminal/** (même port) ou `make shell` en CLI.
+- Le **port 5000** n’est pas l’interface web : c’est l’API vuln (interne) ; on y accède via **http://api.lab:8080** depuis ta machine.
+
 ---
 
 ## 1. Préparer la machine (une fois)
@@ -63,14 +68,13 @@ Cela ouvre **http://lab.local:PORT** dans ton navigateur (sous Linux/macOS/Windo
 
 Ouvre dans ton navigateur (en utilisant le **même port** que dans `.env` ou 8080) :
 
-- **Plateforme (accueil, scénarios, rooms)** :  
-  **http://lab.local:8080**  
-  (ou http://localhost:8080)
+- **Interface web (accueil, scénarios, rooms)** :  
+  **http://127.0.0.1:8080** ou **http://localhost:8080** (ou http://lab.local:8080 si /etc/hosts est configuré).
 
 Depuis la plateforme tu as :
 
 - **Accueil** : scénarios guidés, rooms, section « Mon poste ».
-- **Terminal lab** : ouvre **http://localhost:7681** pour lancer le terminal dans le navigateur (ttyd, pas besoin de /etc/hosts). Ou via la plateforme : lien « Terminal lab » → terminal.lab:8080 si tu as configuré /etc/hosts.
+- **Terminal lab** : lien « Terminal web » sur la plateforme → **http://127.0.0.1:8080/terminal/** (même port 8080). En CLI : `make shell`.
 - **Cibles** : en ouvrant une room (DVWA, Juice Shop, vuln-api, etc.), les liens « machines » pointent vers :
   - **http://dvwa.lab:8080** (DVWA)
   - **http://juice.lab:8080** (Juice Shop)

@@ -14,6 +14,43 @@ Tous les logs métier utilisent une structure commune pour faciliter l’analyse
 
 ---
 
+## Messages attendus (à ignorer)
+
+Lors de `make logs` ou `docker compose logs`, certains messages **ne sont pas des erreurs bloquantes** et peuvent être ignorés.
+
+### lab-desktop (bureau noVNC / XFCE)
+
+Le bureau graphique tourne dans un conteneur sans D-Bus système ni matériel (batterie, backlight, son). Les messages suivants sont **normaux** et n’empêchent pas l’usage de noVNC (http://127.0.0.1:8080/desktop/) :
+
+- **D-Bus** : `Failed to connect to socket /var/run/dbus/system_bus_socket`, `Could not connect: No such file or directory` — pas de bus système en conteneur.
+- **PulseAudio** : `Failed to connect to system bus`, `Failed to open cookie file` — le son n’est pas disponible dans ce setup.
+- **upower / libupower-glib** : `Couldn't connect to proxy`, `up_client_get_on_battery`, `up_device_get_object_path` — pas de gestion batterie en conteneur.
+- **xfce4-power-manager** : `Unable to get system bus connection`, `No outputs have backlight property` — idem.
+- **pm-is-supported** : `Failed to execute child process "/usr/bin/pm-is-supported"` — script absent, sans impact.
+- **Gtk / xfce4-panel** : `Negative content width`, `Plugin power-manager-plugin-9 has been automatically restarted`, `Plugin "(null)-7" was not found` — plugins panel (son, batterie) non disponibles, le bureau reste utilisable.
+
+Aucune action requise : le bureau XFCE et noVNC fonctionnent malgré ces avertissements. Pour voir moins de bruit dans les logs, tu peux cibler les services : `docker compose logs -f gateway platform attaquant vuln-api` (sans desktop).
+
+**Dans la console du navigateur** (F12) sur la page noVNC (http://127.0.0.1:8080/desktop/) : les messages « AudioContext was not allowed to start », « apple-mobile-web-app-capable is deprecated », « resource was preloaded but not used » et les 404 sur les icônes sont **sans impact** ; la connexion VNC utilise le port **56780** (exposé par le conteneur desktop).
+
+### lab-gateway (nginx)
+
+- `10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf is not a file or does not exist` — la gateway utilise une config nginx personnalisée (pas le fichier par défaut). Message informatif, à ignorer.
+- Les lignes du type `GET /desktop/ HTTP/1.1" 200` ou `GET /favicon.ico` sont des **logs d’accès** normaux (requêtes HTTP), pas des erreurs.
+
+### lab-platform (nginx)
+
+- `[notice] start worker process` — démarrage normal des workers nginx. Aucune erreur.
+
+### lab-dvwa-db (MariaDB)
+
+- `[Warn] /sys/fs/cgroup///memory.pressure not writable` — fréquent en conteneur, MariaDB fonctionne sans.
+- `io_uring_queue_init() failed ... falling back to libaio` — selon le noyau, MariaDB utilise libaio à la place ; pas d’impact pour le lab.
+- `[Warning] You need to use --log-bin to make --expire-logs-days...` — option binlog non utilisée en lab, sans conséquence.
+- Les `[Note]` (InnoDB, Server socket created, ready for connections) sont **informatifs** et indiquent que la base est prête.
+
+---
+
 ## Format commun (détaillé)
 
 Chaque entrée de log contient :

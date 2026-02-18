@@ -5,7 +5,7 @@ function byCategory(categories, categoryId) {
   return (categories || []).find(c => c.id === categoryId) || {};
 }
 
-export default function Dashboard({ data, scenarios, config, searchQuery, filterCategory, storage, onNavigate, onOpenScenario, onOpenRoom, onOpenTerminalInNewTab, onOpenTerminalInPanel }) {
+export default function Dashboard({ data, scenarios, config, targets, challenges, searchQuery, filterCategory, storage, onNavigate, onOpenScenario, onOpenRoom, onOpenTerminalInNewTab, onOpenTerminalInPanel }) {
   const categories = data?.categories || [];
   const rooms = data?.rooms || [];
   const termUrl = getTerminalUrl(config);
@@ -60,11 +60,11 @@ export default function Dashboard({ data, scenarios, config, searchQuery, filter
           </article>
           <article class="card desktop-card">
             <h3 class="card-title">🖥️ Interface bureau (noVNC / XFCE)</h3>
-            <p class="card-category">Bureau graphique type Kali (XFCE) dans le navigateur. À activer avec <code>make desktop</code>.</p>
+            <p class="card-category">Bureau graphique XFCE dans le navigateur (optionnel). Pour les outils et le terminal, utilise plutôt le <strong>Terminal web</strong> (Kali) ci-dessus.</p>
             <div class="terminal-card-actions">
               <a href={getDesktopUrl()} target="_blank" rel="noopener" class="btn btn-primary">Ouvrir le bureau</a>
             </div>
-            <p class="terminal-help">URL : <code>{getDesktopUrl()}</code>. Mot de passe VNC : <code>alpine</code>. Si 502 : lancer <code>make desktop</code>.</p>
+            <p class="terminal-help">Mot de passe VNC : <code>labcyber</code>. Que faire : ouvrir un terminal dans le bureau (Applications → Terminal), ou utiliser le <strong>Terminal web</strong> du lab pour nmap, hydra, etc. Si 502 : attendre le démarrage ou <code>docker compose logs desktop</code>.</p>
           </article>
         </div>
       </section>
@@ -103,11 +103,35 @@ export default function Dashboard({ data, scenarios, config, searchQuery, filter
         </div>
       </section>
       <section class="dashboard-section">
+        <h3 class="section-title">Cibles du lab (targets)</h3>
+        <p class="section-desc">Machines et services à attaquer : vuln-api, vuln-network, DVWA, Juice Shop, bWAPP, bureau. Détail dans la doc « Cibles du lab ».</p>
+        <div class="dashboard-grid" id="dashboard-targets-cards">
+          {Array.isArray(targets) && targets.length > 0 ? targets.slice(0, 7).map(t => (
+            <article key={t.id} class="card target-card">
+              <h3 class="card-title">{escapeHtml(t.name)}</h3>
+              <p class="card-category">{escapeHtml(t.type || '')} – {escapeHtml((t.description || '').slice(0, 60))}{(t.description || '').length > 60 ? '…' : ''}</p>
+            </article>
+          )) : <p class="section-desc">Chargement des cibles…</p>}
+        </div>
+      </section>
+      <section class="dashboard-section">
+        <h3 class="section-title">Challenges</h3>
+        <p class="section-desc">Défis style CTF / TryHackMe à valider (Redis, SSH, API, SQLi, sniffing). Voir la doc « Challenges ».</p>
+        <div class="dashboard-grid" id="dashboard-challenges-cards">
+          {Array.isArray(challenges) && challenges.length > 0 ? challenges.slice(0, 6).map(c => (
+            <article key={c.id} class="card challenge-card">
+              <h3 class="card-title">{escapeHtml(c.title)}</h3>
+              <p class="card-category"><span class="difficulty-badge easy">{escapeHtml(c.difficulty || '')}</span> {escapeHtml((c.description || '').slice(0, 55))}{(c.description || '').length > 55 ? '…' : ''}</p>
+            </article>
+          )) : <p class="section-desc">Chargement des challenges…</p>}
+        </div>
+      </section>
+      <section class="dashboard-section">
         <h3 class="section-title">Documentation et tests</h3>
         <div class="dashboard-grid" id="dashboard-docs-cards">
           <article class="card docs-card" onClick={() => onNavigate('docs')} style="cursor:pointer">
             <h3 class="card-title">Documentation du projet</h3>
-            <p class="card-category">Index, usage, tests, Web, Réseau, API, Red/Blue, Forensique, OSINT, Stégano, Crypto, Phishing</p>
+            <p class="card-category">Index, usage, Cibles, Challenges, Web, Réseau, API, Sniffing/Spoofing, Topologie, Red/Blue, Forensique, OSINT, Stégano, Crypto, Phishing</p>
           </article>
         </div>
       </section>

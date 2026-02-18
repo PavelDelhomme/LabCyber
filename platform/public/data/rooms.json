@@ -1,0 +1,274 @@
+{
+  "categorySources": {
+    "web": [
+      { "label": "OWASP Top 10", "url": "https://owasp.org/www-project-top-ten/" },
+      { "label": "OWASP Testing Guide", "url": "https://owasp.org/www-project-web-security-testing-guide/" },
+      { "label": "PortSwigger Web Security Academy", "url": "https://portswigger.net/web-security" }
+    ],
+    "network": [
+      { "label": "Nmap reference", "url": "https://nmap.org/book/man.html" },
+      { "label": "Redis security", "url": "https://redis.io/docs/management/security/" }
+    ],
+    "api": [
+      { "label": "OWASP API Security Top 10", "url": "https://owasp.org/API-Security/" },
+      { "label": "REST Security", "url": "https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html" }
+    ],
+    "red": [
+      { "label": "PTES (Penetration Testing Execution Standard)", "url": "http://www.pentest-standard.org/" },
+      { "label": "OSCP / Pentesting guides", "url": "https://www.offensive-security.com/documentation/" }
+    ],
+    "blue": [
+      { "label": "Suricata documentation", "url": "https://suricata.io/documentation/" },
+      { "label": "SIEM basics", "url": "https://www.splunk.com/en_us/data-insider/what-is-a-siem.html" }
+    ],
+    "forensics": [
+      { "label": "Wireshark User Guide", "url": "https://www.wireshark.org/docs/wsug_html/" },
+      { "label": "tshark man page", "url": "https://www.wireshark.org/docs/man-pages/tshark.html" },
+      { "label": "SANS Digital Forensics", "url": "https://www.sans.org/cyber-security-courses/digital-forensics-incident-response/" }
+    ],
+    "osint": [
+      { "label": "OSINT Framework", "url": "https://osintframework.com/" },
+      { "label": "theHarvester", "url": "https://github.com/laramies/theHarvester" }
+    ],
+    "stego": [
+      { "label": "Steghide", "url": "https://steghide.sourceforge.io/" },
+      { "label": "CTF steganography", "url": "https://0xrick.com/categories/#steganography" }
+    ],
+    "crypto": [
+      { "label": "OpenSSL enc", "url": "https://www.openssl.org/docs/man1.1.1/man1/enc.html" },
+      { "label": "Base64 & hashes", "url": "https://ctf101.org/cryptography/what-is-encoding/" }
+    ],
+    "phishing": [
+      { "label": "ANSSI – Hameçonnage", "url": "https://www.ssi.gouv.fr/entreprise/boite-outils/fiches-pratiques/le-hameconnage-phishing/" },
+      { "label": "Cybermalveillance.gouv.fr", "url": "https://www.cybermalveillance.gouv.fr/" },
+      { "label": "Signal Spam", "url": "https://www.signal-spam.fr/" }
+    ]
+  },
+  "categories": [
+    { "id": "web", "name": "Web", "icon": "🌐", "color": "#4ade80" },
+    { "id": "network", "name": "Réseau", "icon": "🔌", "color": "#60a5fa" },
+    { "id": "api", "name": "Applications / API", "icon": "⚙️", "color": "#a78bfa" },
+    { "id": "red", "name": "Red Team", "icon": "🔴", "color": "#f87171" },
+    { "id": "blue", "name": "Blue Team", "icon": "🔵", "color": "#38bdf8" },
+    { "id": "forensics", "name": "Forensique", "icon": "🔍", "color": "#fbbf24" },
+    { "id": "osint", "name": "OSINT", "icon": "📡", "color": "#34d399" },
+    { "id": "stego", "name": "Stéganographie", "icon": "🖼️", "color": "#c084fc" },
+    { "id": "crypto", "name": "Cryptographie", "icon": "🔐", "color": "#fb923c" },
+    { "id": "phishing", "name": "Phishing / Spam / Social Engineering", "icon": "📧", "color": "#f472b6" }
+  ],
+  "rooms": [
+    {
+      "id": "dvwa-web",
+      "category": "web",
+      "title": "DVWA – Vulnérabilités web",
+      "difficulty": "Débutant",
+      "description": "Damn Vulnerable Web Application : injection SQL, XSS, CSRF, upload de fichiers, etc. Parfait pour apprendre l’OWASP Top 10.",
+      "objectives": ["Comprendre l’injection SQL", "Tester XSS réfléchi et stocké", "Exploiter un upload de fichier", "Reproduire une attaque CSRF"],
+      "machines": [
+        { "name": "DVWA", "urlKey": "dvwa", "credentials": "admin / password" }
+      ],
+      "tasks": [
+        { "title": "Créer la base de données", "content": "Sur la page d’accueil DVWA, clique sur « Create / Reset Database » en bas de page.", "tip": "Sans ça, les modules ne fonctionneront pas." },
+        { "title": "SQL Injection (Low)", "content": "Va dans « SQL Injection », niveau Low. Modifie le paramètre id dans l’URL pour injecter du SQL (ex: 1' OR '1'='1).", "tip": "Utilise sqlmap avec --cookie pour automatiser : repère d’abord le cookie de session dans ton navigateur." },
+        { "title": "XSS réfléchi", "content": "Dans « XSS (Reflected) », entre un script dans le champ (ex: <script>alert(1)</script>) et observe le résultat.", "tip": "En situation réelle, l’attaquant envoie un lien contenant le payload à la victime." },
+        { "title": "File Upload", "content": "Dans « File Upload », uploade un fichier PHP (webshell) ou contourne la validation (double extension, type MIME).", "tip": "En Low, la validation est minimale. Passe en Medium/High pour des bypass plus avancés." }
+      ]
+    },
+    {
+      "id": "juice-shop",
+      "category": "web",
+      "title": "OWASP Juice Shop",
+      "difficulty": "Intermédiaire",
+      "description": "Application moderne volontairement vulnérable. Suis les défis du scoreboard (icône sur la page) pour pratiquer XSS, auth, API, etc.",
+      "objectives": ["Résoudre les défis du scoreboard", "Tester l’API et les vulnérabilités modernes"],
+      "machines": [
+        { "name": "Juice Shop", "urlKey": "juice" }
+      ],
+      "tasks": [
+        { "title": "Ouvrir le scoreboard", "content": "Clique sur l’icône du scoreboard (tableau des défis) et choisis un défi à résoudre.", "tip": "Commence par les plus faciles (étoiles)." },
+        { "title": "XSS et auth", "content": "Plusieurs défis concernent le vol de token, la connexion admin, ou l’injection de script.", "tip": "Regarde les requêtes dans l’onglet Réseau (F12) pour comprendre les appels API." }
+      ]
+    },
+    {
+      "id": "vuln-network",
+      "category": "network",
+      "title": "Pentest réseau – vuln-network",
+      "difficulty": "Débutant",
+      "description": "Une machine avec SSH (mot de passe faible) et Redis (sans authentification). Objectif : découverte, exploitation, accès.",
+      "objectives": ["Scanner les ports et services", "Exploiter Redis non sécurisé", "Se connecter en SSH (credentials faibles ou brute force)"],
+      "machines": [
+        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Ou en CLI : make shell" },
+        { "name": "vuln-network (SSH)", "url": "#", "note": "Depuis l'attaquant : ssh root@vuln-network — mot de passe : labpassword" },
+        { "name": "Redis", "url": "#", "note": "redis-cli -h vuln-network (depuis l’attaquant)" }
+      ],
+      "tasks": [
+        { "title": "Découverte", "content": "Depuis le conteneur attaquant : nmap -sV vuln-network. Note les ports ouverts (22, 6379).", "tip": "nmap -sC ajoute des scripts de détection." },
+        { "title": "Redis sans auth", "content": "Depuis l’attaquant : redis-cli -h vuln-network. Tape INFO puis CONFIG GET dir pour voir la config.", "tip": "Redis sans mot de passe permet parfois d’écrire des clés (ex: clé SSH) pour escalade." },
+        { "title": "SSH", "content": "Connecte-toi en SSH : ssh root@vuln-network (depuis l’attaquant) ou ssh root@localhost -p 4222 (depuis ta machine). Mot de passe : labpassword.", "tip": "Pour t’entraîner au brute force : hydra -l root -P wordlist.txt ssh://vuln-network." }
+      ]
+    },
+    {
+      "id": "vuln-api",
+      "category": "api",
+      "title": "API vulnérable – vuln-api",
+      "difficulty": "Débutant",
+      "description": "API REST avec SQLi, IDOR et authentification faible. Idéal pour OWASP API Security.",
+      "objectives": ["Tester l’authentification (login)", "Exploiter un IDOR sur /api/users/<id>", "Injection SQL sur /api/products?q="],
+      "machines": [
+        { "name": "vuln-api", "urlKey": "api", "credentials": "admin / admin123 ou user / user123" }
+      ],
+      "tasks": [
+        { "title": "Login", "content": "POST /api/login avec {\"login\":\"admin\",\"password\":\"admin123\"}. Tu reçois un « token » (factice).", "tip": "curl -X POST http://vuln-api:5000/api/login -H 'Content-Type: application/json' -d '{\"login\":\"admin\",\"password\":\"admin123\"}'" },
+        { "title": "IDOR", "content": "Appelle GET /api/users/1 et GET /api/users/2. L’API ne vérifie pas que tu es autorisé à voir l’utilisateur demandé.", "tip": "Change l’id dans l’URL pour accéder à d’autres comptes." },
+        { "title": "SQLi", "content": "GET /api/products?q= avec par ex. q=' OR '1'='1 pour extraire tous les produits. Utilise sqlmap pour automatiser.", "tip": "sqlmap -u 'http://vuln-api:5000/api/products?q=1' --batch" }
+      ]
+    },
+    {
+      "id": "red-team-scenario",
+      "category": "red",
+      "title": "Scénario Red Team (solo)",
+      "difficulty": "Intermédiaire",
+      "description": "Mène un scénario d’attaque complet : recon → exploitation → accès. Utilise toutes les cibles du lab et rédige un mini-rapport.",
+      "objectives": ["Reconnaissance (nmap, nikto sur les cibles)", "Au moins un accès (web, SSH ou Redis)", "Rédiger une note avec preuves"],
+      "machines": [
+        { "name": "Toutes les cibles", "url": "#", "note": "Utiliser les cartes par room : DVWA, Juice, bWAPP, api (même port, hostnames dvwa.lab, juice.lab, etc.)" }
+      ],
+      "tasks": [
+        { "title": "Cartographie", "content": "Depuis l’attaquant, scanne toutes les cibles (dvwa, juice-shop, bwapp, vuln-api, vuln-network) et note les services.", "tip": "nmap -sV pour chaque hostname." },
+        { "title": "Exploitation", "content": "Choisis au moins une cible et obtiens un accès ou des données (ex: SQLi sur DVWA, SSH sur vuln-network).", "tip": "Documente chaque commande et le résultat." },
+        { "title": "Rapport", "content": "Rédige un court rapport : objectif, méthodo, vulnérabilités trouvées, preuves (screenshot ou output).", "tip": "Structure : Résumé → Méthode → Vulns → Recommandations." }
+      ]
+    },
+    {
+      "id": "blue-team-suricata",
+      "category": "blue",
+      "title": "Blue Team – Suricata et analyse de trafic",
+      "difficulty": "Intermédiaire",
+      "description": "Utilise Suricata pour analyser des captures de trafic (pcap). Démarrer le lab avec le profil blue.",
+      "objectives": ["Lancer le profil Blue (Suricata)", "Capturer du trafic pendant des scans", "Analyser les alertes Suricata"],
+      "machines": [
+        { "name": "Suricata", "url": "#", "note": "docker compose --profile blue up -d puis docker compose exec blue-suricata sh" }
+      ],
+      "tasks": [
+        { "title": "Démarrer Suricata", "content": "docker compose --profile blue up -d. Puis docker compose exec blue-suricata sh. Tu peux lancer sur un pcap : suricata -r /workspace/capture.pcap -l /var/log/suricata.", "tip": "Les pcaps peuvent être copiés dans le volume suricata-pcaps." },
+        { "title": "Capturer du trafic", "content": "Pendant que tu lances des scans (nmap, nikto) depuis l’attaquant, capture le trafic sur la machine hôte (tcpdump -i docker0 -w capture.pcap).", "tip": "Copie le fichier dans le volume pour l’analyser avec Suricata." },
+        { "title": "Lire les alertes", "content": "Après analyse, consulte /var/log/suricata/eve.json pour les événements et alertes.", "tip": "jq peut aider à parser le JSON." }
+      ]
+    },
+    {
+      "id": "forensics-pcap",
+      "category": "forensics",
+      "title": "Forensique – Analyse de pcap",
+      "difficulty": "Débutant",
+      "description": "Capture et analyse du trafic réseau avec tshark/tcpdump. Identifier des requêtes HTTP, des scans, etc.",
+      "objectives": ["Capturer du trafic avec tcpdump", "Filtrer et analyser avec tshark", "Rédiger une courte fiche d’incident"],
+      "machines": [
+        { "name": "Conteneur attaquant", "url": "#", "note": "docker compose exec attaquant bash — tshark, tcpdump disponibles" }
+      ],
+      "tasks": [
+        { "title": "Capture", "content": "Depuis l’attaquant : tcpdump -i eth0 -w /workspace/capture.pcap. Dans un autre terminal, lance des requêtes (curl, nmap) puis arrête la capture.", "tip": "Limite le temps (tcpdump -G 60 -W 1 -i eth0 -w cap.pcap) ou Ctrl+C." },
+        { "title": "Analyse tshark", "content": "tshark -r /workspace/capture.pcap -Y 'http' -T fields -e http.request.uri. Identifie les URLs et les paramètres suspects.", "tip": "tshark -r file.pcap -Y 'tcp.flags.syn==1' pour les connexions TCP." }
+      ]
+    },
+    {
+      "id": "osint-recon",
+      "category": "osint",
+      "title": "OSINT – Reconnaissance",
+      "difficulty": "Débutant",
+      "description": "Utilise theHarvester et les outils de recon sur un domaine que tu contrôles (ou sur les hostnames du lab en interne).",
+      "objectives": ["Utiliser theHarvester (domaine autorisé)", "Faire une recon « interne » du lab (nmap, énumération)"],
+      "machines": [
+        { "name": "Conteneur attaquant", "url": "#", "note": "theHarvester, dig, curl" }
+      ],
+      "tasks": [
+        { "title": "theHarvester", "content": "Sur un domaine dont tu as le droit : theHarvester -d ton-domaine.fr -b bing,google. Analyse les emails et sous-domaines.", "tip": "Ne cible que des domaines autorisés." },
+        { "title": "Recon interne", "content": "Depuis l’attaquant, considère les hostnames du lab (dvwa, juice-shop, vuln-network) comme des « cibles ». Fais un nmap et une énumération comme en pentest.", "tip": "Documente la cartographie comme un rapport de recon." }
+      ]
+    },
+    {
+      "id": "stego-intro",
+      "category": "stego",
+      "title": "Stéganographie – Introduction",
+      "difficulty": "Débutant",
+      "description": "Apprends à détecter et extraire des données cachées dans des images. Télécharge les défis ci-dessous.",
+      "objectives": ["Utiliser file, exiftool, binwalk", "Extraire un fichier caché avec steghide", "Trouver un flag dans les métadonnées ou le contenu"],
+      "challengeDownloads": [
+        { "name": "Image avec données cachées (steghide)", "url": "/challenges/stego/image_stego.jpg", "password": "labstego" }
+      ],
+      "machines": [
+        { "name": "Tous les défis", "url": "/challenges/stego/", "note": "Liste des fichiers stégano" },
+        { "name": "Terminal attaquant", "url": "#", "note": "docker compose exec attaquant bash — steghide, exiftool, binwalk" }
+      ],
+      "tasks": [
+        { "title": "Identifier le fichier", "content": "file image.jpg et exiftool image.jpg. Parfois le flag ou un indice est dans les métadonnées.", "tip": "Les commentaires EXIF peuvent contenir un mot de passe." },
+        { "title": "Binwalk", "content": "binwalk image.jpg pour détecter des fichiers embarqués. binwalk -e image.jpg pour les extraire dans un dossier.", "tip": "Un « .jpg » peut cacher une archive ZIP." },
+        { "title": "Steghide", "content": "steghide info image.jpg pour voir si des données sont cachées. steghide extract -sf image.jpg puis entre le mot de passe si demandé.", "tip": "Mot de passe courant pour les défis du lab : labstego" }
+      ]
+    },
+    {
+      "id": "crypto-intro",
+      "category": "crypto",
+      "title": "Cryptographie – Introduction",
+      "difficulty": "Débutant",
+      "description": "Base64, chiffrement symétrique (OpenSSL), hachage. Télécharge les défis ci-dessous et déchiffre-les.",
+      "objectives": ["Décoder du Base64", "Déchiffrer un fichier OpenSSL (mot de passe à trouver)", "Identifier et casser un hash avec John"],
+      "challengeDownloads": [
+        { "name": "Flag en Base64", "url": "/challenges/crypto/flag_b64.txt", "password": null },
+        { "name": "Fichier chiffré OpenSSL", "url": "/challenges/crypto/flag.enc", "password": "labcrypto" }
+      ],
+      "machines": [
+        { "name": "Tous les défis", "url": "/challenges/crypto/", "note": "Liste des fichiers crypto" },
+        { "name": "Terminal attaquant", "url": "#", "note": "openssl, gpg, base64, john" }
+      ],
+      "tasks": [
+        { "title": "Base64", "content": "echo 'TGFCX0NSWVBUX0ZMQUdfMQ==' | base64 -d pour obtenir le flag.", "tip": "Le flag du défi 1 est encodé en Base64." },
+        { "title": "OpenSSL", "content": "Un fichier .enc est chiffré avec openssl enc -aes-256-cbc. openssl enc -d -aes-256-cbc -in flag.enc -out flag.txt. Mot de passe courant : labcrypto", "tip": "Si le mot de passe est inconnu, utilise une wordlist avec un script ou John (format spécifique)." },
+        { "title": "Hash", "content": "Pour un hash MD5/SHA : identifie le type puis john ou des tables rainbow. Ex: echo -n 'password' | openssl md5 pour vérifier.", "tip": "John : prépare un fichier avec un hash par ligne (format user:hash ou juste hash selon le type)." }
+      ]
+    },
+    {
+      "id": "phishing-reconnaitre",
+      "category": "phishing",
+      "title": "Phishing – Reconnaître et analyser",
+      "difficulty": "Débutant",
+      "description": "Apprends à identifier une tentative de phishing (email, page web) et les bons réflexes pour ne pas tomber dans le piège.",
+      "objectives": ["Reconnaître les signaux d’alerte dans un email", "Vérifier une URL et une page de connexion", "Comprendre ce qu’est une page type phishing (démo)"],
+      "machines": [
+        { "name": "Exemple de page type phishing (démo)", "url": "/demo-phishing.html", "note": "Page pédagogique sur cette plateforme – à ouvrir pour voir à quoi ressemble une fausse page de connexion" }
+      ],
+      "tasks": [
+        { "title": "Ouvrir la page de démo", "content": "Clique sur « Exemple de page type phishing » ci-dessus. Observe : la bannière rouge (avertissement), l’URL dans la barre d’adresse (localhost), le formulaire qui ressemble à une vraie connexion.", "tip": "En situation réelle, l’URL serait un faux domaine (ex: banque-securise.xyz) et il n’y aurait pas de bannière – d’où l’importance de toujours vérifier l’URL." },
+        { "title": "Indices dans un email de phishing", "content": "En général : expéditeur qui imite un nom connu, lien dont l’adresse réelle (au survol) ne correspond pas au vrai site, urgence (« Votre compte sera bloqué »), demande de clic ou de mot de passe.", "tip": "Ne jamais cliquer sur un lien de connexion reçu par email : aller sur le site en tapant l’URL ou via un favori." },
+        { "title": "Vérifier une page de connexion", "content": "Toujours contrôler : l’URL exacte (domaine officiel), la présence de HTTPS et du cadenas, éventuellement le certificat (clic sur le cadenas).", "tip": "Les clones de pages (phishing) sont hébergés sur d’autres domaines – une lecture attentive de la barre d’adresse suffit souvent." }
+      ]
+    },
+    {
+      "id": "spam-arnaques",
+      "category": "phishing",
+      "title": "Spam et arnaques – Comprendre et se défendre",
+      "difficulty": "Débutant",
+      "description": "Spam, arnaques par email/SMS, fausses promesses et bonnes pratiques pour s’en protéger et signaler.",
+      "objectives": ["Distinguer spam, phishing et arnaques", "Connaître les bons réflexes (ne pas cliquer, signaler)", "Savoir où et comment signaler"],
+      "machines": [],
+      "tasks": [
+        { "title": "Types de messages non sollicités", "content": "Le spam peut être : publicitaire, malveillant (phishing, pièce jointe infectée), arnaque (gain fictif, faux support, urgence fiscale, faux dirigeant). Objectif : ne pas ouvrir, ne pas cliquer, ne pas répondre.", "tip": "En entreprise, signaler à la DSI ou au SOC selon la procédure en vigueur." },
+        { "title": "Réflexes de base", "content": "Ne pas ouvrir les pièces jointes suspectes ; ne pas activer les macros dans un document reçu par email ; ne jamais donner de mot de passe ou code par email/téléphone ; en cas de doute, contacter l’organisme par un canal officiel (site connu, numéro du site officiel).", "tip": "Les arnaques jouent sur l’urgence et l’émotion – prendre du recul avant d’agir." },
+        { "title": "Signalement", "content": "En France : signal-spam.fr pour les emails, signaler aussi sur signal.gouv.fr et cybermalveillance.gouv.fr. En entreprise : suivre la procédure interne (ex: bouton « Signaler comme hameçonnage »).", "tip": "Le signalement aide à faire bloquer les campagnes et à protéger les autres." }
+      ]
+    },
+    {
+      "id": "social-engineering",
+      "category": "phishing",
+      "title": "Social Engineering – Principes et défense",
+      "difficulty": "Débutant",
+      "description": "Manipulation psychologique pour obtenir une action (cliquer, divulguer, ouvrir). Comprendre les techniques pour mieux s’en protéger.",
+      "objectives": ["Comprendre ce qu’est le social engineering", "Identifier les vecteurs (email, téléphone, physique)", "Appliquer les principes de défense"],
+      "machines": [],
+      "tasks": [
+        { "title": "Définition et objectifs", "content": "Le social engineering vise à obtenir une action (cliquer sur un lien, donner un mot de passe, ouvrir une porte) en exploitant la confiance, l’urgence, l’autorité ou la peur. L’attaquant n’a pas besoin de vulnérabilité technique si la personne « ouvre la porte ».", "tip": "La sensibilisation et la politique de vérification (identité par un canal indépendant) sont essentielles." },
+        { "title": "Vecteurs courants", "content": "Email (phishing), téléphone (vishing : faux support, faux patron), SMS (smishing), réseaux sociaux, présence physique (tailgating, badge volé). En télétravail : demandes par messagerie ou appel prétendant venir du support ou de la hiérarchie.", "tip": "Toujours vérifier l’identité par un moyen indépendant (rappeler sur le numéro officiel, contacter le support via le site officiel)." },
+        { "title": "Défense", "content": "Ne jamais divulguer de mot de passe ou code par email/téléphone ; ne pas faire confiance à un seul canal ; en cas de demande inhabituelle (virement, accès), valider par un autre canal connu ; formation et exercices de sensibilisation (simulations autorisées).", "tip": "En entreprise, les simulations de phishing doivent être autorisées et encadrées (RSSI, direction)." }
+      ]
+    }
+  ]
+}

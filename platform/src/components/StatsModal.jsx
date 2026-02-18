@@ -1,3 +1,5 @@
+const STATUS_LABELS = { not_started: 'Non commencé', in_progress: 'En cours', completed: 'Terminé', abandoned: 'Abandonné' };
+
 export default function StatsModal({ open, onClose, scenarios, storage }) {
   if (!open) return null;
 
@@ -7,6 +9,7 @@ export default function StatsModal({ open, onClose, scenarios, storage }) {
     s.tasks.forEach((_, i) => { if (storage.getTaskDone(s.id, i)) done++; });
     return { done, total: s.tasks.length };
   };
+  const getStatus = (s) => storage ? storage.getScenarioStatus(s.id) : 'not_started';
 
   return (
     <div class="modal" role="dialog" aria-modal="true" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -16,19 +19,21 @@ export default function StatsModal({ open, onClose, scenarios, storage }) {
           <button type="button" class="modal-close" onClick={onClose} aria-label="Fermer">×</button>
         </div>
         <div class="modal-body">
-          <h3>Avancement par scénario</h3>
+          <h3>Scénarios (statut et tâches)</h3>
           <div class="stats-scenarios">
             {(scenarios || []).map(s => {
               const { done, total } = getProgress(s);
+              const status = getStatus(s);
               return (
                 <div key={s.id} class="stat-row">
                   <span class="stats-title">{s.title}</span>
+                  <span class={`stats-status status-${status}`}>{STATUS_LABELS[status] || status}</span>
                   <span class="stats-progress">{done}/{total} tâches</span>
                 </div>
               );
             })}
           </div>
-          <p class="stats-hint">La progression est enregistrée localement (navigateur).</p>
+          <p class="stats-hint">La progression et le statut (démarrer / abandonner / terminé) sont enregistrés localement (navigateur).</p>
         </div>
       </div>
     </div>

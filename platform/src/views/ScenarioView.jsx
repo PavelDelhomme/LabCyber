@@ -1,26 +1,59 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { escapeHtml, getTerminalUrl } from '../lib/store';
 
 export default function ScenarioView({ scenarios, config, currentScenarioId, storage }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
   const [taskIndex, setTaskIndex] = useState(0);
 
+  const status = storage?.getScenarioStatus(scenario?.id) || 'not_started';
+  const tasks = scenario?.tasks || [];
+  const doneCount = tasks.filter((_, i) => storage?.getTaskDone(scenario?.id, i)).length;
+  const allDone = tasks.length > 0 && doneCount >= tasks.length;
+
+  useEffect(() => {
+    if (!scenario || !storage) return;
+    if (allDone && status !== 'completed') storage.setScenarioStatus(scenario.id, 'completed');
+  }, [scenario?.id, allDone, status, storage]);
+
   if (!scenario) {
     return <div class="view"><p class="section-desc">Choisis un scénario dans la barre latérale.</p></div>;
   }
 
-  const tasks = scenario.tasks || [];
   const task = tasks[taskIndex];
   const isDone = (i) => storage?.getTaskDone(scenario.id, i);
-  const setDone = (i, done) => storage?.setTaskDone(scenario.id, i, done);
+  const setDone = (i, done) => {
+    storage?.setTaskDone(scenario.id, i, done);
+    storage?.setLastScenario(scenario.id, taskIndex);
+  };
   const termUrl = getTerminalUrl(config);
+
+  const startScenario = () => storage?.setScenarioStatus(scenario.id, 'in_progress');
+  const abandonScenario = () => storage?.setScenarioStatus(scenario.id, 'abandoned');
+  const resetScenario = () => storage?.setScenarioStatus(scenario.id, 'not_started');
+
+  const statusLabel = { not_started: 'Non commencé', in_progress: 'En cours', completed: 'Terminé', abandoned: 'Abandonné' }[status] || status;
 
   return (
     <div id="view-scenario" class="view view-scenario-with-terminal active">
       <div class="scenario-content-column">
         <header class="page-header scenario-header">
-          <h2 id="scenario-title">{escapeHtml(scenario.title)}</h2>
+          <div class="scenario-header-row">
+            <h2 id="scenario-title">{escapeHtml(scenario.title)}</h2>
+            <span class={`scenario-status-badge status-${status}`}>{statusLabel}</span>
+          </div>
           <p class="room-description">{escapeHtml(scenario.description || '')}</p>
+          <p class="scenario-mode-hint">Tu peux faire les étapes depuis le navigateur (cibles, Proxy / Requêtes dans le menu) ou depuis le terminal à côté — pas besoin de te connecter au conteneur attaquant si tu préfères rester dans le navigateur.</p>
+          <div class="scenario-actions">
+            {status === 'not_started' && (
+              <button type="button" class="btn btn-primary" onClick={startScenario}>Démarrer le scénario</button>
+            )}
+            {(status === 'in_progress' || status === 'completed') && (
+              <button type="button" class="topbar-btn" onClick={abandonScenario}>J'abandonne ce scénario</button>
+            )}
+            {status === 'abandoned' && (
+              <button type="button" class="topbar-btn" onClick={resetScenario}>Reprendre (réinitialiser le statut)</button>
+            )}
+          </div>
         </header>
         <section class="room-section machines-section">
           <h3>Déployer / Accéder aux cibles</h3>
@@ -42,7 +75,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
                   type="checkbox"
                   class="task-checkbox"
                   checked={!!isDone(i)}
-                  onChange={e => { setDone(i, e.target.checked); storage?.setLastScenario(scenario.id, i); }}
+                  onChange={e => { setDone(i, e.target.checked); storage?.setLastScenario(scenario.id, i); storage?.setScenarioStatus(scenario.id, 'in_progress'); }}
                 />
                 <div class="task-content">
                   <div class="task-title">{escapeHtml(t.title)}</div>
