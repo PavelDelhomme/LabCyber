@@ -12,7 +12,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ### Terminal web attaquant (panneau et PiP)
 
-- **Commande `exit` → fermer l’onglet** : côté app c’est fait : écoute de `postMessage` `{ type: 'lab-cyber-terminal-exit' }` ; à la réception, fermeture de l’onglet courant (panneau ou PiP) ou du panneau s’il ne reste qu’un onglet. **À faire côté backend** : que ttyd (ou un proxy/wrapper) envoie ce message à la page parente quand la session shell se termine (ex. après `exit`), pour que l’onglet se ferme au lieu d’afficher « press enter to reconnect ». Sans ce message, la session se termine bien (exit ferme le shell) mais l’UI reste sur « press enter to reconnect ».
+- **Commande `exit` → fermer l’onglet** : **implémenté** (app + backend). Côté app : écoute de `postMessage` `{ type: 'lab-cyber-terminal-exit' }` et fermeture de l’onglet courant (panneau ou PiP). Côté backend : la gateway (nginx) injecte un script dans la page ttyd (`/terminal/`) qui enveloppe le `WebSocket` et envoie ce message à la page parente quand la connexion se ferme (ex. après `exit`). Voir `gateway/nginx.conf` (location `/terminal/`, `sub_filter`).
 - **Panneau – historique conservé** : le panneau n’est plus démonté à la fermeture ; il reste en DOM (masqué en CSS). Les iframes sont rendues une par onglet (pas seulement l’onglet actif), donc l’état et l’historique de chaque session sont conservés quand on ferme puis rouvre le panneau.
 - **PiP – plus de rechargement sur commandes** : l’URL de l’iframe PiP n’est plus mise à jour à chaque rendu ; elle est définie une seule fois au montage (`StableTerminalIframe`), ce qui évite le rechargement intempestif (ex. après `ls`) et la perte de l’affichage.
 - Bouton « + » nouvel onglet terminal : corriger si besoin (stopPropagation, persistance).
@@ -25,12 +25,12 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 **Limites connues (pas encore complètement opérationnel)**  
 1. **Connexions WebSocket qui se rouvrent** : en changeant d’onglet terminal, l’historique affiché dans le terminal (scrollback ttyd) peut se réinitialiser car le navigateur peut suspendre les iframes non visibles et couper le WebSocket. **Correction partielle** : les onglets inactifs utilisent `visibility: hidden` au lieu de `display: none` pour limiter la suspension des iframes. Pour un comportement totalement stable, le backend doit gérer `?session=<tabId>` (une session ttyd par onglet, éventuellement persistée).  
 2. **Rechargement de la page ou autre navigateur** : on **perd le contenu des sessions** (shell, scrollback). Seuls sont restaurés : la liste des onglets (noms, nombre), l’onglet actif, le journal de session (lignes enregistrées à la main). Les iframes sont rechargées donc nouvelles connexions ttyd = nouveaux shells. Pour ne pas perdre au rechargement, il faudrait une **persistance côté serveur** (ttyd ou gateway) : associer une session à un id, la restaurer au reload (hors scope actuel).  
-3. **Exit** : l’app ferme l’onglet uniquement si elle reçoit `postMessage({ type: 'lab-cyber-terminal-exit' })`. C’est à la gateway/ttyd d’envoyer ce message quand le shell se termine (après `exit`).
+3. **Exit** : implémenté (script injecté par la gateway ; à la fermeture du WebSocket, la page envoie `postMessage` et l’app ferme l’onglet).
 
 **Diagnostic panneau terminal (corrections déjà appliquées)**  
 1. **Historique perdu** : le body du panneau (et donc toutes les iframes) était rendu seulement quand `!terminalPanelMinimized`. Dès qu’on réduisait puis agrandissait, tout était démonté puis remonté → nouvelles iframes, plus d’historique. **Correction** : le body est toujours rendu ; en mode réduit il est caché en CSS ; les iframes restent en DOM.  
 2. **Clic sur un autre onglet** : chaque onglet a une URL avec `?session=<tabId>`. Onglets inactifs en `visibility: hidden` (au lieu de `display: none`) pour limiter la coupure WebSocket.  
-3. **Exit** : voir ci-dessus (postMessage côté backend).
+3. **Exit** : la gateway injecte un script dans la page ttyd qui envoie `postMessage({ type: 'lab-cyber-terminal-exit' })` à la fermeture du WebSocket ; l’app ferme alors l’onglet.
 
 ### Panneaux et lab
 
