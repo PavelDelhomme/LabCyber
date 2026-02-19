@@ -6,7 +6,7 @@ Ce fichier liste ce qui a été fait récemment, ce qui reste à faire et les po
 
 ## ✅ Réalisé
 
-- **Panneau terminal** : redimensionnable (poignée, largeur 320–900 px), réductible/agrandissable (bouton pour cacher le corps sans fermer), renommage des onglets (double-clic sur le nom, persistance tant que le panneau n’est pas fermé).
+- **Panneau terminal** : en place (iframe terminal, onglets, zone journal). Les fonctionnalités avancées (redimensionnement par poignée, réduction/agrandissement, persistance) ont été annoncées mais **ne sont pas toutes opérationnelles** → à revérifier en détail (voir section « À vérifier en détail »).
 - **Notes par lab** : zone de notes dans le panneau Lab (barre du haut), enregistrement par lab, persistance au rechargement.
 - **CVE** : recherche par ID et par mot-clé (NVD API 2.0) dans l’app, affichage des résultats et détails (résumé, score CVSS, lien NVD).
 - **Capture pcap** : colonnes type Wireshark (Time, Source, Destination, Protocol, Length), filtre par IP/protocole, détail par paquet (IPv4/IPv6, TCP/UDP).
@@ -33,13 +33,24 @@ Ce fichier liste ce qui a été fait récemment, ce qui reste à faire et les po
 
 - **Actions flottantes quand sidebar rétractée** : quand le panneau latéral est fermé, les boutons d’action (Lab, Ouvrir, Stats, Options, Journal) deviennent flottants à droite (bloc fixe avec bordure/ombre) pour rester visibles ; la barre de recherche et le filtre gardent un padding pour ne pas être recouverts.
 
+- **Options en page (plus de modale)** : la modale Options a été supprimée ; le bouton ⚙️ et l’entrée « Options » du menu ouvrent la **page** `#/options` (même contenu : PiP auto, export progression, réinitialisation, sources doc personnalisées). Plus de popup bloquante.
+
+- **Make clean sans perdre les données** : `make clean` arrête les conteneurs, reconstruit l’image plateforme (`--no-cache`) pour prendre le nouveau code, **sans supprimer les volumes** (données conservées). `make clean-all` supprime en plus les volumes.
+
 ---
 
-## 🚨 PRIORITÉ ABSOLUE (à résoudre demain – tout corriger avant le reste)
+## ⚠️ À vérifier en détail (annoncé comme fait mais non fonctionnel ou à confirmer)
 
-- **Bug modale Options** : la modale Options **s'affiche mais ne se ferme plus** (ni en cliquant sur ×, ni en cliquant en dehors). À corriger en priorité.
-- **Bug panneau terminal / capture** : le panneau **s'affiche maintenant** (progrès), mais il peut rester des cas où il ne s’ouvre pas au clic ou se ferme intempestivement. Vérifier et finaliser demain.
-- **À faire** : tout résoudre en priorité absolue avant de passer aux autres tâches.
+- **Panneau terminal** : vérifier et corriger si besoin : **redimensionnement** (poignée, largeur 320–900 px), **réduction/agrandissement** (bouton pour cacher le corps sans fermer), **renommage des onglets** (double-clic), **persistance** (état après rechargement). Ne pas considérer comme terminé tant que ces points ne sont pas validés.
+- **Panneau capture** : idem, vérifier ouverture, fermeture, persistance.
+- **Autres** : tout ce qui a été listé en « Réalisé » et qui touche à l’UI (panneaux, modales, menus) : à tester en conditions réelles et corriger les régressions.
+
+---
+
+## 🚨 PRIORITÉ ABSOLUE (résolu)
+
+- **Bug modale Options** : **corrigé** – la modale ne se rend plus quand open est false, elle se ferme correctement (× ou clic dehors).
+- **Panneau terminal / capture** : le panneau s'affiche au clic ; en cas de régression, vérifier OpenInPageDropdown et App.jsx.
 
 ---
 
@@ -64,18 +75,30 @@ Ce fichier liste ce qui a été fait récemment, ce qui reste à faire et les po
    - S’assurer que la liste des docs (data/docs.json) inclut tous les fichiers de `platform/docs/` (ex. CVE.md, UTILISER_LE_LAB.md, 15-LINUX-RESEAU.md) pour qu’ils soient visibles et ouverts dans l’app.
 
 6. **Panneau terminal / capture**  
-   - **Progrès** : le panneau **s'affiche maintenant** au clic (menu Ouvrir ou Lab dropdown). Vérifier s'il reste des cas non résolus – voir PRIORITÉ ABSOLUE.
-   - Si le panneau est fermé (croix), les onglets/sessions sont recréés au prochain ouvert ; les noms personnalisés ne sont pas persistés après fermeture du panneau (comportement actuel). À décider : persister les noms d’onglets même après fermeture.  
-   - **Session terminal** : au rechargement de la page, la session ttyd (shell) est perdue (comportement normal du navigateur). Pour ne pas perdre : éviter de recharger, ou ouvrir le terminal en onglet dédié et ne pas le fermer.
+   - **À revérifier** : redimensionnement (poignée), réduction/agrandissement, onglets, persistance – plusieurs de ces fonctionnalités ne fonctionnent pas correctement ; voir section « À vérifier en détail ». Le panneau s’affiche au clic (menu Ouvrir ou Lab dropdown).
+   - Si le panneau est fermé (croix), les onglets/sessions sont recréés au prochain ouvert ; les noms personnalisés ne sont pas persistés après fermeture du panneau. À décider : persister les noms d’onglets même après fermeture.  
+   - **Session terminal** : au rechargement de la page, la session ttyd (shell) est perdue (comportement normal du navigateur).
 
-6b. **Modale Options – bug non résolu**  
-   - **Problème actuel** : la modale Options **ne se ferme plus** (bouton × ou clic en dehors). Priorité absolue (voir section ci-dessus).
+6b. **Options**  
+   - **Résolu** : Options = page dédiée `#/options` (plus de modale). Accès par ⚙️ ou menu « Options ».
+
+6c. **Panneau scénario (barre en bas quand un scénario est actif)**  
+   - **À améliorer** : quand on active un scénario (ex. lab par défaut), le panneau affiche les tâches mais **pas l’avancement** (tâches faites / en cours / pas commencées). Design à revoir : actuellement mal adapté, « décalé » à droite, peu lisible. Améliorer : affichage de la progression, état des tâches, mise en page claire et cohérente (pas défaussé sur le côté).
 
 7. **vuln-network / vuln-api**  
    - Tous les cas de figure et scénarios d’apprentissage ne sont pas encore en place. Compléter les rooms, scénarios et doc pour couvrir l’usage de vuln-network (SSH, Redis) et vuln-api (endpoints, vulns) de A à Z.
 
-8. **Simulateur réseau**  
-   - À améliorer (cohérence, persistance, intégration avec le lab actif). Tout doit rester en l’état dans le lab actif sauf option explicite pour nettoyer.
+8. **Simulateur réseau / lab de simulation de paquets (tracert, topologie)**  
+   - **Déjà en place (à conserver)** : vue Simulateur réseau dans l’app ; capture pcap (colonnes type Wireshark, filtre, détail paquet) ; outils réels dans le lab (ping, traceroute, tcpdump, etc.) via terminal attaquant.  
+   - **À faire (évolution du simulateur)** :  
+     - **Topologie drag & drop** : machines, PC, routeurs, switches, serveurs, firewall, IoT ; topologie illimitée.  
+     - **Protocoles simulés** : IP, VLAN, STP, routage (statique, OSPF, EIGRP, BGP), DHCP, DNS, HTTP, FTP, etc.  
+     - **Modes** : temps réel et mode simulation (voir les paquets circuler étape par étape).  
+     - **Outils intégrés** : ping, traceroute, capture de paquets façon Wireshark dans l’UI.  
+     - **Simulation de composants de sécurité (type Packet Tracer)** : à intégrer dans le simulateur : **firewall stateful**, **IPS/IDS**, **proxy** (HTTP/SOCKS), **WAF complet**, **VPN** (site-to-site, remote-access, etc.) ; règles, politiques, inspection ; logs et alertes associés.  
+     - **Scénarios attaque / défense** : VLAN hopping, CAM flooding, ARP spoofing, DNS spoofing ; attaques web basiques et poussées ; SQLi/XSS via endpoints d’API fictifs ; brute force / dictionnaire sur SSH, RDP, avec logs associés.  
+     - **Journalisation et SOC virtuel** : syslog, NetFlow ; vue logs pour apprendre à repérer une attaque ; timeline d’incident avec alertes et indicateurs (IP suspecte, ports scannés, etc.).  
+   - Cohérence, persistance et intégration avec le lab actif : tout reste en l’état sauf option explicite pour nettoyer.
 
 9. **Capture / Wireshark**  
    - La capture pcap doit pouvoir s’ouvrir en **panneau** (comme le terminal) et être accessible depuis le lab actif. Données de capture conservées tant qu’on ne nettoie pas.
@@ -90,7 +113,7 @@ Ce fichier liste ce qui a été fait récemment, ce qui reste à faire et les po
 ### Infrastructure / doc
 
 12. **Sync doc**  
-   - Après modification de `platform/docs/`, recopier vers `platform/public/docs/` pour que le mode dev reflète les changements (ou ajouter un script `npm run sync-docs`).
+   - **Automatique** : plus besoin de lancer une commande à la main. **`npm run dev`** exécute `sync-docs` avant de lancer Vite (`predev`). **`npm run build`** exécute aussi `sync-docs` avant le build. Les docs dans `platform/docs/` sont donc toujours recopiés vers `platform/public/docs/` sans action manuelle.
 
 13. **Tests**  
    - Relancer les tests après les changements (build, plateforme, cibles) et mettre à jour TESTS.md si besoin.
@@ -146,7 +169,7 @@ Ce fichier liste ce qui a été fait récemment, ce qui reste à faire et les po
 - Doc & Cours : pas de pages détaillées par thème → **résolu** (pages par thème/sous-catégorie, fil d’Ariane, liens doc/cours/outils).
 - nmap « Operation not permitted » dans l’attaquant → **résolu** (cap_add NET_RAW, NET_ADMIN).
 - **Terminal / capture en panneau** → **partiellement résolu** (le panneau s'affiche maintenant ; à vérifier et finaliser).
-- **Modale Options ne se ferme plus** → **non résolu**. La modale s'affiche mais ne se ferme ni par le bouton × ni par clic en dehors. Priorité absolue.
+- **Modale Options ne se ferme plus / bloque tout** → **résolu** (Options = page `#/options`, modale supprimée ; `make clean` + `make up` pour prendre le nouveau build).
 - Notes pas structurées pour rapports de test → **résolu** (zone Rapport / Failles + modèle insérable).
 - Menu / boutons trop dispersés pour ouvrir terminal, capture, etc. → **résolu** (menu déroulant unique « Ouvrir dans la page »).
 - Lab actif : pas d’accès rapide terminal/capture/simulateur depuis le bouton Lab → **résolu** (Lab dropdown quand lab actif non défaut).
@@ -167,4 +190,4 @@ Ce fichier liste ce qui a été fait récemment, ce qui reste à faire et les po
 
 ---
 
-*Dernière mise à jour : 13 février 2026.*
+*Dernière mise à jour : février 2026.*

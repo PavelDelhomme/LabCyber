@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart
+.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -25,7 +25,8 @@ help:
 	@echo "  make logs         Suivi des logs (Ctrl+C pour arrêter ; après make rebuild, relancer make logs)"
 	@echo "  make logs-SVC     Logs d'un service (ex: make logs-gateway)"
 	@echo "  make proxy        Lab + Squid (3128)  |  make blue  Blue Team  |  Bureau noVNC inclus (make dev) : /desktop/"
-	@echo "  make clean        Tout arrêter + supprimer volumes  |  make ports  Voir qui utilise 8080/7681"
+	@echo "  make clean        Tout arrêter + reconstruire la plateforme (sans supprimer les données)  |  make clean-all  + supprimer volumes"
+	@echo "  make ports        Voir qui utilise 8080/7681"
 	@echo ""
 
 # Démarrer sans rebuild (rapide si les images sont déjà à jour)
@@ -141,8 +142,16 @@ ports:
 	@ss -tlnp 2>/dev/null | grep -E ':8080|:7681' || true
 	@echo "Pour libérer : make down. Pour changer : .env (GATEWAY_PORT, TTYD_PORT) puis make up."
 
-# Nettoyage complet (conteneurs + volumes)
+# Nettoyage : arrêter les conteneurs, reconstruire la plateforme (--no-cache) pour prendre le nouveau code.
+# Ne supprime PAS les volumes (données DVWA, vuln-api, bash history, etc. conservées).
 clean:
+	cd $(ROOT) && docker compose --profile proxy --profile blue down --remove-orphans
+	cd $(ROOT) && docker compose -f docker-compose.minimal.yml down --remove-orphans 2>/dev/null || true
+	cd $(ROOT) && docker compose build --no-cache platform
+	@echo "Conteneurs arrêtés, image plateforme reconstruite (données conservées). Lancez : make up"
+
+# Nettoyage total : conteneurs + volumes (toutes les données supprimées)
+clean-all:
 	cd $(ROOT) && docker compose --profile proxy --profile blue down -v
 	cd $(ROOT) && docker compose -f docker-compose.minimal.yml down -v 2>/dev/null || true
 	@echo "Conteneurs et volumes supprimés."

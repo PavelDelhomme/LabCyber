@@ -1180,6 +1180,21 @@ body {
 
 .option-row { margin-bottom: 1rem; }
 .option-row label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.option-section-title { margin: 0 0 0.5rem; font-size: 1rem; font-weight: 600; color: var(--text); }
+.option-section-desc { margin: 0 0 0.75rem; font-size: 0.9rem; color: var(--text-muted); }
+.option-divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+.option-doc-custom { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.option-input { padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-dark); color: var(--text); font-size: 0.9rem; min-width: 140px; }
+.option-select { padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-dark); color: var(--text); font-size: 0.9rem; }
+.option-doc-list { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+.option-doc-item { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+.option-doc-item-label { font-weight: 500; min-width: 80px; }
+.option-doc-item-url { font-size: 0.85rem; color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.option-doc-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0 0.25rem; font-size: 1.2rem; }
+.option-doc-remove:hover { color: var(--red); }
+.options-view { max-width: 560px; }
+.options-view .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem; }
+.options-view-card { margin-bottom: 1.5rem; }
 
 /* Checkbox THM-style */
 .task-checkbox {

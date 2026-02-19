@@ -9,8 +9,8 @@ import PipPanel from './components/PipPanel';
 import ScenarioBottomBar from './components/ScenarioBottomBar';
 import TerminalPipPanel from './components/TerminalPipPanel';
 import StatsModal from './components/StatsModal';
-import OptionsModal from './components/OptionsModal';
 import Dashboard from './views/Dashboard';
+import OptionsView from './views/OptionsView';
 import DocsView from './views/DocsView';
 import LearningView from './views/LearningView';
 import EngagementsView from './views/EngagementsView';
@@ -40,6 +40,7 @@ const VIEWS = {
   'api-client': ApiClientView,
   capture: CaptureView,
   'terminal-full': TerminalFullView,
+  options: OptionsView,
   scenario: ScenarioView,
   room: RoomView,
 };
@@ -79,7 +80,6 @@ export default function App() {
   const [terminalPipOpen, setTerminalPipOpen] = useState(false);
   const [scenarioBarCollapsed, setScenarioBarCollapsed] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
-  const [optionsOpen, setOptionsOpen] = useState(false);
   const [cvePanelOpen, setCvePanelOpen] = useState(false);
   const [terminalPanelOpen, setTerminalPanelOpen] = useState(false);
   const [terminalTabs, setTerminalTabs] = useState([{ id: '1', name: 'Session 1' }]);
@@ -261,7 +261,7 @@ export default function App() {
           onLogToggle={() => setLogOpen(o => !o)}
           onPipToggle={() => setPipOpen(o => !o)}
           onStats={() => setStatsOpen(true)}
-          onOptions={() => setOptionsOpen(true)}
+          onOptions={() => setView('options')}
           onTerminal={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
           onTerminalInPanel={openTerminalPanel}
           onTerminalPip={() => setTerminalPipOpen(true)}
@@ -282,7 +282,7 @@ export default function App() {
             ? `Scénario : ${currentScenario.title}`
             : view === 'room' && currentRoomId
               ? (data?.rooms?.find(r => r.id === currentRoomId)?.title || 'Room')
-              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', 'doc-offline': 'Bibliothèque doc', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', 'network-sim': 'Simulateur réseau', 'proxy-tools': 'Requêtes API', 'proxy-config': 'Proxy (config)', 'api-client': 'Requêtes API (Postman)', capture: 'Capture pcap' }[view] || view)}
+              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', 'doc-offline': 'Bibliothèque doc', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', options: 'Options', 'network-sim': 'Simulateur réseau', 'proxy-tools': 'Requêtes API', 'proxy-config': 'Proxy (config)', 'api-client': 'Requêtes API (Postman)', capture: 'Capture pcap' }[view] || view)}
         </div>
         {loaded && (
           <div class="view active" key={view}>
@@ -326,7 +326,6 @@ export default function App() {
       </main>
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />
       <StatsModal open={statsOpen} onClose={() => setStatsOpen(false)} scenarios={scenarios} storage={storage} />
-      <OptionsModal open={optionsOpen} onClose={() => setOptionsOpen(false)} storage={storage} />
       <button type="button" class="log-fab" onClick={() => setLogOpen(true)} aria-label="Ouvrir le journal" title="Journal d'activité">📋</button>
       <button type="button" class="cve-fab" onClick={() => setCvePanelOpen(true)} aria-label="Recherche CVE" title="Rechercher un CVE">CVE</button>
       <CvePanel open={cvePanelOpen} onClose={() => setCvePanelOpen(false)} />

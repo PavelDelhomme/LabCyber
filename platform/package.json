@@ -3,10 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "sync-docs": "cp -r docs public/docs",
+    "predev": "npm run sync-docs",
     "dev": "vite",
-    "build": "vite build && cp -r data docs dist/ 2>/dev/null || true",
-    "preview": "vite preview",
-    "sync-docs": "cp -r docs public/docs"
+    "build": "npm run sync-docs && vite build && (cp -r data dist/ 2>/dev/null; cp -r docs dist/docs 2>/dev/null; true)",
+    "preview": "vite preview"
   },
   "dependencies": {
     "preact": "^10.19.0"
