@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all
+.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -33,8 +33,9 @@ help:
 	@echo "  Autres"
 	@echo "  ------"
 	@echo "  make status         État des conteneurs"
-	@echo "  make logs           Suivi des logs (Ctrl+C pour arrêter)"
+	@echo "  make logs           Suivi des logs (reconnexion auto après restart) — make logs LOGFILE=lab.log pour sauvegarder"
 	@echo "  make logs-SVC       Logs d'un service (ex: make logs-gateway)"
+	@echo "  make terminal-html  Verifier que l'injection exit est OK (page /terminal/)"
 	@echo "  make shell          Shell dans le conteneur attaquant"
 	@echo "  make test            Lancer les tests  |  make test-full  avec lab requis"
 	@echo "  make up-minimal     Mode minimal  |  make proxy  Lab + Squid  |  make blue  Blue Team"
@@ -117,13 +118,34 @@ shell: shell-attacker
 shell-attacker:
 	cd $(ROOT) && docker compose exec attaquant bash
 
-# Logs : suivi en direct. Ctrl+C pour arrêter. Après make rebuild, relancer make logs pour les nouveaux conteneurs.
+# Logs : suivi en direct. Ne se coupe pas : en cas de redémarrage (make restart ailleurs), les logs reprennent seuls après 2 s.
+# Optionnel : make logs LOGFILE=lab.log écrit aussi dans lab.log (historique conservé).
+# Ctrl+C pour arrêter.
 logs:
-	cd $(ROOT) && docker compose logs -f
+	@echo "  Suivi des logs (Ctrl+C pour quitter). En cas de make restart ailleurs, reconnexion auto."
+	@if [ -n "$(LOGFILE)" ]; then echo "  Écriture supplémentaire dans $(LOGFILE)"; fi
+	@echo ""
+	@while true; do \
+		cd $(ROOT) && ( [ -n "$(LOGFILE)" ] && docker compose logs -f 2>&1 | tee -a "$(LOGFILE)" || docker compose logs -f ) 2>/dev/null || true; \
+		echo ""; echo "  [logs] Conteneurs arrêtés ou redémarrage — reconnexion dans 2 s..."; \
+		sleep 2; \
+	done
 
 # Règle générique logs-<service> (ex: make logs-gateway)
 logs-%:
 	cd $(ROOT) && docker compose logs -f $*
+
+# Verifier que l'injection exit est dans la page /terminal/ (resultat affiche ici, pas de fichier a ouvrir)
+terminal-html:
+	@port=$${GATEWAY_PORT:-8080}; \
+	echo "  Verification http://127.0.0.1:$$port/terminal/ ..."; \
+	body=$$(curl -sS "http://127.0.0.1:$$port/terminal/" 2>/dev/null); \
+	if [ -z "$$body" ]; then echo "  Erreur : pas de reponse. Lab demarre ? (make up)"; exit 1; fi; \
+	if echo "$$body" | grep -q "lab-cyber-terminal-exit"; then \
+	  echo "  Injection exit : OK. Taper exit dans le terminal panneau/PiP fermera l'onglet."; \
+	else \
+	  echo "  Injection exit : ABSENTE. Faire : make dev  puis reessayer."; exit 1; \
+	fi
 
 # Proxy Squid (profil proxy)
 proxy:

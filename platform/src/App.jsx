@@ -124,6 +124,7 @@ export default function App() {
   const skipNextHashChange = useRef(false);
   const terminalResizeRef = useRef({ active: false, startX: 0, startW: 0 });
   const panelIframeWindowsRef = useRef(new Set());
+  const terminalPanelBodyRef = useRef(null);
   const uiSessionRef = useRef({});
 
   useEffect(() => {
@@ -228,7 +229,11 @@ export default function App() {
   useEffect(() => {
     const onMessage = (e) => {
       if (e?.data?.type !== 'lab-cyber-terminal-exit') return;
-      if (!e.source || !panelIframeWindowsRef.current.has(e.source)) return;
+      if (!e.source) return;
+      const fromPanel = panelIframeWindowsRef.current.has(e.source)
+        || (terminalPanelBodyRef.current && Array.from(terminalPanelBodyRef.current.querySelectorAll('iframe')).some((f) => f.contentWindow === e.source));
+      if (!fromPanel) return;
+      if (e.source) panelIframeWindowsRef.current.add(e.source);
       const rest = terminalTabs.filter(t => t.id !== activeTerminalTabId);
       if (rest.length === 0) {
         setTerminalPanelOpen(false);
@@ -467,7 +472,7 @@ export default function App() {
           </header>
           {/* Toujours rendre le body pour garder les iframes en DOM (évite démontage quand minimisé → perte d'historique). Caché en CSS via .terminal-side-panel-minimized. */}
           <p class="terminal-side-panel-hint">En cas d'erreur 502 : le terminal peut mettre 15–20 s à démarrer. Double-clic sur un onglet pour le renommer.</p>
-          <div class="terminal-side-panel-body">
+          <div class="terminal-side-panel-body" ref={terminalPanelBodyRef}>
             {terminalTabs.map(tab => (
               <div key={tab.id} class={`terminal-tab-pane ${activeTerminalTabId === tab.id ? 'terminal-tab-pane-active' : 'terminal-tab-pane-inactive'}`}>
                 <TerminalPanelIframe terminalUseDefaultLab={terminalUseDefaultLab} tabName={tab.name} tabId={tab.id} reloadKey={terminalReloadKeys[tab.id] || 0} onReload={() => setTerminalReloadKeys(k => ({ ...k, [tab.id]: (k[tab.id] || 0) + 1 }))} onIframeLoad={(win) => { if (win) panelIframeWindowsRef.current.add(win); }} />

@@ -37,6 +37,8 @@ secrets/
 tmp/
 temp/
 *.tmp
+lab.log
+terminal-page.html
 
 # Binaire C compilé (make lab)
 /lab
