@@ -887,6 +887,45 @@ body {
 }
 .learning-subcat strong { color: var(--accent); font-size: 0.95rem; }
 .learning-subcat-content { margin: 0.35rem 0 0; font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+.learning-breadcrumb { margin: 0 0 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+.learning-breadcrumb a { color: var(--accent); text-decoration: none; }
+.learning-breadcrumb a:hover { text-decoration: underline; }
+.learning-breadcrumb-sep { margin: 0 0.35rem; }
+.learning-detail { max-width: 56rem; }
+.learning-detail-content { margin-bottom: 1.5rem; line-height: 1.6; }
+.learning-detail-block { margin-bottom: 1.5rem; }
+.learning-detail-heading { margin: 0 0 0.5rem; font-size: 1rem; color: var(--text-muted); }
+.learning-doc-list, .learning-tools-list { margin: 0; padding-left: 1.25rem; }
+.learning-doc-list li, .learning-tools-list li { margin-bottom: 0.35rem; }
+.learning-doc-desc { font-size: 0.9rem; color: var(--text-muted); }
+.learning-subcats-list { list-style: none; margin: 0; padding: 0; }
+.learning-subcats-list li { margin-bottom: 0.75rem; }
+.learning-subcat-link, .learning-subcat-btn, .learning-topic-btn { background: none; border: none; color: var(--accent); cursor: pointer; font: inherit; padding: 0; text-align: left; }
+.learning-subcat-link:hover, .learning-subcat-btn:hover, .learning-topic-btn:hover { text-decoration: underline; }
+.learning-topic-btn { font-weight: 600; font-size: 1.15rem; }
+.learning-topic-actions { margin: 0.75rem 0; }
+.learning-subcats-cards { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.learning-subcat-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem 0.75rem; transition: background 0.15s; }
+.learning-subcat-card:hover { background: var(--bg-hover); }
+.learning-subcat-card-btn { width: 100%; text-align: left; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.learning-subcat-card-name { font-weight: 600; }
+.learning-subcat-card-arrow { font-size: 0.85rem; color: var(--accent); }
+.learning-doc-list-clickable { list-style: none; padding-left: 0; }
+.learning-doc-item { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+.learning-doc-item-btn { background: none; border: none; color: var(--text); cursor: pointer; font: inherit; padding: 0; text-align: left; flex: 1; min-width: 0; }
+.learning-doc-item-btn:hover { color: var(--accent); }
+.learning-doc-item-label { font-weight: 500; }
+.learning-doc-item-arrow { font-size: 0.85rem; color: var(--accent); margin-left: 0.25rem; }
+.learning-doc-item-open { flex-shrink: 0; }
+.learning-doc-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.learning-doc-modal { background: var(--bg-card); border-radius: var(--radius); max-width: 480px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.learning-doc-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+.learning-doc-modal-header h3 { margin: 0; font-size: 1rem; }
+.learning-doc-modal-close { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; padding: 0 0.25rem; }
+.learning-doc-modal-close:hover { color: var(--text); }
+.learning-doc-modal-body { padding: 1rem; }
+.learning-doc-modal-desc { margin: 0 0 1rem; line-height: 1.5; color: var(--text-muted); }
+.learning-view-wrap { display: contents; }
 
 /* Vue Engagements */
 .engagement-block { margin-top: 0.5rem; }
@@ -1589,6 +1628,52 @@ body {
 }
 .topbar-btn-lab:hover { background: rgba(0, 210, 106, 0.25); color: var(--accent-hover); }
 
+/* Lab button dropdown (quand lab actif autre que défaut) */
+.lab-button-dropdown { position: relative; display: inline-block; }
+.topbar-btn-lab-dropdown { padding-right: 1.5rem; }
+.lab-dropdown-chevron { position: absolute; right: 0.5rem; font-size: 0.55rem; opacity: 0.85; }
+.lab-dropdown-menu {
+  position: absolute; top: 100%; left: 0; margin-top: 0.25rem; min-width: 240px;
+  list-style: none; margin: 0; padding: 0.25rem 0;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3); z-index: 2500;
+}
+.lab-dropdown-item {
+  display: block; width: 100%; text-align: left; padding: 0.5rem 0.75rem;
+  background: none; border: none; color: var(--text); font-size: 0.9rem; cursor: pointer; font-family: inherit;
+}
+.lab-dropdown-item:hover { background: var(--bg-hover); color: var(--accent); }
+.lab-dropdown-item.active { color: var(--accent); font-weight: 500; }
+.lab-dropdown-item-danger { color: var(--red, #ef4444); }
+.lab-dropdown-item-danger:hover { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+.lab-dropdown-divider { height: 1px; margin: 0.25rem 0; background: var(--border); padding: 0; list-style: none; }
+
+/* Topbar quand sidebar rétractée : actions flottantes + décalage gauche */
+.app.sidebar-collapsed .topbar-sidebar-collapsed .topbar-toolbar {
+  flex-wrap: wrap;
+  padding-right: 220px;
+  margin-right: 0;
+}
+.app.sidebar-collapsed .topbar-sidebar-collapsed .topbar-actions {
+  position: fixed;
+  top: 0.75rem;
+  right: 1rem;
+  z-index: 200;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+}
+.app.sidebar-collapsed .topbar-sidebar-collapsed .topbar-toolbar .search-input,
+.app.sidebar-collapsed .topbar-sidebar-collapsed .topbar-toolbar .filter-category {
+  max-width: 100%;
+}
+
 /* Panneau Lab actif (accès terminal, bureau, proxy, scénarios) */
 .lab-panel-overlay {
   position: fixed;
@@ -1621,6 +1706,30 @@ body {
 .lab-panel-notes { width: 100%; min-height: 80px; padding: 0.5rem; font-size: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-dark); color: var(--text); resize: vertical; }
 .lab-panel-actions { display: flex; flex-direction: column; gap: 0.5rem; }
 .lab-panel-actions .btn { width: 100%; }
+
+/* Menu déroulant Ouvrir dans la page */
+.open-in-page-dropdown { position: relative; display: inline-block; }
+.open-in-page-btn {
+  display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.7rem;
+  background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text); font-size: 0.9rem; cursor: pointer; font-family: inherit;
+}
+.open-in-page-btn:hover { border-color: var(--accent); color: var(--accent); }
+.open-in-page-chevron { font-size: 0.65rem; opacity: 0.8; }
+.open-in-page-menu {
+  position: absolute; top: 100%; left: 0; margin-top: 0.25rem;
+  min-width: 200px; max-height: 320px; overflow-y: auto;
+  list-style: none; margin: 0; padding: 0.25rem 0;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3); z-index: 2500;
+}
+.open-in-page-item {
+  display: block; width: 100%; text-align: left; padding: 0.5rem 0.75rem;
+  background: none; border: none; color: var(--text); font-size: 0.9rem; cursor: pointer; font-family: inherit;
+}
+.open-in-page-item:hover { background: var(--bg-hover); color: var(--accent); }
+.open-in-page-item.active { color: var(--accent); font-weight: 500; }
+.topbar-dropdown.open-in-page-dropdown .open-in-page-btn { padding: 0.4rem 0.6rem; font-size: 1rem; min-height: 36px; }
 
 /* Room: machines et tâches */
 .room-machines, .room-objectives { list-style: none; margin: 0; padding: 0; }

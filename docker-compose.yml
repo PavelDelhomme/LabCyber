@@ -33,6 +33,11 @@ services:
     expose: ["7681"]
     stdin_open: true
     tty: true
+    volumes: [attaquant-bash-history:/root/.lab_bash_history]
+    # nmap a besoin de sockets bruts (NET_RAW) ; tcpdump/scapy peuvent en avoir besoin
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
     healthcheck:
       # OK si ttyd répond ; sinon OK si ttyd absent (autre arch) pour ne pas bloquer la gateway
       test: ["CMD", "sh", "-c", "wget -q -O /dev/null http://127.0.0.1:7681/ || [ ! -x /usr/local/bin/ttyd ]"]
@@ -149,6 +154,7 @@ volumes:
   vuln-api-data:
   suricata-logs:
   suricata-pcaps:
+  attaquant-bash-history:
 
 networks:
   lab-network:

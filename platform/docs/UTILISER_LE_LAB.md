@@ -14,6 +14,16 @@ Ce guide décrit comment te connecter au lab et utiliser les outils depuis ta ma
 
 Pour **configurer la connexion** au lab (proxy Squid, tunnel SSH, VPN sur l’hôte), voir [PROXY-VPN.md](PROXY-VPN.md).
 
+## Utiliser les cibles depuis le terminal attaquant
+
+Dans le **terminal web** (ou `docker compose exec attaquant bash`), tu es **dans le réseau du lab** : les hostnames des cibles sont résolus. Tu peux faire par exemple :
+
+- **vuln-network** (SSH, Redis) : `nmap -sV vuln-network`, `nc -zv vuln-network 22`, `redis-cli -h vuln-network`
+- **vuln-api** (API) : `curl http://vuln-api:5000/`, `curl http://vuln-api:5000/api/...`
+- **dvwa, juice-shop, bwapp** : accessibles par hostname depuis le terminal (ex. `curl http://dvwa/` si le réseau du lab a l’alias). En pratique, pour les apps web tu passes souvent par la **gateway** depuis ton navigateur (voir tableau des URLs en doc).
+
+Le message « Cibles: vuln-network (SSH/Redis), vuln-api (API), dvwa, juice-shop, bwapp » au démarrage du shell rappelle ces noms. Pour **tcpdump**, si « any » affiche un avertissement (promiscuous mode), utilise `tcpdump -i eth0 -w cap.pcap` à la place.
+
 ## Depuis ton PC : commandes vers le lab
 
 - **SSH vers la machine attaquant** (si exposée) : selon ta config, tu peux avoir un port SSH mappé ; sinon, utilise le terminal web ou `docker compose exec attaquant bash`.

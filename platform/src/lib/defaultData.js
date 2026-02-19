@@ -68,3 +68,22 @@ export const EMBEDDED_TARGETS = [
   { id: 'desktop', name: 'Bureau noVNC (XFCE)', type: 'desktop', description: 'Bureau graphique à distance pour outils GUI.', url: 'http://127.0.0.1:8080/desktop/', credentials: 'VNC : labcyber', access: 'Navigateur' },
   { id: 'attaquant', name: 'Machine attaquant (Kali)', type: 'attaquant', description: 'Terminal avec nmap, hydra, sqlmap, tcpdump, scapy, etc.', url: 'http://127.0.0.1:8080/terminal/', access: 'Terminal web (lien plateforme)' },
 ];
+
+/** Catalogue minimal pour la Bibliothèque doc (hors ligne) si docSources.json est absent. */
+export const EMBEDDED_DOC_SOURCES = {
+  title: 'Bibliothèque de documentation hors ligne',
+  description: 'Récupérez les documentations externes pour les consulter dans l’app, hors réseau.',
+  categories: [
+    { id: 'cyber', name: 'Cybersécurité', icon: '🔐' },
+    { id: 'network', name: 'Réseau', icon: '🔌' },
+    { id: 'system', name: 'Systèmes', icon: '🖥️' },
+    { id: 'admin', name: 'Administration', icon: '⚙️' },
+    { id: 'dev', name: 'Développement', icon: '💻' },
+    { id: 'database', name: 'Bases de données', icon: '🗄️' },
+  ],
+  sources: [
+    { id: 'owasp-top10', label: 'OWASP Top 10', url: 'https://owasp.org/www-project-top-ten/', category: 'cyber', desc: 'Vulnérabilités web' },
+    { id: 'nmap-man', label: 'Nmap Reference', url: 'https://nmap.org/book/man.html', category: 'network', desc: 'Documentation Nmap' },
+    { id: 'linux-man', label: 'Linux man pages', url: 'https://man7.org/linux/man-pages/', category: 'system', desc: 'Commandes Linux' },
+  ],
+};

@@ -103,6 +103,7 @@ export default function Sidebar({
         <div class="nav-block">
           <button class={`nav-item ${view === 'docs' ? 'active' : ''}`} onClick={() => onNavigate('docs')}>📚 Doc. projet</button>
           <button class={`nav-item ${view === 'learning' ? 'active' : ''}`} onClick={() => onNavigate('learning')}>📖 Doc &amp; Cours</button>
+          <button class={`nav-item ${view === 'doc-offline' ? 'active' : ''}`} onClick={() => onNavigate('doc-offline')}>📥 Bibliothèque doc (hors ligne)</button>
           <button class={`nav-item ${view === 'engagements' ? 'active' : ''}`} onClick={() => onNavigate('engagements')}>🎯 Cibles &amp; Proxy</button>
           <button class={`nav-item ${view === 'progression' ? 'active' : ''}`} onClick={() => onNavigate('progression')}>📊 Progression</button>
         </div>

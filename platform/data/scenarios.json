@@ -31,7 +31,8 @@
           "content": "Lance un scan des ports ouverts et des versions de services sur vuln-network. Tu dois identifier au moins les ports 22 (SSH) et 6379 (Redis).",
           "command": "nmap -sV vuln-network",
           "tip": "nmap -sC ajoute des scripts par défaut. -p- pour tous les ports (plus long).",
-          "learn": "nmap -sV fait du « version detection » : il envoie des probes pour deviner le logiciel (OpenSSH, Redis, etc.). C’est la base de la recon réseau."
+          "learn": "nmap -sV fait du « version detection » : il envoie des probes pour deviner le logiciel (OpenSSH, Redis, etc.). C’est la base de la recon réseau.",
+          "docRef": "nmap-man"
         },
         {
           "title": "Noter les résultats",

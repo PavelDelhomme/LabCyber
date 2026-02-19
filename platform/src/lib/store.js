@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
-import { EMBEDDED_DOCS, EMBEDDED_LEARNING, EMBEDDED_TARGETS } from './defaultData';
+import { EMBEDDED_DOCS, EMBEDDED_LEARNING, EMBEDDED_TARGETS, EMBEDDED_DOC_SOURCES } from './defaultData';
 
 const storage = typeof window !== 'undefined' ? window.LabCyberStorage : null;
 
@@ -37,6 +37,7 @@ export function useStore() {
   const [learning, setLearning] = useState(EMBEDDED_LEARNING);
   const [targets, setTargets] = useState(EMBEDDED_TARGETS);
   const [challenges, setChallenges] = useState([]);
+  const [docSources, setDocSources] = useState({ title: '', description: '', categories: [], sources: [] });
   const [loaded, setLoaded] = useState(true);
 
   useEffect(() => {
@@ -50,8 +51,9 @@ export function useStore() {
       get('/data/learning.json').then(x => x && typeof x === 'object' && Array.isArray(x.topics) ? x : null),
       get('/data/targets.json').then(x => x),
       get('/data/challenges.json').then(x => x),
+      get('/data/docSources.json').then(x => x && typeof x === 'object' && Array.isArray(x.sources) ? x : null),
     ]).then((results) => {
-      const [roomsData, scenarioList, cfg, docsList, learningData, targetsData, challengesData] = results.map(r => r.status === 'fulfilled' ? r.value : null);
+      const [roomsData, scenarioList, cfg, docsList, learningData, targetsData, challengesData, docSourcesData] = results.map(r => r.status === 'fulfilled' ? r.value : null);
       setData(roomsData && (roomsData.rooms || roomsData.categories) ? roomsData : { rooms: [], categories: [] });
       setScenarios((scenarioList && scenarioList.scenarios) || (Array.isArray(scenarioList) ? scenarioList : []));
       setConfig(cfg || {});
@@ -60,11 +62,12 @@ export function useStore() {
       const t = Array.isArray(targetsData) ? targetsData : (targetsData?.targets);
       if (t && t.length) setTargets(t);
       setChallenges(challengesData && Array.isArray(challengesData.challenges) ? challengesData.challenges : []);
+      setDocSources(docSourcesData || EMBEDDED_DOC_SOURCES);
       setLoaded(true);
     });
   }, []);
 
-  return { data, scenarios, config, docs, learning, targets, challenges, loaded };
+  return { data, scenarios, config, docs, learning, targets, challenges, docSources, loaded };
 }
 
 export function useStorage() {
@@ -107,6 +110,13 @@ export function useStorage() {
   const setRequestData = useCallback((labId, data) => storage && storage.setRequestData && storage.setRequestData(labId, data), []);
   const getLabNotes = useCallback((labId) => (storage && storage.getLabNotes) ? storage.getLabNotes(labId) : '', []);
   const setLabNotes = useCallback((labId, text) => storage && storage.setLabNotes && storage.setLabNotes(labId, text), []);
+  const getLabReport = useCallback((labId) => (storage && storage.getLabReport) ? storage.getLabReport(labId) : '', []);
+  const setLabReport = useCallback((labId, text) => storage && storage.setLabReport && storage.setLabReport(labId, text), []);
+  const getOfflineDoc = useCallback((id) => (storage && storage.getOfflineDoc) ? storage.getOfflineDoc(id) : null, []);
+  const setOfflineDoc = useCallback((id, data) => storage && storage.setOfflineDoc && storage.setOfflineDoc(id, data), []);
+  const getOfflineDocIds = useCallback(() => (storage && storage.getOfflineDocIds) ? storage.getOfflineDocIds() : [], []);
+  const getDocPreferences = useCallback(() => (storage && storage.getDocPreferences) ? storage.getDocPreferences() : { customSources: [], versionOverrides: {}, autoFetchIds: [] }, []);
+  const setDocPreferences = useCallback((data) => storage && storage.setDocPreferences && storage.setDocPreferences(data), []);
 
   return {
     getEngagement, setEngagement, getLastScenario, setLastScenario, getLastTaskIndex,
@@ -116,7 +126,8 @@ export function useStorage() {
     getTerminalHistory, appendTerminalHistory, clearTerminalHistory,
     getUiSession, setUiSession, getCaptureState, setCaptureState,
     getCaptureSessionsList, setCaptureSession, getCaptureSession, deleteCaptureSession,
-    getLabNotes, setLabNotes,
+    getLabNotes, setLabNotes, getLabReport, setLabReport,
+    getOfflineDoc, setOfflineDoc, getOfflineDocIds, getDocPreferences, setDocPreferences,
     getNetworkSimulations, setNetworkSimulations, getProxies, setProxies, getRequestData, setRequestData,
   };
 }

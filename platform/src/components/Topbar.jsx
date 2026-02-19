@@ -1,3 +1,6 @@
+import OpenInPageDropdown from './OpenInPageDropdown';
+import LabButtonDropdown from './LabButtonDropdown';
+
 export default function Topbar({
   view,
   categories = [],
@@ -17,6 +20,7 @@ export default function Topbar({
   onOptions,
   onTerminal,
   onTerminalInPanel,
+  onTerminalPip,
   capturePanelOpen,
   onCapturePanelToggle,
   onDeactivateLab,
@@ -26,12 +30,30 @@ export default function Topbar({
   getViewUrl = (v) => (typeof window !== 'undefined' ? window.location.origin + (window.location.pathname || '/') : '') + '#/' + v,
   labNotes = '',
   onLabNotesChange,
+  labReport = '',
+  onLabReportChange,
+  sidebarCollapsed = false,
 }) {
+  const REPORT_TEMPLATE = `## Cibles
+- 
+
+## Méthodologie
+- 
+
+## Découvertes
+- 
+
+## Failles (CVE, vulnérabilités)
+- 
+
+## Recommandations
+- 
+`;
   const termUrl = typeof getTerminalUrl === 'function' ? getTerminalUrl() : '';
   const desktopUrl = typeof getDesktopUrl === 'function' ? getDesktopUrl() : '';
 
   return (
-    <header class="topbar">
+    <header class={`topbar ${sidebarCollapsed ? 'topbar-sidebar-collapsed' : ''}`}>
       <div class="topbar-head">
         <button type="button" class="topbar-btn sidebar-toggle" onClick={onSidebarToggle} aria-label="Menu" title="Menu">☰</button>
         <h1 class="topbar-title">Lab Cyber</h1>
@@ -57,18 +79,33 @@ export default function Topbar({
           ))}
         </select>
         <div class="topbar-actions">
-          <button
-            type="button"
-            class="topbar-btn topbar-btn-lab"
-            onClick={onLabPanelToggle}
-            title={`Lab actif : ${currentLab.name}`}
-            aria-expanded={labPanelOpen}
-          >
-            <span class="topbar-btn-lab-label">Lab</span>
-            <span class="topbar-btn-lab-name">{currentLab.name}</span>
-          </button>
-          <button type="button" class="topbar-btn" onClick={onTerminal} title="Terminal">⌨</button>
-          <button type="button" class={`topbar-btn ${capturePanelOpen ? 'active' : ''}`} onClick={onCapturePanelToggle} title="Capture pcap (panneau)">📡</button>
+          <LabButtonDropdown
+            currentLab={currentLab}
+            labPanelOpen={labPanelOpen}
+            onLabPanelToggle={onLabPanelToggle}
+            onLabPanelClose={onLabPanelClose}
+            onTerminalInPanel={onTerminalInPanel}
+            onTerminalPip={onTerminalPip}
+            onTerminalNewTab={onTerminal}
+            onCapturePanelToggle={onCapturePanelToggle}
+            onCaptureNewTab={() => window.open(getViewUrl('capture'), '_blank', 'noopener')}
+            onNavigate={onNavigate}
+            onDeactivateLab={onDeactivateLab}
+            getViewUrl={getViewUrl}
+            capturePanelOpen={capturePanelOpen}
+          />
+          <button type="button" class="topbar-btn" onClick={onTerminal} title="Terminal (nouvel onglet)">⌨</button>
+          <OpenInPageDropdown
+            class="topbar-dropdown"
+            onTerminalPanel={onTerminalInPanel}
+            onTerminalPip={onTerminalPip}
+            onCapture={onCapturePanelToggle}
+            onSimulator={() => onNavigate?.('network-sim')}
+            onProxy={() => onNavigate?.('proxy-config')}
+            onApi={() => onNavigate?.('api-client')}
+            captureOpen={capturePanelOpen}
+            label="Ouvrir"
+          />
           <button type="button" class="topbar-btn" onClick={onStats} title="Statistiques">📊</button>
           <button type="button" class="topbar-btn" onClick={onOptions} title="Options">⚙️</button>
           {showPipButton && (
@@ -100,30 +137,35 @@ export default function Topbar({
               placeholder="Notes, infos importantes, chemins de fichiers ou dossiers pour ce lab…"
               value={labNotes}
               onInput={e => onLabNotesChange?.(e.target.value)}
-              rows={4}
+              rows={3}
             />
+            <p class="lab-panel-section">Rapport / Failles (test de cybersécurité)</p>
+            <textarea
+              class="lab-panel-notes lab-panel-report"
+              placeholder="Cibles, méthodologie, découvertes, failles (CVE), recommandations… Utilisez « Insérer modèle » pour une structure de rapport."
+              value={labReport}
+              onInput={e => onLabReportChange?.(e.target.value)}
+              rows={6}
+            />
+            <button type="button" class="btn btn-secondary" onClick={() => onLabReportChange?.(labReport ? labReport + '\n\n' + REPORT_TEMPLATE : REPORT_TEMPLATE)} style={{ marginBottom: '0.5rem' }}>Insérer modèle rapport</button>
             <div class="lab-panel-actions">
-              <p class="lab-panel-section">Terminal (attaquant)</p>
-              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('terminal-full'), '_blank', 'noopener'); onLabPanelClose(); }}>
-                Ouvrir dans un nouvel onglet
-              </button>
-              <button type="button" class="btn btn-primary" onClick={() => { onTerminalInPanel?.(); onLabPanelClose(); }}>
-                Ouvrir dans la page (panneau)
-              </button>
-              <p class="lab-panel-section">Capture pcap</p>
-              <button type="button" class="btn btn-secondary" onClick={() => { onCapturePanelToggle?.(); onLabPanelClose(); }}>
-                {capturePanelOpen ? 'Fermer le panneau' : 'Ouvrir en panneau'}
-              </button>
-              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('capture'), '_blank', 'noopener'); onLabPanelClose(); }}>Ouvrir dans un nouvel onglet</button>
-              <p class="lab-panel-section">Simulateur réseau</p>
-              <button type="button" class="btn btn-secondary" onClick={() => { onNavigate?.('network-sim'); onLabPanelClose(); }}>Ouvrir dans la page</button>
-              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('network-sim'), '_blank', 'noopener'); onLabPanelClose(); }}>Ouvrir dans un nouvel onglet</button>
-              <p class="lab-panel-section">Proxy (config)</p>
-              <button type="button" class="btn btn-secondary" onClick={() => { onNavigate?.('proxy-config'); onLabPanelClose(); }}>Ouvrir dans la page</button>
-              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('proxy-config'), '_blank', 'noopener'); onLabPanelClose(); }}>Ouvrir dans un nouvel onglet</button>
-              <p class="lab-panel-section">Requêtes API (Postman)</p>
-              <button type="button" class="btn btn-secondary" onClick={() => { onNavigate?.('api-client'); onLabPanelClose(); }}>Ouvrir dans la page</button>
-              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('api-client'), '_blank', 'noopener'); onLabPanelClose(); }}>Ouvrir dans un nouvel onglet</button>
+              <p class="lab-panel-section">Ouvrir dans la page</p>
+              <OpenInPageDropdown
+                onTerminalPanel={() => { onTerminalInPanel?.(); onLabPanelClose(); }}
+                onTerminalPip={onTerminalPip ? () => { onTerminalPip?.(); onLabPanelClose(); } : undefined}
+                onCapture={() => { onCapturePanelToggle?.(); onLabPanelClose(); }}
+                onSimulator={() => { onNavigate?.('network-sim'); onLabPanelClose(); }}
+                onProxy={() => { onNavigate?.('proxy-config'); onLabPanelClose(); }}
+                onApi={() => { onNavigate?.('api-client'); onLabPanelClose(); }}
+                captureOpen={capturePanelOpen}
+                label="Choisir un outil à ouvrir…"
+              />
+              <p class="lab-panel-section">Ouvrir dans un nouvel onglet</p>
+              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('terminal-full'), '_blank', 'noopener'); onLabPanelClose(); }}>Terminal</button>
+              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('capture'), '_blank', 'noopener'); onLabPanelClose(); }}>Capture pcap</button>
+              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('network-sim'), '_blank', 'noopener'); onLabPanelClose(); }}>Simulateur réseau</button>
+              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('proxy-config'), '_blank', 'noopener'); onLabPanelClose(); }}>Proxy (config)</button>
+              <button type="button" class="btn btn-secondary" onClick={() => { window.open(getViewUrl('api-client'), '_blank', 'noopener'); onLabPanelClose(); }}>Requêtes API</button>
               <p class="lab-panel-section">Bureau noVNC</p>
               <a href={desktopUrl} target="_blank" rel="noopener" class="btn btn-secondary" onClick={onLabPanelClose}>Ouvrir le bureau</a>
               <p class="lab-panel-section">Paramètres & scénarios</p>

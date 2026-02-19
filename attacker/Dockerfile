@@ -60,5 +60,12 @@ RUN echo 'echo "=== Lab Cyber – Attaquant (Kali) ==="' >> /root/.bashrc && \
     echo 'echo "Cibles: vuln-network (SSH/Redis), vuln-api (API), dvwa, juice-shop, bwapp"' >> /root/.bashrc && \
     echo 'echo "Ex: nmap -sV vuln-network | tcpdump -i any -w cap.pcap | scapy"' >> /root/.bashrc
 
+# Persistance de l'historique bash : commandes conservées entre rechargements et nouvelles sessions
+RUN mkdir -p /root/.lab_bash_history && \
+    echo 'export HISTFILE="/root/.lab_bash_history/history"' >> /root/.bashrc && \
+    echo 'export HISTSIZE=5000' >> /root/.bashrc && \
+    echo 'export HISTFILESIZE=10000' >> /root/.bashrc && \
+    echo 'export PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }history -a"' >> /root/.bashrc
+
 EXPOSE 7681
 CMD ["/bin/sh", "-c", "if [ -x /usr/local/bin/ttyd ]; then exec ttyd -p 7681 -i 0.0.0.0 -W bash; else sleep infinity; fi"]

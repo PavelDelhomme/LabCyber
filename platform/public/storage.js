@@ -33,6 +33,9 @@
   const KEY_PROXIES = 'proxies';
   const KEY_REQUEST_DATA = 'requestData';
   const KEY_LAB_NOTES = 'labNotes';
+  const KEY_LAB_REPORT = 'labReport';
+  const KEY_OFFLINE_DOCS = 'offlineDocs';
+  const KEY_DOC_PREFERENCES = 'docPreferences';
   const MAX_TERMINAL_HISTORY = 500;
 
   const LEGACY_KEYS = {
@@ -60,7 +63,10 @@
     networkSimulations: {},
     proxies: {},
     requestData: {},
-    labNotes: {}
+    labNotes: {},
+    labReport: {},
+    offlineDocs: {},
+    docPreferences: null
   };
   let readyPromise = null;
   let writeQueue = [];
@@ -133,6 +139,9 @@
             case KEY_PROXIES: cache.proxies = row.v && typeof row.v === 'object' ? row.v : {}; break;
             case KEY_REQUEST_DATA: cache.requestData = row.v && typeof row.v === 'object' ? row.v : {}; break;
             case KEY_LAB_NOTES: cache.labNotes = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_LAB_REPORT: cache.labReport = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_OFFLINE_DOCS: cache.offlineDocs = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_DOC_PREFERENCES: cache.docPreferences = row.v && typeof row.v === 'object' ? row.v : null; break;
             default: break;
           }
         });
@@ -480,6 +489,51 @@
       if (!cache.labNotes) cache.labNotes = {};
       cache.labNotes[labId] = text != null ? String(text) : '';
       writeQueue.push(setData(STORE_DATA, KEY_LAB_NOTES, cache.labNotes));
+    },
+    getLabReport: function (labId) {
+      var report = (cache.labReport && cache.labReport[labId]);
+      return report != null ? String(report) : '';
+    },
+    setLabReport: function (labId, text) {
+      if (!cache.labReport) cache.labReport = {};
+      cache.labReport[labId] = text != null ? String(text) : '';
+      writeQueue.push(setData(STORE_DATA, KEY_LAB_REPORT, cache.labReport));
+    },
+
+    getOfflineDoc: function (id) {
+      if (!cache.offlineDocs || typeof cache.offlineDocs !== 'object') return null;
+      var entry = cache.offlineDocs[id];
+      return entry && entry.content != null ? { content: entry.content, contentType: entry.contentType || 'text/html', fetchedAt: entry.fetchedAt, title: entry.title } : null;
+    },
+    setOfflineDoc: function (id, data) {
+      if (!cache.offlineDocs) cache.offlineDocs = {};
+      if (!data || data.content == null) { delete cache.offlineDocs[id]; } else {
+        cache.offlineDocs[id] = { content: data.content, contentType: data.contentType || 'text/html', fetchedAt: data.fetchedAt || new Date().toISOString(), title: data.title || '' };
+      }
+      writeQueue.push(setData(STORE_DATA, KEY_OFFLINE_DOCS, cache.offlineDocs));
+    },
+    getOfflineDocIds: function () {
+      if (!cache.offlineDocs || typeof cache.offlineDocs !== 'object') return [];
+      return Object.keys(cache.offlineDocs).filter(function (k) { return cache.offlineDocs[k] && cache.offlineDocs[k].content != null; });
+    },
+
+    getDocPreferences: function () {
+      if (cache.docPreferences && typeof cache.docPreferences === 'object') {
+        return {
+          customSources: Array.isArray(cache.docPreferences.customSources) ? cache.docPreferences.customSources.slice() : [],
+          versionOverrides: cache.docPreferences.versionOverrides && typeof cache.docPreferences.versionOverrides === 'object' ? Object.assign({}, cache.docPreferences.versionOverrides) : {},
+          autoFetchIds: Array.isArray(cache.docPreferences.autoFetchIds) ? cache.docPreferences.autoFetchIds.slice() : []
+        };
+      }
+      return { customSources: [], versionOverrides: {}, autoFetchIds: [] };
+    },
+    setDocPreferences: function (data) {
+      cache.docPreferences = data && typeof data === 'object' ? {
+        customSources: Array.isArray(data.customSources) ? data.customSources.slice() : [],
+        versionOverrides: data.versionOverrides && typeof data.versionOverrides === 'object' ? Object.assign({}, data.versionOverrides) : {},
+        autoFetchIds: Array.isArray(data.autoFetchIds) ? data.autoFetchIds.slice() : []
+      } : { customSources: [], versionOverrides: {}, autoFetchIds: [] };
+      writeQueue.push(setData(STORE_DATA, KEY_DOC_PREFERENCES, cache.docPreferences));
     },
 
     getLogs: function () { return cache.logs.slice(); },

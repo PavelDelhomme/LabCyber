@@ -6,6 +6,8 @@ import Topbar from './components/Topbar';
 import Sidebar from './components/Sidebar';
 import LogPanel from './components/LogPanel';
 import PipPanel from './components/PipPanel';
+import ScenarioBottomBar from './components/ScenarioBottomBar';
+import TerminalPipPanel from './components/TerminalPipPanel';
 import StatsModal from './components/StatsModal';
 import OptionsModal from './components/OptionsModal';
 import Dashboard from './views/Dashboard';
@@ -21,12 +23,14 @@ import ProxyConfigView from './views/ProxyConfigView';
 import ApiClientView from './views/ApiClientView';
 import CaptureView from './views/CaptureView';
 import TerminalFullView from './views/TerminalFullView';
+import DocOfflineView from './views/DocOfflineView';
 import CvePanel from './components/CvePanel';
 
 const VIEWS = {
   dashboard: Dashboard,
   docs: DocsView,
   learning: LearningView,
+  'doc-offline': DocOfflineView,
   engagements: EngagementsView,
   progression: ProgressionView,
   labs: LabsView,
@@ -44,11 +48,17 @@ const VALID_VIEWS = new Set(Object.keys(VIEWS));
 
 function parseHash() {
   const h = typeof window !== 'undefined' ? window.location.hash.slice(1).replace(/^\/+/, '') || 'dashboard' : 'dashboard';
-  const parts = h.split('/');
-  if (parts[0] === 'scenario' && parts[1]) return { view: 'scenario', scenarioId: parts[1], roomId: null };
-  if (parts[0] === 'room' && parts[1]) return { view: 'room', scenarioId: null, roomId: parts[1] };
+  const parts = h.split('/').filter(Boolean);
+  if (parts[0] === 'scenario' && parts[1]) return { view: 'scenario', scenarioId: parts[1], roomId: null, learningTopicId: null, learningSubId: null };
+  if (parts[0] === 'room' && parts[1]) return { view: 'room', scenarioId: null, roomId: parts[1], learningTopicId: null, learningSubId: null };
+  if (parts[0] === 'learning') {
+    return { view: 'learning', scenarioId: null, roomId: null, learningTopicId: parts[1] || null, learningSubId: parts[2] || null, docOfflineId: null };
+  }
+  if (parts[0] === 'doc-offline') {
+    return { view: 'doc-offline', scenarioId: null, roomId: null, learningTopicId: null, learningSubId: null, docOfflineId: parts[1] || null };
+  }
   const view = VALID_VIEWS.has(parts[0]) ? parts[0] : 'dashboard';
-  return { view, scenarioId: null, roomId: null };
+  return { view, scenarioId: null, roomId: null, learningTopicId: null, learningSubId: null, docOfflineId: null };
 }
 
 function hashFor(view, scenarioId, roomId) {
@@ -59,13 +69,15 @@ function hashFor(view, scenarioId, roomId) {
 }
 
 export default function App() {
-  const { data, scenarios, config, docs, learning, targets, challenges, loaded } = useStore();
+  const { data, scenarios, config, docs, learning, targets, challenges, docSources, loaded } = useStore();
   const storage = useStorage();
   const [view, setViewState] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [pipOpen, setPipOpen] = useState(false);
+  const [terminalPipOpen, setTerminalPipOpen] = useState(false);
+  const [scenarioBarCollapsed, setScenarioBarCollapsed] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [cvePanelOpen, setCvePanelOpen] = useState(false);
@@ -79,12 +91,16 @@ export default function App() {
   const [filterCategory, setFilterCategory] = useState('');
   const [currentScenarioId, setCurrentScenarioId] = useState(null);
   const [currentRoomId, setCurrentRoomId] = useState(null);
+  const [learningTopicId, setLearningTopicId] = useState(null);
+  const [learningSubId, setLearningSubId] = useState(null);
+  const [docOfflineId, setDocOfflineId] = useState(null);
   const [currentLabId, setCurrentLabId] = useState('default');
   const [labPanelOpen, setLabPanelOpen] = useState(false);
   const [capturePanelOpen, setCapturePanelOpen] = useState(false);
   const [terminalHistory, setTerminalHistory] = useState([]);
   const [terminalJournalInput, setTerminalJournalInput] = useState('');
   const [labNotes, setLabNotesState] = useState('');
+  const [labReport, setLabReportState] = useState('');
   const skipNextHashChange = useRef(false);
   const terminalResizeRef = useRef({ active: false, startX: 0, startW: 0 });
 
@@ -113,6 +129,11 @@ export default function App() {
   const labs = storage ? [DEFAULT_LAB, ...(storage.getLabs() || [])] : [DEFAULT_LAB];
   const currentLab = labs.find(l => l.id === currentLabId) || DEFAULT_LAB;
 
+  useEffect(() => {
+    setLabNotesState(storage?.getLabNotes?.(currentLabId) || '');
+    setLabReportState(storage?.getLabReport?.(currentLabId) || '');
+  }, [currentLabId, storage]);
+
   const onLabChange = (id) => {
     const next = id || 'default';
     setCurrentLabId(next);
@@ -125,8 +146,10 @@ export default function App() {
         skipNextHashChange.current = false;
         return;
       }
-      const { view: v, scenarioId: sid, roomId: rid } = parseHash();
+      const { view: v, scenarioId: sid, roomId: rid, learningTopicId: lid, learningSubId: lsid } = parseHash();
       setViewState(v);
+      setLearningTopicId(lid || null);
+      setLearningSubId(lsid || null);
       setCurrentScenarioId(sid);
       setCurrentRoomId(rid);
     };
@@ -145,10 +168,11 @@ export default function App() {
     const savedActive = ui?.activeTerminalTabId && savedTabs.some(t => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : savedTabs[0].id;
     setTerminalTabs(savedTabs);
     setActiveTerminalTabId(savedActive);
-    setTerminalPanelOpen(true);
     setLabPanelOpen(false);
+    setTerminalPanelOpen(true);
     setTerminalHistory(storage?.getTerminalHistory?.() || []);
     storage?.setUiSession?.({ terminalPanelOpen: true, labPanelOpen: false, terminalTabs: savedTabs, activeTerminalTabId: savedActive });
+    setTimeout(() => { storage?.setUiSession?.({ terminalPanelOpen: true, labPanelOpen: false, terminalTabs: savedTabs, activeTerminalTabId: savedActive }); }, 100);
   };
 
   useEffect(() => {
@@ -219,9 +243,10 @@ export default function App() {
         onOpenScenario={onOpenScenario}
         onOpenRoom={onOpenRoom}
       />
-      <main class="main">
+      <main class={`main ${view === 'scenario' ? 'has-scenario-bar' + (scenarioBarCollapsed ? ' scenario-bar-collapsed' : '') : ''}`}>
         <Topbar
           view={view}
+          sidebarCollapsed={sidebarCollapsed}
           categories={data?.categories || []}
           searchQuery={searchQuery}
           filterCategory={filterCategory}
@@ -239,6 +264,7 @@ export default function App() {
           onOptions={() => setOptionsOpen(true)}
           onTerminal={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
           onTerminalInPanel={openTerminalPanel}
+          onTerminalPip={() => setTerminalPipOpen(true)}
           capturePanelOpen={capturePanelOpen}
           onCapturePanelToggle={() => { const next = !capturePanelOpen; setCapturePanelOpen(next); persistUiSession({ capturePanelOpen: next }); }}
           onDeactivateLab={() => { storage?.setCurrentLabId('default'); setCurrentLabId('default'); setLabPanelOpen(false); }}
@@ -248,13 +274,15 @@ export default function App() {
           getViewUrl={getViewUrl}
           labNotes={labNotes}
           onLabNotesChange={(text) => { setLabNotesState(text); storage?.setLabNotes?.(currentLabId, text); }}
+          labReport={labReport}
+          onLabReportChange={(text) => { setLabReportState(text); storage?.setLabReport?.(currentLabId, text); }}
         />
         <div id="topbar-context" class="topbar-context" aria-live="polite">
           {view === 'scenario' && currentScenario
             ? `Scénario : ${currentScenario.title}`
             : view === 'room' && currentRoomId
               ? (data?.rooms?.find(r => r.id === currentRoomId)?.title || 'Room')
-              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', 'network-sim': 'Simulateur réseau', 'proxy-tools': 'Requêtes API', 'proxy-config': 'Proxy (config)', 'api-client': 'Requêtes API (Postman)', capture: 'Capture pcap' }[view] || view)}
+              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', 'doc-offline': 'Bibliothèque doc', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', 'network-sim': 'Simulateur réseau', 'proxy-tools': 'Requêtes API', 'proxy-config': 'Proxy (config)', 'api-client': 'Requêtes API (Postman)', capture: 'Capture pcap' }[view] || view)}
         </div>
         {loaded && (
           <div class="view active" key={view}>
@@ -265,6 +293,18 @@ export default function App() {
               config={config}
               docs={docs}
               learning={learning}
+              learningTopicId={learningTopicId}
+              learningSubId={learningSubId}
+              onNavigateLearning={(topicId, subId) => { window.location.hash = '#/learning' + (topicId ? '/' + encodeURIComponent(topicId) : '') + (subId ? '/' + encodeURIComponent(subId) : ''); setLearningTopicId(topicId || null); setLearningSubId(subId || null); }}
+              docSources={docSources}
+              docId={docOfflineId}
+              getOfflineDoc={storage?.getOfflineDoc}
+              setOfflineDoc={storage?.setOfflineDoc}
+              getOfflineDocIds={storage?.getOfflineDocIds}
+              getDocPreferences={storage?.getDocPreferences}
+              setDocPreferences={storage?.setDocPreferences}
+              onOpenDoc={(id) => { window.location.hash = '#/doc-offline/' + encodeURIComponent(id); setDocOfflineId(id); setViewState('doc-offline'); }}
+              onBack={() => { window.location.hash = '#/doc-offline'; setDocOfflineId(null); setViewState('doc-offline'); }}
               targets={targets}
               challenges={challenges}
               searchQuery={searchQuery}
@@ -291,6 +331,8 @@ export default function App() {
       <button type="button" class="cve-fab" onClick={() => setCvePanelOpen(true)} aria-label="Recherche CVE" title="Rechercher un CVE">CVE</button>
       <CvePanel open={cvePanelOpen} onClose={() => setCvePanelOpen(false)} />
       {showPipButton && <PipPanel open={pipOpen} scenario={currentScenario} onClose={() => setPipOpen(false)} />}
+      {view === 'scenario' && <ScenarioBottomBar scenario={currentScenario} storage={storage} collapsed={scenarioBarCollapsed} onCollapsed={setScenarioBarCollapsed} onExpand={() => window.location.hash = '#/scenario/' + (currentScenarioId || '')} />}
+      <TerminalPipPanel open={terminalPipOpen} onClose={() => setTerminalPipOpen(false)} getTerminalUrl={getTerminalUrl} />
       {terminalPanelOpen && (
         <div
           class={`terminal-side-panel ${terminalPanelMinimized ? 'terminal-side-panel-minimized' : ''}`}

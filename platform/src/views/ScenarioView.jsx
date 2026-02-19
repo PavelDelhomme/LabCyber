@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { escapeHtml, getTerminalUrl } from '../lib/store';
 
-export default function ScenarioView({ scenarios, config, currentScenarioId, storage, onOpenTerminalInPanel }) {
+export default function ScenarioView({ scenarios, config, currentScenarioId, storage, onOpenTerminalInPanel, docSources }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
   const [taskIndex, setTaskIndex] = useState(0);
 
@@ -101,6 +101,11 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
                   <div class="task-title">{escapeHtml(t.title)}</div>
                   {t.content && <p>{escapeHtml(t.content)}</p>}
                   {t.command && <pre class="code-block">{escapeHtml(t.command)}</pre>}
+                  {t.docRef && (
+                    <p class="task-doc-ref">
+                      <a href={`#/doc-offline/${encodeURIComponent(t.docRef)}`} class="task-doc-link">View doc: {escapeHtml((docSources?.sources || []).find(s => s.id === t.docRef)?.label || t.docRef)}</a>
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
