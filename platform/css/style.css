@@ -1261,6 +1261,32 @@ body {
   max-height: 60vh;
 }
 
+/* Panneau Options à gauche */
+.options-left-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(380px, 100vw);
+  max-width: 100%;
+  height: 100vh;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 9000;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+}
+.options-left-panel .terminal-side-panel-header {
+  border-bottom: 1px solid var(--border);
+}
+.options-left-panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+}
+.options-left-panel-body .options-view { padding: 0; }
+.options-left-panel-body .page-header { flex-wrap: wrap; gap: 0.5rem; }
+
 /* Panneau latéral Terminal (dashboard « Ouvrir à côté ») */
 .terminal-side-panel {
   position: fixed;
@@ -1297,6 +1323,24 @@ body {
   border-right: 1px solid var(--border);
   margin-right: 0.25rem;
 }
+.terminal-lab-choice {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+.terminal-lab-choice-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.terminal-lab-choice-btn:hover { color: var(--text); border-color: var(--accent); background: var(--bg-hover); }
+.terminal-lab-choice-btn.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 500; }
 .terminal-side-panel-tabs {
   display: flex;
   align-items: stretch;
@@ -1501,9 +1545,100 @@ body {
 .terminal-journal-empty { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
 
 .capture-side-panel .capture-panel-body { padding: 0.75rem 1rem; overflow: auto; }
+.capture-panel-position-choice { display: flex; gap: 0.25rem; flex-shrink: 0; }
+.capture-panel-position-choice button {
+  padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text-muted); cursor: pointer; font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.capture-panel-position-choice button:hover { color: var(--text); border-color: var(--accent); background: var(--bg-hover); }
+.capture-panel-position-choice button.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 500; }
+.capture-side-panel.capture-panel-bottom {
+  top: auto; right: 0; left: 0; width: 100%; height: 42vh; min-height: 200px;
+  border-left: none; border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+}
 .view-capture-panel .room-section { margin-bottom: 0.75rem; }
 .view-capture-panel .page-header { display: none; }
 .topbar-actions .topbar-btn.active { background: var(--accent-soft); color: var(--accent); }
+.log-stats-dropdown { position: relative; display: inline-block; }
+.log-stats-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin: 0.25rem 0 0;
+  padding: 0.35rem 0;
+  min-width: 180px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  list-style: none;
+  z-index: 1100;
+}
+.log-stats-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.log-stats-item:hover { background: var(--bg-hover); color: var(--accent); }
+
+/* Terminal PiP : fenêtre flottante déplaçable (au-dessus du panneau terminal) */
+.terminal-pip-panel {
+  position: fixed;
+  width: 400px;
+  height: 320px;
+  min-width: 280px;
+  min-height: 200px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  z-index: 9500;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+.terminal-pip-minimized {
+  width: 220px;
+  height: 48px;
+  min-width: 180px;
+  min-height: 48px;
+}
+.terminal-pip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.75rem;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  user-select: none;
+  cursor: grab;
+}
+.terminal-pip-header:active { cursor: grabbing; }
+.terminal-pip-minimized .terminal-pip-header { border-bottom: none; }
+.terminal-pip-title { font-size: 0.9rem; font-weight: 600; color: var(--accent); }
+.terminal-pip-actions { display: flex; gap: 0.25rem; }
+.terminal-pip-btn {
+  padding: 0.2rem 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+.terminal-pip-btn:hover { color: var(--text); }
+.terminal-pip-body { flex: 1; min-height: 0; display: flex; }
+.terminal-pip-iframe { flex: 1; width: 100%; height: 100%; min-height: 0; border: none; border-radius: 0 0 var(--radius) var(--radius); }
 
 #log-entries {
   list-style: none;
@@ -1533,6 +1668,9 @@ body {
 #log-entries li .log-details { color: var(--text-muted); font-size: 0.7rem; margin-top: 0.2rem; }
 
 /* Bouton flottant Journal (masqué sur desktop) */
+.app.has-right-panel .log-fab { right: calc(var(--right-panel-width, 0px) + 1.25rem); }
+.app.has-right-panel .cve-fab { right: calc(var(--right-panel-width, 0px) + 5rem); }
+.app.has-right-panel .log-panel { margin-right: var(--right-panel-width, 0); }
 .log-fab {
   display: none;
   position: fixed;

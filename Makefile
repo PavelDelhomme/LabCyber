@@ -2,31 +2,43 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart
+.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 help:
-	@echo "Lab Cyber – Cibles principales"
+	@echo "Lab Cyber – Cibles Make"
+	@echo "================================"
 	@echo ""
-	@echo "  Interface web (lab) : http://127.0.0.1:8080  (après make dev ou make up)"
-	@echo "  Port 5000 = vuln-api (interne), pas l'interface ; tout passe par le port 8080."
+	@echo "  Interface web : http://127.0.0.1:8080   |   Terminal : http://127.0.0.1:8080/terminal/"
 	@echo ""
-	@echo "  make dev          Reconstruire si besoin + démarrer tout (recommandé)"
-	@echo "  make up           Démarrer sans rebuild (rapide)"
-	@echo "  make down         Tout arrêter (lab + lab-minimal)"
-	@echo "  make rebuild      Tout arrêter + reconstruire les images + redémarrer (pour tester les modifs)"
-	@echo "  make restart     Arrêter puis redémarrer (down + up, pas de rebuild)"
-	@echo "  make build        Reconstruire les images (sans démarrer)"
-	@echo "  make status       État des conteneurs"
+	@echo "  Démarrer / arrêter"
+	@echo "  ------------------"
+	@echo "  make up             Démarrer les conteneurs (sans rebuild)"
+	@echo "  make down           Tout arrêter (lab + lab-minimal), libérer les ports"
+	@echo "  make dev            Reconstruire si besoin + démarrer (recommandé)"
+	@echo "  make build          Reconstruire les images (sans démarrer)"
 	@echo ""
-	@echo "  make up-minimal   Mode minimal  |  make test  tests  |  make shell  conteneur attaquant"
-	@echo "  make logs         Suivi des logs (Ctrl+C pour arrêter ; après make rebuild, relancer make logs)"
-	@echo "  make logs-SVC     Logs d'un service (ex: make logs-gateway)"
-	@echo "  make proxy        Lab + Squid (3128)  |  make blue  Blue Team  |  Bureau noVNC inclus (make dev) : /desktop/"
-	@echo "  make clean        Tout arrêter + reconstruire la plateforme (sans supprimer les données)  |  make clean-all  + supprimer volumes"
-	@echo "  make ports        Voir qui utilise 8080/7681"
+	@echo "  Redémarrage et nettoyage"
+	@echo "  -------------------------"
+	@echo "  make restart        down puis up (redémarrage rapide, pas de rebuild)"
+	@echo "  make restart-clean  down + clean + up (arrêt, rebuild plateforme sans perdre les données, puis up)"
+	@echo "  make restart-clean-all  down + clean-all + up (tout supprimer y compris volumes, rebuild, up)"
+	@echo "  make rebuild        down + build + up (reconstruire toutes les images puis up)"
+	@echo ""
+	@echo "  make clean          Arrêter + reconstruire la plateforme (--no-cache), sans supprimer les volumes"
+	@echo "  make clean-all      Arrêter + supprimer les volumes (toutes les données effacées)"
+	@echo ""
+	@echo "  Autres"
+	@echo "  ------"
+	@echo "  make status         État des conteneurs"
+	@echo "  make logs           Suivi des logs (Ctrl+C pour arrêter)"
+	@echo "  make logs-SVC       Logs d'un service (ex: make logs-gateway)"
+	@echo "  make shell          Shell dans le conteneur attaquant"
+	@echo "  make test            Lancer les tests  |  make test-full  avec lab requis"
+	@echo "  make up-minimal     Mode minimal  |  make proxy  Lab + Squid  |  make blue  Blue Team"
+	@echo "  make ports          Voir qui utilise 8080/7681"
 	@echo ""
 
 # Démarrer sans rebuild (rapide si les images sont déjà à jour)
@@ -47,8 +59,22 @@ down:
 restart: down
 	cd $(ROOT) && docker compose up -d
 	@echo ""
-	@echo "  Interface web (lab) : http://127.0.0.1:8080"
-	@echo "  Terminal : http://127.0.0.1:8080/terminal/  |  make shell"
+	@echo "  Interface web : http://127.0.0.1:8080   |   Terminal : http://127.0.0.1:8080/terminal/"
+	@echo ""
+
+# Arrêter + clean (rebuild plateforme sans supprimer les volumes) + démarrer
+restart-clean: clean
+	cd $(ROOT) && docker compose up -d
+	@echo ""
+	@echo "  restart-clean terminé. Interface : http://127.0.0.1:8080   |   make shell"
+	@echo ""
+
+# Arrêter + supprimer volumes + rebuild plateforme + démarrer
+restart-clean-all: clean-all
+	cd $(ROOT) && docker compose build --no-cache platform
+	cd $(ROOT) && docker compose up -d
+	@echo ""
+	@echo "  restart-clean-all terminé (volumes supprimés). Interface : http://127.0.0.1:8080"
 	@echo ""
 
 # Tout arrêter + reconstruire les images + redémarrer (pour tester les modifs plateforme, etc.)
@@ -142,13 +168,12 @@ ports:
 	@ss -tlnp 2>/dev/null | grep -E ':8080|:7681' || true
 	@echo "Pour libérer : make down. Pour changer : .env (GATEWAY_PORT, TTYD_PORT) puis make up."
 
-# Nettoyage : arrêter les conteneurs, reconstruire la plateforme (--no-cache) pour prendre le nouveau code.
-# Ne supprime PAS les volumes (données DVWA, vuln-api, bash history, etc. conservées).
+# Nettoyage : arrêter les conteneurs, reconstruire la plateforme (--no-cache). Ne supprime PAS les volumes.
 clean:
 	cd $(ROOT) && docker compose --profile proxy --profile blue down --remove-orphans
 	cd $(ROOT) && docker compose -f docker-compose.minimal.yml down --remove-orphans 2>/dev/null || true
 	cd $(ROOT) && docker compose build --no-cache platform
-	@echo "Conteneurs arrêtés, image plateforme reconstruite (données conservées). Lancez : make up"
+	@echo "Conteneurs arrêtés, image plateforme reconstruite (données conservées). Lancez : make up ou make restart-clean pour enchaîner avec up."
 
 # Nettoyage total : conteneurs + volumes (toutes les données supprimées)
 clean-all:

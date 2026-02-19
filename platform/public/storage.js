@@ -378,7 +378,11 @@
         terminalTabs: Array.isArray(obj.terminalTabs) && obj.terminalTabs.length > 0 ? obj.terminalTabs : undefined,
         activeTerminalTabId: obj.activeTerminalTabId != null ? obj.activeTerminalTabId : undefined,
         terminalPanelMinimized: !!obj.terminalPanelMinimized,
-        terminalPanelWidth: typeof obj.terminalPanelWidth === 'number' && obj.terminalPanelWidth >= 320 ? obj.terminalPanelWidth : undefined
+        terminalPanelWidth: typeof obj.terminalPanelWidth === 'number' && obj.terminalPanelWidth >= 320 ? obj.terminalPanelWidth : undefined,
+        optionsInLeftPanel: !!obj.optionsInLeftPanel,
+        optionsPanelOpen: !!obj.optionsPanelOpen,
+        terminalUseDefaultLab: obj.terminalUseDefaultLab !== false,
+        capturePanelPosition: (obj.capturePanelPosition === 'bottom' || obj.capturePanelPosition === 'left') ? obj.capturePanelPosition : 'right'
       };
       writeQueue.push(setData(STORE_DATA, KEY_UI_SESSION, cache.uiSession));
     },

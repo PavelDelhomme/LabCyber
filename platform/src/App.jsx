@@ -82,6 +82,7 @@ export default function App() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [cvePanelOpen, setCvePanelOpen] = useState(false);
   const [terminalPanelOpen, setTerminalPanelOpen] = useState(false);
+  const [terminalPanelReady, setTerminalPanelReady] = useState(false);
   const [terminalTabs, setTerminalTabs] = useState([{ id: '1', name: 'Session 1' }]);
   const [activeTerminalTabId, setActiveTerminalTabId] = useState('1');
   const [terminalPanelMinimized, setTerminalPanelMinimized] = useState(false);
@@ -97,6 +98,10 @@ export default function App() {
   const [currentLabId, setCurrentLabId] = useState('default');
   const [labPanelOpen, setLabPanelOpen] = useState(false);
   const [capturePanelOpen, setCapturePanelOpen] = useState(false);
+  const [capturePanelPosition, setCapturePanelPosition] = useState('right');
+  const [optionsInLeftPanel, setOptionsInLeftPanel] = useState(false);
+  const [optionsPanelOpen, setOptionsPanelOpen] = useState(false);
+  const [terminalUseDefaultLab, setTerminalUseDefaultLab] = useState(true);
   const [terminalHistory, setTerminalHistory] = useState([]);
   const [terminalJournalInput, setTerminalJournalInput] = useState('');
   const [labNotes, setLabNotesState] = useState('');
@@ -114,12 +119,16 @@ export default function App() {
         setTerminalPanelOpen(!!ui.terminalPanelOpen);
         setLabPanelOpen(!!ui.labPanelOpen);
         setCapturePanelOpen(!!ui.capturePanelOpen);
+        if (ui.capturePanelPosition === 'bottom' || ui.capturePanelPosition === 'left') setCapturePanelPosition(ui.capturePanelPosition);
         if (Array.isArray(ui.terminalTabs) && ui.terminalTabs.length > 0) {
           setTerminalTabs(ui.terminalTabs);
           setActiveTerminalTabId(ui.activeTerminalTabId || ui.terminalTabs[0].id);
         }
         if (typeof ui.terminalPanelMinimized === 'boolean') setTerminalPanelMinimized(ui.terminalPanelMinimized);
         if (typeof ui.terminalPanelWidth === 'number' && ui.terminalPanelWidth >= 320) setTerminalPanelWidth(ui.terminalPanelWidth);
+        if (typeof ui.optionsInLeftPanel === 'boolean') setOptionsInLeftPanel(ui.optionsInLeftPanel);
+        if (typeof ui.optionsPanelOpen === 'boolean') setOptionsPanelOpen(ui.optionsPanelOpen);
+        if (typeof ui.terminalUseDefaultLab === 'boolean') setTerminalUseDefaultLab(ui.terminalUseDefaultLab);
       }
     };
     if (storage.ready) storage.ready().then(init);
@@ -159,7 +168,7 @@ export default function App() {
   }, []);
 
   const persistUiSession = (patch) => {
-    if (storage?.setUiSession) storage.setUiSession({ terminalPanelOpen, labPanelOpen, capturePanelOpen, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth, ...patch });
+    if (storage?.setUiSession) storage.setUiSession({ terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth, ...patch });
   };
 
   const openTerminalPanel = () => {
@@ -172,12 +181,20 @@ export default function App() {
     setTerminalPanelOpen(true);
     setTerminalHistory(storage?.getTerminalHistory?.() || []);
     storage?.setUiSession?.({ terminalPanelOpen: true, labPanelOpen: false, terminalTabs: savedTabs, activeTerminalTabId: savedActive });
-    setTimeout(() => { storage?.setUiSession?.({ terminalPanelOpen: true, labPanelOpen: false, terminalTabs: savedTabs, activeTerminalTabId: savedActive }); }, 100);
   };
 
   useEffect(() => {
     if (terminalPanelOpen && storage) setTerminalHistory(storage.getTerminalHistory() || []);
   }, [terminalPanelOpen, storage]);
+
+  useEffect(() => {
+    if (!terminalPanelOpen) {
+      setTerminalPanelReady(false);
+      return;
+    }
+    const t = setTimeout(() => setTerminalPanelReady(true), 80);
+    return () => clearTimeout(t);
+  }, [terminalPanelOpen]);
 
   useEffect(() => {
     const onMove = (e) => {
@@ -198,9 +215,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!terminalPanelOpen || !storage?.setUiSession) return;
-    storage.setUiSession({ terminalPanelOpen, labPanelOpen, capturePanelOpen, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth });
-  }, [terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth]);
+    if (!storage?.setUiSession) return;
+    storage.setUiSession({ terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth });
+  }, [terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth, terminalUseDefaultLab, capturePanelPosition]);
+
+  const onOptionsClick = () => {
+    if (optionsInLeftPanel) {
+      setOptionsPanelOpen(true);
+      persistUiSession({ optionsPanelOpen: true });
+    } else {
+      setView('options');
+    }
+  };
 
   const setView = (v) => {
     skipNextHashChange.current = true;
@@ -230,8 +256,9 @@ export default function App() {
 
   const ViewComponent = VIEWS[view] || Dashboard;
 
+  const rightPanelWidth = terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : (capturePanelOpen && capturePanelPosition === 'right' ? 360 : 0);
   return (
-    <div class={`app ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div class={`app ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${rightPanelWidth ? 'has-right-panel' : ''}`} style={rightPanelWidth ? { '--right-panel-width': `${rightPanelWidth}px` } : {}}>
       <Sidebar
         view={view}
         currentScenarioId={currentScenarioId}
@@ -243,7 +270,7 @@ export default function App() {
         onOpenScenario={onOpenScenario}
         onOpenRoom={onOpenRoom}
       />
-      <main class={`main ${view === 'scenario' ? 'has-scenario-bar' + (scenarioBarCollapsed ? ' scenario-bar-collapsed' : '') : ''}`}>
+      <main class={`main ${view === 'scenario' ? 'has-scenario-bar' + (scenarioBarCollapsed ? ' scenario-bar-collapsed' : '') : ''}`} style={{ marginRight: terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : (capturePanelOpen && capturePanelPosition === 'right' ? 360 : 0) }}>
         <Topbar
           view={view}
           sidebarCollapsed={sidebarCollapsed}
@@ -261,12 +288,12 @@ export default function App() {
           onLogToggle={() => setLogOpen(o => !o)}
           onPipToggle={() => setPipOpen(o => !o)}
           onStats={() => setStatsOpen(true)}
-          onOptions={() => setView('options')}
+          onOptions={onOptionsClick}
           onTerminal={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
           onTerminalInPanel={openTerminalPanel}
           onTerminalPip={() => setTerminalPipOpen(true)}
           capturePanelOpen={capturePanelOpen}
-          onCapturePanelToggle={() => { const next = !capturePanelOpen; setCapturePanelOpen(next); persistUiSession({ capturePanelOpen: next }); }}
+          onCapturePanelToggle={() => { setCapturePanelOpen(prev => { const next = !prev; setTimeout(() => persistUiSession({ capturePanelOpen: next }), 0); return next; }); }}
           onDeactivateLab={() => { storage?.setCurrentLabId('default'); setCurrentLabId('default'); setLabPanelOpen(false); }}
           onNavigate={setView}
           getTerminalUrl={getTerminalUrl}
@@ -319,6 +346,8 @@ export default function App() {
               onLabChange={onLabChange}
               onOpenTerminalInNewTab={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
               onOpenTerminalInPanel={openTerminalPanel}
+              optionsInLeftPanel={optionsInLeftPanel}
+              onOptionsInLeftPanelChange={(v) => { setOptionsInLeftPanel(v); persistUiSession({ optionsInLeftPanel: v }); }}
             />
           </div>
         )}
@@ -346,6 +375,12 @@ export default function App() {
           />
           <header class="terminal-side-panel-header">
             <h3>{terminalPanelMinimized ? '⌨' : 'Terminal web (attaquant)'}</h3>
+            {!terminalPanelMinimized && currentLabId !== 'default' && (
+              <div class="terminal-lab-choice">
+                <button type="button" class={`terminal-lab-choice-btn ${terminalUseDefaultLab ? 'active' : ''}`} onClick={() => { setTerminalUseDefaultLab(true); persistUiSession({ terminalUseDefaultLab: true }); }} title="Terminal du lab par défaut">Lab défaut</button>
+                <button type="button" class={`terminal-lab-choice-btn ${!terminalUseDefaultLab ? 'active' : ''}`} onClick={() => { setTerminalUseDefaultLab(false); persistUiSession({ terminalUseDefaultLab: false }); }} title="Terminal du lab actif">Lab actif</button>
+              </div>
+            )}
             {!terminalPanelMinimized && (
               <div class="terminal-side-panel-tabs">
                 {terminalTabs.map(tab => (
@@ -358,6 +393,8 @@ export default function App() {
                   >
                     {editingTerminalTabId === tab.id ? (
                       <input
+                        id={`terminal-tab-rename-${tab.id}`}
+                        name="terminal-tab-rename"
                         type="text"
                         class="terminal-tab-rename-input"
                         value={tab.name}
@@ -375,7 +412,7 @@ export default function App() {
                     )}
                   </button>
                 ))}
-                <button type="button" class="terminal-tab-add" onClick={() => { const id = String(Date.now()); setTerminalTabs(t => [...t, { id, name: `Session ${t.length + 1}` }]); setActiveTerminalTabId(id); }} title="Nouvel onglet">+</button>
+                <button type="button" class="terminal-tab-add" onClick={(e) => { e.stopPropagation(); const newTab = { id: String(Date.now()), name: `Session ${terminalTabs.length + 1}` }; const nextTabs = [...terminalTabs, newTab]; setTerminalTabs(nextTabs); setActiveTerminalTabId(newTab.id); persistUiSession({ terminalTabs: nextTabs, activeTerminalTabId: newTab.id }); }} title="Nouvel onglet">+</button>
               </div>
             )}
             <button type="button" class="terminal-side-panel-minimize" onClick={() => { setTerminalPanelMinimized(m => !m); persistUiSession({ terminalPanelMinimized: !terminalPanelMinimized }); }} title={terminalPanelMinimized ? 'Afficher le panneau' : 'Réduire (cacher sans fermer)'} aria-label={terminalPanelMinimized ? 'Agrandir' : 'Réduire'}>{terminalPanelMinimized ? '▶' : '◀'}</button>
@@ -387,7 +424,7 @@ export default function App() {
           <div class="terminal-side-panel-body">
             {terminalTabs.map(tab => (
               <div key={tab.id} class="terminal-tab-pane" style={{ display: activeTerminalTabId === tab.id ? 'flex' : 'none' }}>
-                <iframe src={getTerminalUrl()} title={tab.name} class="terminal-side-panel-iframe" />
+                {terminalPanelReady && <iframe src={getTerminalUrl(terminalUseDefaultLab)} title={tab.name} class="terminal-side-panel-iframe" key={`${tab.id}-${terminalUseDefaultLab}`} />}
               </div>
             ))}
           </div>
@@ -395,7 +432,7 @@ export default function App() {
             <h4 class="terminal-journal-title">Journal de session (historique enregistré)</h4>
             <p class="terminal-journal-desc">Ajoute une ligne (commande ou note) pour la garder en mémoire.</p>
             <form class="terminal-journal-form" onSubmit={(e) => { e.preventDefault(); const t = terminalJournalInput.trim(); if (t) { storage?.appendTerminalHistory?.({ text: t }); setTerminalHistory(storage?.getTerminalHistory?.() || []); setTerminalJournalInput(''); } }}>
-              <input type="text" class="terminal-journal-input" value={terminalJournalInput} onInput={e => setTerminalJournalInput(e.target.value)} placeholder="Commande ou note à enregistrer" />
+              <input id="terminal-journal-input" name="terminal-journal-entry" type="text" class="terminal-journal-input" value={terminalJournalInput} onInput={e => setTerminalJournalInput(e.target.value)} placeholder="Commande ou note à enregistrer" />
               <button type="submit" class="btn btn-secondary">Ajouter</button>
             </form>
             <ul class="terminal-journal-list">
@@ -412,10 +449,31 @@ export default function App() {
           )}
         </div>
       )}
+      {optionsPanelOpen && (
+        <div class="options-left-panel" role="dialog" aria-label="Options">
+          <header class="terminal-side-panel-header">
+            <h3>Options</h3>
+            <button type="button" class="terminal-side-panel-close" onClick={() => { setOptionsPanelOpen(false); persistUiSession({ optionsPanelOpen: false }); }} aria-label="Fermer">×</button>
+          </header>
+          <div class="options-left-panel-body">
+            <OptionsView
+              onNavigate={setView}
+              storage={storage}
+              optionsInLeftPanel={optionsInLeftPanel}
+              onOptionsInLeftPanelChange={(v) => { setOptionsInLeftPanel(v); persistUiSession({ optionsInLeftPanel: v }); }}
+              isPanel
+            />
+          </div>
+        </div>
+      )}
       {capturePanelOpen && (
-        <div class="terminal-side-panel capture-side-panel" role="dialog" aria-label="Capture pcap (lab actif)">
+        <div class={`terminal-side-panel capture-side-panel capture-panel-${capturePanelPosition}`} role="dialog" aria-label="Capture pcap (lab actif)">
           <header class="terminal-side-panel-header">
             <h3>Capture pcap (lab : {currentLab.name})</h3>
+            <div class="capture-panel-position-choice">
+              <button type="button" class={capturePanelPosition === 'right' ? 'active' : ''} onClick={() => { setCapturePanelPosition('right'); persistUiSession({ capturePanelPosition: 'right' }); }} title="Panneau à droite">Droite</button>
+              <button type="button" class={capturePanelPosition === 'bottom' ? 'active' : ''} onClick={() => { setCapturePanelPosition('bottom'); persistUiSession({ capturePanelPosition: 'bottom' }); }} title="Panneau en bas">Bas</button>
+            </div>
             <button type="button" class="terminal-side-panel-close" onClick={() => { setCapturePanelOpen(false); persistUiSession({ capturePanelOpen: false }); }} aria-label="Fermer">×</button>
           </header>
           <div class="terminal-side-panel-body capture-panel-body">

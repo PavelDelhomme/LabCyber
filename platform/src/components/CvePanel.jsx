@@ -61,6 +61,8 @@ export default function CvePanel({ open: isOpen, onClose }) {
           <h4 class="cve-panel-section-title">Ouvrir par ID</h4>
           <div class="cve-panel-form">
             <input
+              id="cve-panel-id"
+              name="cveId"
               type="text"
               class="cve-panel-input"
               placeholder="CVE-2024-1234"
@@ -76,6 +78,8 @@ export default function CvePanel({ open: isOpen, onClose }) {
           <h4 class="cve-panel-section-title">Rechercher (logiciel, OS, application, version)</h4>
           <div class="cve-panel-form">
             <input
+              id="cve-panel-keyword"
+              name="cveKeyword"
               type="text"
               class="cve-panel-input"
               placeholder="ex. Redis, OpenSSH 8.1, Apache 2.4"

@@ -9,7 +9,7 @@ const DOC_CATEGORIES = [
   { id: 'database', name: 'Bases de données' },
 ];
 
-export default function OptionsView({ onNavigate, storage }) {
+export default function OptionsView({ onNavigate, storage, optionsInLeftPanel, onOptionsInLeftPanelChange, isPanel }) {
   const [pipAuto, setPipAuto] = useState(false);
   const [docPrefs, setDocPrefs] = useState({ customSources: [], versionOverrides: {}, autoFetchIds: [] });
   const [newUrl, setNewUrl] = useState('');
@@ -70,19 +70,29 @@ export default function OptionsView({ onNavigate, storage }) {
 
   return (
     <div class="options-view">
-      <div class="page-header">
-        <h2>Options</h2>
-        <button type="button" class="btn btn-secondary" onClick={() => onNavigate?.('dashboard')}>← Retour à l'accueil</button>
-      </div>
+      {!isPanel && (
+        <div class="page-header">
+          <h2>Options</h2>
+          <button type="button" class="btn btn-secondary" onClick={() => onNavigate?.('dashboard')}>← Retour à l'accueil</button>
+        </div>
+      )}
 
       <div class="options-view-card card">
         <h3 class="option-section-title">Général</h3>
         <div class="option-row">
           <label>
-            <input type="checkbox" checked={pipAuto} onChange={handlePipAuto} />
+            <input id="option-pip-auto" name="pipAuto" type="checkbox" checked={pipAuto} onChange={handlePipAuto} />
             Ouvrir le PiP scénario quand je lance un scénario
           </label>
         </div>
+        {typeof optionsInLeftPanel === 'boolean' && onOptionsInLeftPanelChange && (
+          <div class="option-row">
+            <label>
+              <input id="option-open-in-panel" name="optionsInLeftPanel" type="checkbox" checked={optionsInLeftPanel} onChange={(e) => onOptionsInLeftPanelChange(!!e.target.checked)} />
+              Ouvrir les Options en panneau à gauche (au lieu de la page) quand je clique sur ⚙️
+            </label>
+          </div>
+        )}
         <div class="option-row">
           <button type="button" class="topbar-btn" onClick={exportProgress}>Exporter ma progression (JSON)</button>
         </div>
@@ -95,9 +105,9 @@ export default function OptionsView({ onNavigate, storage }) {
         <h3 class="option-section-title">Bibliothèque doc (hors ligne)</h3>
         <p class="option-section-desc">Ajoutez des sources de documentation personnalisées (URL). Elles apparaîtront dans la vue Bibliothèque doc.</p>
         <div class="option-row option-doc-custom">
-          <input type="url" class="option-input" placeholder="URL (ex. https://docs.example.com)" value={newUrl} onInput={e => setNewUrl(e.target.value)} />
-          <input type="text" class="option-input" placeholder="Nom (ex. My Docs)" value={newLabel} onInput={e => setNewLabel(e.target.value)} />
-          <select class="option-select" value={newCategory} onInput={e => setNewCategory(e.target.value)}>
+          <input id="option-doc-url" name="docSourceUrl" type="url" class="option-input" placeholder="URL (ex. https://docs.example.com)" value={newUrl} onInput={e => setNewUrl(e.target.value)} />
+          <input id="option-doc-label" name="docSourceLabel" type="text" class="option-input" placeholder="Nom (ex. My Docs)" value={newLabel} onInput={e => setNewLabel(e.target.value)} />
+          <select id="option-doc-category" name="docSourceCategory" class="option-select" value={newCategory} onInput={e => setNewCategory(e.target.value)}>
             {DOC_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <button type="button" class="topbar-btn" onClick={addCustomSource}>Ajouter</button>

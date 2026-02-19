@@ -45,21 +45,21 @@ export default function OpenInPageDropdown({
         <ul class="open-in-page-menu" role="listbox">
           {onTerminalPanel && (
             <li>
-              <button type="button" class="open-in-page-item" onClick={(e) => { e.stopPropagation(); select(onTerminalPanel); }}>
+              <button type="button" class="open-in-page-item" onClick={(e) => { e.stopPropagation(); select(onTerminalPanel); }} title="Ouvrir le terminal dans un panneau à droite">
                 ⌨ Terminal (panneau)
               </button>
             </li>
           )}
           {onTerminalPip && (
             <li>
-              <button type="button" class="open-in-page-item" onClick={(e) => { e.stopPropagation(); select(onTerminalPip); }}>
+              <button type="button" class="open-in-page-item" onClick={(e) => { e.stopPropagation(); select(onTerminalPip); }} title="Terminal en fenêtre flottante (PiP) : déplaçable sur l'écran, à garder au-dessus du reste">
                 ▶ Terminal (PiP)
               </button>
             </li>
           )}
           {onCapture && (
             <li>
-              <button type="button" class={`open-in-page-item ${captureOpen ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); select(onCapture); }}>
+              <button type="button" class={`open-in-page-item ${captureOpen ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); select(onCapture); }} title="Ouvrir la capture paquets (type Wireshark) dans un panneau">
                 📡 Capture pcap
               </button>
             </li>

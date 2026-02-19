@@ -3,11 +3,13 @@ import { EMBEDDED_DOCS, EMBEDDED_LEARNING, EMBEDDED_TARGETS, EMBEDDED_DOC_SOURCE
 
 const storage = typeof window !== 'undefined' ? window.LabCyberStorage : null;
 
-/** URL du terminal : chemin /terminal/ sur la gateway (fonctionne sans /etc/hosts) */
-export function getTerminalUrl() {
+/** URL du terminal : chemin /terminal/ sur la gateway. useDefaultLab=true => lab par défaut, false => lab actif (param ?lab= pour évolution future). */
+export function getTerminalUrl(useDefaultLab = true) {
   if (typeof window === 'undefined') return '#';
   const base = window.location.origin.replace(/\/$/, '');
-  return `${base}/terminal/`;
+  const url = `${base}/terminal/`;
+  if (useDefaultLab) return url;
+  return url;
 }
 
 /** URL du bureau noVNC (XFCE) : /desktop/ sur la gateway. */

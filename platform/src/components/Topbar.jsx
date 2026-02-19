@@ -1,5 +1,28 @@
+import { useState, useRef, useEffect } from 'preact/hooks';
 import OpenInPageDropdown from './OpenInPageDropdown';
 import LabButtonDropdown from './LabButtonDropdown';
+
+function LogStatsDropdown({ onLogToggle, onStats }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const t = setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
+    return () => { clearTimeout(t); document.removeEventListener('click', onDocClick, true); };
+  }, [open]);
+  return (
+    <div class="log-stats-dropdown" ref={ref}>
+      <button type="button" class="topbar-btn topbar-btn-log" onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }} title="Journal & Stats">📋 ▼</button>
+      {open && (
+        <ul class="log-stats-menu" role="menu">
+          <li><button type="button" class="log-stats-item" onClick={(e) => { e.stopPropagation(); onLogToggle?.(); setOpen(false); }}>📋 Journal d'activité</button></li>
+          <li><button type="button" class="log-stats-item" onClick={(e) => { e.stopPropagation(); onStats?.(); setOpen(false); }}>📊 Statistiques</button></li>
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function Topbar({
   view,
@@ -60,6 +83,8 @@ export default function Topbar({
       </div>
       <div class="topbar-toolbar">
         <input
+          id="topbar-search"
+          name="search"
           type="search"
           class="search-input"
           placeholder="Rechercher scénarios, rooms, docs…"
@@ -68,6 +93,8 @@ export default function Topbar({
           onInput={e => onSearchChange(e.target.value)}
         />
         <select
+          id="topbar-filter-category"
+          name="filterCategory"
           class="filter-category"
           aria-label="Catégorie"
           value={filterCategory}
@@ -106,12 +133,11 @@ export default function Topbar({
             captureOpen={capturePanelOpen}
             label="Ouvrir"
           />
-          <button type="button" class="topbar-btn" onClick={onStats} title="Statistiques">📊</button>
+          <LogStatsDropdown onLogToggle={onLogToggle} onStats={onStats} />
           <button type="button" class="topbar-btn" onClick={onOptions} title="Options">⚙️</button>
           {showPipButton && (
             <button type="button" class="topbar-btn" onClick={onPipToggle} title="PiP scénario">📌</button>
           )}
-          <button type="button" class="topbar-btn topbar-btn-log" onClick={onLogToggle} title="Journal d'activité">📋</button>
         </div>
       </div>
       {labPanelOpen && (
@@ -133,6 +159,8 @@ export default function Topbar({
             )}
             <p class="lab-panel-section">Notes du lab</p>
             <textarea
+              id="lab-panel-notes"
+              name="labNotes"
               class="lab-panel-notes"
               placeholder="Notes, infos importantes, chemins de fichiers ou dossiers pour ce lab…"
               value={labNotes}
@@ -141,6 +169,8 @@ export default function Topbar({
             />
             <p class="lab-panel-section">Rapport / Failles (test de cybersécurité)</p>
             <textarea
+              id="lab-panel-report"
+              name="labReport"
               class="lab-panel-notes lab-panel-report"
               placeholder="Cibles, méthodologie, découvertes, failles (CVE), recommandations… Utilisez « Insérer modèle » pour une structure de rapport."
               value={labReport}
