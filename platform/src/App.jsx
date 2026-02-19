@@ -108,6 +108,28 @@ export default function App() {
   const [labReport, setLabReportState] = useState('');
   const skipNextHashChange = useRef(false);
   const terminalResizeRef = useRef({ active: false, startX: 0, startW: 0 });
+  const uiSessionRef = useRef({});
+
+  useEffect(() => {
+    uiSessionRef.current = { terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth };
+  });
+
+  const persistUiSession = (patch) => {
+    if (storage?.setUiSession) storage.setUiSession({ ...uiSessionRef.current, ...patch });
+  };
+
+  const openTerminalPanel = () => {
+    const ui = storage?.getUiSession?.();
+    const savedTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
+    const savedActive = ui?.activeTerminalTabId && savedTabs.some(t => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : savedTabs[0].id;
+    setTerminalTabs(savedTabs);
+    setActiveTerminalTabId(savedActive);
+    setLabPanelOpen(false);
+    setTerminalPanelOpen(true);
+    setTerminalHistory(storage?.getTerminalHistory?.() || []);
+    uiSessionRef.current = { ...uiSessionRef.current, terminalPanelOpen: true, labPanelOpen: false, terminalTabs: savedTabs, activeTerminalTabId: savedActive };
+    storage?.setUiSession?.({ ...uiSessionRef.current });
+  };
 
   useEffect(() => {
     if (!storage) return;
@@ -166,22 +188,6 @@ export default function App() {
     window.addEventListener('hashchange', apply);
     return () => window.removeEventListener('hashchange', apply);
   }, []);
-
-  const persistUiSession = (patch) => {
-    if (storage?.setUiSession) storage.setUiSession({ terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth, ...patch });
-  };
-
-  const openTerminalPanel = () => {
-    const ui = storage?.getUiSession?.();
-    const savedTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
-    const savedActive = ui?.activeTerminalTabId && savedTabs.some(t => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : savedTabs[0].id;
-    setTerminalTabs(savedTabs);
-    setActiveTerminalTabId(savedActive);
-    setLabPanelOpen(false);
-    setTerminalPanelOpen(true);
-    setTerminalHistory(storage?.getTerminalHistory?.() || []);
-    storage?.setUiSession?.({ terminalPanelOpen: true, labPanelOpen: false, terminalTabs: savedTabs, activeTerminalTabId: savedActive });
-  };
 
   useEffect(() => {
     if (terminalPanelOpen && storage) setTerminalHistory(storage.getTerminalHistory() || []);

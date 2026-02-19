@@ -181,9 +181,9 @@ export default function Topbar({
             <div class="lab-panel-actions">
               <p class="lab-panel-section">Ouvrir dans la page</p>
               <OpenInPageDropdown
-                onTerminalPanel={() => { onTerminalInPanel?.(); onLabPanelClose(); }}
-                onTerminalPip={onTerminalPip ? () => { onTerminalPip?.(); onLabPanelClose(); } : undefined}
-                onCapture={() => { onCapturePanelToggle?.(); onLabPanelClose(); }}
+                onTerminalPanel={() => { onTerminalInPanel?.(); setTimeout(() => onLabPanelClose(), 0); }}
+                onTerminalPip={onTerminalPip ? () => { onTerminalPip?.(); setTimeout(() => onLabPanelClose(), 0); } : undefined}
+                onCapture={() => { onCapturePanelToggle?.(); setTimeout(() => onLabPanelClose(), 0); }}
                 onSimulator={() => { onNavigate?.('network-sim'); onLabPanelClose(); }}
                 onProxy={() => { onNavigate?.('proxy-config'); onLabPanelClose(); }}
                 onApi={() => { onNavigate?.('api-client'); onLabPanelClose(); }}

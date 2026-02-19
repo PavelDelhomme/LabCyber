@@ -10,7 +10,8 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Bouton « + » nouvel onglet terminal** : ne fonctionne pas – corriger le clic (stopPropagation, persistance des onglets).
 - **Terminal PiP** : doit être **déplaçable** comme une vidéo YouTube (fenêtre flottante), ne pas prendre la place du panneau ; position et z-index à corriger pour qu’il soit bien au-dessus et déplaçable.
 - **Panneau terminal rétracté** : quand le terminal est réduit sur le côté, les boutons **Options, Stats, Journal d’activité** (et CVE, etc.) passent **sous** le panneau et ne sont plus cliquables. Idem si le journal d’activité est ouvert alors que le terminal est rétracté – on ne peut plus fermer. **À faire** : réserver une marge à droite au contenu principal (topbar + FAB) quand un panneau droit est ouvert (terminal, capture, etc.) pour que les boutons restent toujours visibles et accessibles.
-- **Lab actif – Ouvrir dans la page** : depuis les options du lab actif, « Capture pcap » et « Simulateur réseau » (et Proxy, Requêtes API) doivent pouvoir **s’ouvrir en panneau** dans la page, pas en nouvel onglet ni en changeant la vue. À faire : **système de panneaux** à droite (terminal, capture, simulateur, proxy, API) avec icônes des panneaux actifs, clic pour afficher le panneau concerné.
+- **Lab actif – Ouvrir dans la page** : **Corrigé** : le terminal (panneau) ne se referme plus quand on l’ouvre depuis le popup lab (persistance via ref). **À faire** : « Ouvrir dans la page » = toujours ouvrir en **panneau** (comme le terminal), pas en changeant la page actuelle. Donc Simulateur réseau, Proxy config, Requêtes API, Capture pcap doivent s’ouvrir en **panneau** à droite (pas « page Simulateur » ou « page Proxy »). Système de panneaux à droite avec icônes des panneaux actifs, onglets en haut du panneau, menu Ouvrir à ce même endroit (Terminal, Capture, Simulateur, Proxy, API, Terminal PiP). Terminal PiP reste une fenêtre flottante à part ; **à améliorer** : pouvoir ouvrir **plusieurs onglets** dans le terminal PiP comme dans le panneau terminal.
+- **Session par lab** : quand un lab est actif, les panneaux ouverts (terminal, capture, etc.) doivent être **enregistrés en session de lab** pour retrouver la même configuration quand on revient sur ce lab après en avoir chargé un autre.
 - **Journal + Stats** : combiner **Journal d’activité** et **Stats** en un **seul bouton dropdown** (ex. « 📋 ▼ ») pour gagner de la place et libérer de l’espace pour une barre d’icônes de panneaux.
 - **CVE** : la recherche par mot-clé affiche déjà les résultats dans le panel ; s’assurer que le flux est clair (recherche → résultats dans le panel, pas ouverture NVD). **À faire plus tard** : « Ouvrir par ID » pourrait aussi afficher le CVE dans le panel au lieu d’ouvrir NVD ; possibilité d’**enregistrer les CVE détectés** (ex. pour un lab) pour les retrouver plus tard.
 - **Champs formulaire id/name** : compléter les `id` et `name` partout pour supprimer l’avertissement console (autofill).
@@ -28,21 +29,24 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
    - **Historique / session terminal** : pouvoir enregistrer l’**état historique** du terminal (attaquant, lab, etc.), prendre des **notes par ligne/session**, et option pour **nettoyer** cet historique. Persistance des sessions/onglets et de l’historique des commandes si possible.
 
 2. **Système de panneaux (côté droit)**  
-   - **Multi-panneaux** : terminal, capture, simulateur, proxy, Requêtes API – tous ouvrables en **panneau** (pas seulement en page). Barre d’**icônes** des panneaux actifs à droite ; clic sur une icône ouvre ou met en avant le panneau. Gestion des panneaux par catégorie, position (droite/bas/gauche), taille, session.
+   - **Multi-panneaux** : terminal, capture, simulateur, proxy, Requêtes API – tous ouvrables en **panneau** (pas en page). **Onglets** affichés en haut du panneau ; menu **Ouvrir** (dropdown) au même endroit : Terminal panneau, Capture, Simulateur réseau, Proxy config, Requêtes API, Terminal PiP. Barre d’**icônes** des panneaux actifs ; clic sur une icône affiche le panneau. Réduction du panneau sur le côté explicite (bouton « réduire » visible, pas seulement à côté de « Lab par défaut »). Simulateur réseau en panneau = plus grand, avec sélection par lab / session ou création d’une nouvelle session réseau.
 
 3. **Lab actif – Ouvrir en panneau**  
-   - Dans le panneau Lab (détails du lab), les actions « Ouvrir dans la page » doivent ouvrir les **panneaux** (terminal, capture, simulateur, proxy, API) et non pas naviguer vers la page ou ouvrir un nouvel onglet.
+   - Dans le popup Lab, « Ouvrir dans la page » doit **toujours** ouvrir en **panneau** (terminal, capture, simulateur, proxy, API), jamais en changeant la page courante ni en nouvel onglet.
 
-4. **CVE**  
+4. **Terminal PiP**  
+   - Garder le comportement actuel (fenêtre flottante déplaçable). **À faire** : pouvoir ouvrir **plusieurs onglets** dans le terminal PiP (comme dans le panneau terminal).
+
+5. **CVE**  
    - Recherche : résultats dans le panel (déjà en place). À améliorer : affichage par ID dans le panel ; **enregistrer les CVE détectés** (par lab ou global) pour les consulter plus tard.
 
-5. **Capture pcap, simulateur, proxy, API**  
+6. **Capture pcap, simulateur, proxy, API**  
    - Déjà en panneau ou en page. S’assurer que depuis le lab actif on peut tout ouvrir en panneau.
 
-6. **Panneau scénario (barre en bas)**  
+7. **Panneau scénario (barre en bas)**  
    - Afficher l’**avancement** des tâches (fait / en cours / pas commencé), revoir le design (pas décalé à droite).
 
-7. **Autres**  
+8. **Autres**  
    - Terminal : redimensionnement, réduction, persistance onglets.  
    - Capture : décodage avancé, Wireshark-like.  
    - Cours pentest, vuln-network/vuln-api, doc projet, sync doc, tests, etc. (voir ancienne section « À faire » pour le détail).
