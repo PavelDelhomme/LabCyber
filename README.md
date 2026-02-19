@@ -50,7 +50,7 @@ Si un port est pris : copie `.env.example` en `.env`, change `GATEWAY_PORT` ou `
 
 **Bureau noVNC** : **http://127.0.0.1:8080/desktop/** (mot de passe VNC : `labcyber`). Le conteneur bureau met ~30 s à démarrer ; la gateway attend qu’il réponde avant d’accepter les requêtes.
 
-**Documentation** : [docs/USAGE.md](docs/USAGE.md) (comment faire quoi) · [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) · [docs/00-INDEX.md](docs/00-INDEX.md) · [docs/TESTS.md](docs/TESTS.md) · [docs/LOGGING.md](docs/LOGGING.md).
+**Documentation** : [docs/USAGE.md](docs/USAGE.md) · [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) · [docs/00-INDEX.md](docs/00-INDEX.md) · [docs/TESTS.md](docs/TESTS.md) · [docs/LOGGING.md](docs/LOGGING.md). **Roadmap système maison** (terminal + env lab dédié, sans ttyd/VNC) : [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md).
 
 ### Si 502 sur /desktop/ ou /terminal/
 

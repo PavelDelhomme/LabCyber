@@ -8,10 +8,19 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 *Uniquement ce qui reste à faire. Les points déjà corrigés sont listés en bas dans « Réalisé ».*
 
+### Système maison (terminal + environnement lab)
+
+**Vision** : remplacer la dépendance à ttyd/Kali (et optionnellement noVNC) par un **système maison** : backend terminal dédié (Go ou C), environnement de lab minimal avec **outils pré-sélectionnés par lab**, terminal panel fiable, et optionnellement un « bureau » 100 % web (notes, liens, navigation) sans VNC. **Roadmap détaillée** : [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md).
+
+- **Court terme** : vérifier que le client `terminal-client.html` (protocole binaire ttyd corrigé) affiche bien le terminal en panel ; si non, PoC backend Go (PTY + WebSocket).
+- **Moyen terme** : backend terminal maison, conteneur lab avec outils définis en config, plus de Kali générique.
+- **Long terme** : « bureau » lab en pur web (pas de VNC), tout optimisé et maîtrisé.
+
 **Scintillement** : pour le moment plus de scintillement signalé (à surveiller). Si ça revient, désactiver `contain`/`translateZ(0)` et vérifier avec React DevTools Profiler.
 
 ### Terminal web attaquant (panneau et PiP)
 
+- **Affichage terminal** : client `terminal-client.html` en protocole binaire ttyd (0 = output, 0x30 = input, 0x31 = resize) ; à valider en conditions réelles.
 - **Commande `exit` → fermer l’onglet** : **implémenté** (app + backend). Côté app : écoute de `postMessage` `{ type: 'lab-cyber-terminal-exit' }` et fermeture de l’onglet courant (panneau ou PiP) ; le handler ne réagit que si le message vient d’un iframe du panneau (ou du PiP pour le PiP). Côté backend : la gateway (nginx) injecte un script **avant la première balise `<script>`** dans la page ttyd ; ce script enveloppe `WebSocket` et envoie le message à la page parente **avant** le handler ttyd (pour que l’onglet se ferme avant toute tentative de reconnexion / refreshToken). Voir `gateway/nginx.conf` (location `/terminal/`, `sub_filter`). **Test** : après modification de la gateway, `make dev` ou rebuild gateway puis redémarrer ; recharger la page du lab (ou ouvrir le terminal en panneau/PiP) puis taper `exit` → l’onglet doit se fermer. **Vérifier l’injection** : avec le lab démarré, lancer `make terminal-html` ; le résultat s’affiche dans le terminal (« Injection exit : OK » ou « ABSENTE »), sans fichier à ouvrir.
 - **Panneau – historique conservé** : le panneau n’est plus démonté à la fermeture ; il reste en DOM (masqué en CSS). Les iframes sont rendues une par onglet (pas seulement l’onglet actif), donc l’état et l’historique de chaque session sont conservés quand on ferme puis rouvre le panneau.
 - **PiP – plus de rechargement sur commandes** : l’URL de l’iframe PiP n’est plus mise à jour à chaque rendu ; elle est définie une seule fois au montage (`StableTerminalIframe`), ce qui évite le rechargement intempestif (ex. après `ls`) et la perte de l’affichage.
