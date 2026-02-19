@@ -228,6 +228,7 @@ export default function App() {
   useEffect(() => {
     const onMessage = (e) => {
       if (e?.data?.type !== 'lab-cyber-terminal-exit') return;
+      if (!e.source || !panelIframeWindowsRef.current.has(e.source)) return;
       const rest = terminalTabs.filter(t => t.id !== activeTerminalTabId);
       if (rest.length === 0) {
         setTerminalPanelOpen(false);
