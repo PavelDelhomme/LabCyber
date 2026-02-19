@@ -67,7 +67,7 @@
       "name": "Machine attaquant (Kali)",
       "type": "attaquant",
       "description": "Terminal avec outils pentest (nmap, hydra, sqlmap, tcpdump, scapy, etc.). Point de départ pour scanner et exploiter les cibles.",
-      "url": "http://127.0.0.1:8080/terminal/",
+      "url": "http://127.0.0.1:8080/terminal-client.html",
       "access": "Terminal web (lien plateforme) ou make shell"
     }
   ]

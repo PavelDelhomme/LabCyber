@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terminal Lab Cyber</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0c0c0c; min-height: 100vh; display: flex; flex-direction: column; }
+    #status { padding: 0.5rem 1rem; font-family: monospace; font-size: 12px; color: #888; }
+    #status.error { color: #e74c3c; }
+    #status.ok { color: #2ecc71; }
+    #terminal { flex: 1; padding: 8px; min-height: 200px; }
+  </style>
+</head>
+<body>
+  <div id="status">Connexion au terminal…</div>
+  <div id="terminal"></div>
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+  <script>
+(function () {
+  var statusEl = document.getElementById('status');
+  var terminalEl = document.getElementById('terminal');
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg;
+    statusEl.className = isError ? 'error' : 'ok';
+  }
+  function notifyExit() {
+    try { window.parent.postMessage({ type: 'lab-cyber-terminal-exit' }, '*'); } catch (_) {}
+  }
+
+  var base = window.location.origin.replace(/\/$/, '');
+  var wsScheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  var wsBase = wsScheme + '//' + window.location.host;
+
+  function run() {
+    fetch(base + '/terminal/token')
+      .then(function (r) { if (!r.ok) throw new Error('Token ' + r.status); return r.text(); })
+      .then(function (token) {
+        token = (token || '').trim();
+        var wsUrl = wsBase + '/terminal/ws' + (token ? '?token=' + encodeURIComponent(token) : '');
+        var ws = new WebSocket(wsUrl);
+        var term = new window.Terminal({ cursorBlink: true, theme: { background: '#0c0c0c' } });
+        var fitAddon = new window.FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(terminalEl);
+        fitAddon.fit();
+        window.addEventListener('resize', function () { fitAddon.fit(); });
+
+        ws.onopen = function () { setStatus('Connecté. Tapez "exit" pour fermer l’onglet.'); };
+        ws.onerror = function () { setStatus('Erreur WebSocket', true); };
+        ws.onclose = function () {
+          notifyExit();
+          setStatus('Session fermée.', true);
+        };
+        ws.onmessage = function (ev) {
+          if (typeof ev.data === 'string') term.write(ev.data);
+          else if (ev.data instanceof Blob) {
+            var r = new FileReader();
+            r.onload = function () { term.write(r.result); };
+            r.readAsText(ev.data);
+          }
+        };
+        term.onData(function (data) { if (ws.readyState === 1) ws.send(data); });
+      })
+      .catch(function (e) {
+        setStatus('Erreur: ' + (e.message || e), true);
+        notifyExit();
+      });
+  }
+  run();
+})();
+  </script>
+</body>
+</html>
