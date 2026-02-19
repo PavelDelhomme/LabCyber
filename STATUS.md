@@ -17,10 +17,20 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **PiP – plus de rechargement sur commandes** : l’URL de l’iframe PiP n’est plus mise à jour à chaque rendu ; elle est définie une seule fois au montage (`StableTerminalIframe`), ce qui évite le rechargement intempestif (ex. après `ls`) et la perte de l’affichage.
 - Bouton « + » nouvel onglet terminal : corriger si besoin (stopPropagation, persistance).
 
-**Diagnostic panneau terminal (corrections appliquées)**  
-1. **Historique perdu** : le body du panneau (et donc toutes les iframes) était rendu seulement quand `!terminalPanelMinimized`. Dès qu’on réduisait puis agrandissait, tout était démonté puis remonté → nouvelles iframes, plus d’historique. **Correction** : le body est toujours rendu dès que le panneau a été ouvert une fois ; en mode réduit il est caché en CSS (`.terminal-side-panel-minimized .terminal-side-panel-body`), les iframes restent en DOM.  
-2. **Clic sur un autre onglet « réactive » la même session** : tous les onglets chargeaient la même URL (`/terminal/`), donc une seule session ttyd partagée entre iframes. **Correction** : chaque onglet a une URL distincte avec `?session=<tabId>` (`getTerminalUrl(..., tabId)`), pour que le backend puisse associer une session par onglet. Si la gateway/ttyd n’utilise pas encore le paramètre `session`, il faudra l’implémenter côté serveur pour que chaque onglet ait sa propre session.  
+**Ce qui est enregistré côté app**  
+- Liste des onglets (noms, nombre), onglet actif, largeur du panneau, etc. : sauvegardé dans le storage (session UI) et restauré au rechargement de la page.  
+- Chaque onglet a une URL distincte `?session=<tabId>` pour que le backend puisse associer une session par onglet (à implémenter côté ttyd/gateway si pas déjà fait).  
+- **Journal de session** (historique enregistré) : les lignes ajoutées manuellement (commandes ou notes) sont persistées en storage et restent après rechargement.
+
+**Limites connues (pas encore complètement opérationnel)**  
+1. **Connexions WebSocket qui se rouvrent** : en changeant d’onglet terminal, l’historique affiché dans le terminal (scrollback ttyd) peut se réinitialiser car le navigateur peut suspendre les iframes non visibles et couper le WebSocket. **Correction partielle** : les onglets inactifs utilisent `visibility: hidden` au lieu de `display: none` pour limiter la suspension des iframes. Pour un comportement totalement stable, le backend doit gérer `?session=<tabId>` (une session ttyd par onglet, éventuellement persistée).  
+2. **Rechargement de la page ou autre navigateur** : on **perd le contenu des sessions** (shell, scrollback). Seuls sont restaurés : la liste des onglets (noms, nombre), l’onglet actif, le journal de session (lignes enregistrées à la main). Les iframes sont rechargées donc nouvelles connexions ttyd = nouveaux shells. Pour ne pas perdre au rechargement, il faudrait une **persistance côté serveur** (ttyd ou gateway) : associer une session à un id, la restaurer au reload (hors scope actuel).  
 3. **Exit** : l’app ferme l’onglet uniquement si elle reçoit `postMessage({ type: 'lab-cyber-terminal-exit' })`. C’est à la gateway/ttyd d’envoyer ce message quand le shell se termine (après `exit`).
+
+**Diagnostic panneau terminal (corrections déjà appliquées)**  
+1. **Historique perdu** : le body du panneau (et donc toutes les iframes) était rendu seulement quand `!terminalPanelMinimized`. Dès qu’on réduisait puis agrandissait, tout était démonté puis remonté → nouvelles iframes, plus d’historique. **Correction** : le body est toujours rendu ; en mode réduit il est caché en CSS ; les iframes restent en DOM.  
+2. **Clic sur un autre onglet** : chaque onglet a une URL avec `?session=<tabId>`. Onglets inactifs en `visibility: hidden` (au lieu de `display: none`) pour limiter la coupure WebSocket.  
+3. **Exit** : voir ci-dessus (postMessage côté backend).
 
 ### Panneaux et lab
 
@@ -135,8 +145,8 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Popup lab bloquée** : touche **Escape** ferme le popup lab et les autres overlays (Stats, Journal, CVE, Options).
 - **Lab actif – terminal** : ouverture du terminal en panneau depuis le popup lab ne referme plus le popup immédiatement (persistance via ref).
 - **Journal + Stats** : un seul bouton dropdown (📋 ▼) avec Journal d’activité et Stats.
-- **Panneau terminal** : en place (iframe, onglets, journal). Panneau gardé en DOM quand fermé (masqué en CSS) + une iframe par onglet → historique conservé à la fermeture/réouverture. Bouton Recharger. Exit → fermeture de l’onglet si le backend envoie `postMessage` (voir PRIORITÉ). Redimensionnement / persistance à finaliser.
-- **Terminal PiP** : déplaçable (validé), plusieurs onglets. Iframe avec URL fixée au montage → plus de rechargement (ex. après `ls`). Exit → fermeture de l’onglet si le backend envoie `postMessage`.
+- **Panneau terminal** : en place (iframe, onglets, journal). Panneau gardé en DOM quand fermé (masqué en CSS) + une iframe par onglet → historique conservé à la fermeture/réouverture. Onglets inactifs en `visibility: hidden` (pas `display: none`) pour limiter la reconnexion WebSocket au changement d’onglet. Chaque onglet enregistré (liste, noms) en storage, URL `?session=<tabId>`. Bouton Recharger. Exit → fermeture de l’onglet si le backend envoie `postMessage`. Limite : rechargement page ou autre navigateur = perte du contenu des sessions (shell), seule la liste des onglets et le journal restent.
+- **Terminal PiP** : déplaçable (validé), plusieurs onglets. Iframe avec URL fixée au montage → plus de rechargement (ex. après `ls`). Historique conservé tant que la fenêtre PiP reste ouverte. Exit → fermeture de l’onglet si le backend envoie `postMessage`.
 - **Doc & Cours** : sous-navigation (sidebar thèmes + Doc / Cours / Outils), OWASP Top 10:2021 (catalogue + bloc Learning avec Ouvrir dans l’app / externe).
 - **Bibliothèque doc** : isolation du design (`.doc-offline-content-isolated`) pour le HTML récupéré.
 - **Capture pcap** : colonnes type Wireshark, filtre, détail ; notice « analyse machine client » (charger .pcap capturé sur son PC).

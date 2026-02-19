@@ -1542,6 +1542,16 @@ body {
   right: 0;
   bottom: 0;
 }
+/* Inactif : visibility au lieu de display:none pour éviter que le navigateur suspende l'iframe et coupe le WebSocket (reconnexion à chaque changement d'onglet). */
+.terminal-side-panel-body .terminal-tab-pane-inactive {
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.terminal-side-panel-body .terminal-tab-pane-active {
+  visibility: visible;
+  z-index: 1;
+}
 .terminal-side-panel-body {
   position: relative;
 }

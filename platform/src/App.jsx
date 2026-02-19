@@ -468,7 +468,7 @@ export default function App() {
           <p class="terminal-side-panel-hint">En cas d'erreur 502 : le terminal peut mettre 15–20 s à démarrer. Double-clic sur un onglet pour le renommer.</p>
           <div class="terminal-side-panel-body">
             {terminalTabs.map(tab => (
-              <div key={tab.id} class="terminal-tab-pane" style={{ display: activeTerminalTabId === tab.id ? 'flex' : 'none' }}>
+              <div key={tab.id} class={`terminal-tab-pane ${activeTerminalTabId === tab.id ? 'terminal-tab-pane-active' : 'terminal-tab-pane-inactive'}`}>
                 <TerminalPanelIframe terminalUseDefaultLab={terminalUseDefaultLab} tabName={tab.name} tabId={tab.id} reloadKey={terminalReloadKeys[tab.id] || 0} onReload={() => setTerminalReloadKeys(k => ({ ...k, [tab.id]: (k[tab.id] || 0) + 1 }))} onIframeLoad={(win) => { if (win) panelIframeWindowsRef.current.add(win); }} />
               </div>
             ))}
