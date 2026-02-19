@@ -117,4 +117,12 @@ Ce document décrit la vision et le plan pour **remplacer les briques externes**
 - **Moyen terme** : backend terminal maison (Go) + environnement par lab (packs d’outils, image Docker dédiée).
 - **Long terme** : « bureau » lab 100 % web (notes, liens, navigation) sans VNC ; système lab entièrement maîtrisé et optimisé.
 
+Ce document sera mis à jour au fur et à mesure de l'avancement (phases cochées, décisions techniques, nouveaux fichiers).
+
+---
+
+## Historique des changements
+
+- **2026-02-20** (branche `feature/terminal-integre`) : Client `terminal-client.html` adapté au protocole binaire ttyd (0 = output, 0x30 = input, 0x31 = resize). Création de cette roadmap, mise à jour STATUS.md et README.md. Commit poussé sur `origin/feature/terminal-integre`.
+
 Ce document sera mis à jour au fur et à mesure de l’avancement (phases cochées, décisions techniques, nouveaux fichiers).
