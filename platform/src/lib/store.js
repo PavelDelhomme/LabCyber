@@ -3,12 +3,12 @@ import { EMBEDDED_DOCS, EMBEDDED_LEARNING, EMBEDDED_TARGETS, EMBEDDED_DOC_SOURCE
 
 const storage = typeof window !== 'undefined' ? window.LabCyberStorage : null;
 
-/** URL du terminal : chemin /terminal/ sur la gateway. useDefaultLab=true => lab par défaut, false => lab actif (param ?lab= pour évolution future). */
-export function getTerminalUrl(useDefaultLab = true) {
+/** URL du terminal : chemin /terminal/ sur la gateway. useDefaultLab=true => lab par défaut, false => lab actif. sessionId optionnel pour une session par onglet (évite partage entre iframes). */
+export function getTerminalUrl(useDefaultLab = true, sessionId = '') {
   if (typeof window === 'undefined') return '#';
   const base = window.location.origin.replace(/\/$/, '');
-  const url = `${base}/terminal/`;
-  if (useDefaultLab) return url;
+  let url = `${base}/terminal/`;
+  if (sessionId) url += (url.includes('?') ? '&' : '?') + `session=${encodeURIComponent(sessionId)}`;
   return url;
 }
 

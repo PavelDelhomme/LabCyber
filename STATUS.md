@@ -12,10 +12,15 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ### Terminal web attaquant (panneau et PiP)
 
-- **Commande `exit` → fermer l’onglet** : côté app c’est fait : écoute de `postMessage` `{ type: 'lab-cyber-terminal-exit' }` ; à la réception, fermeture de l’onglet courant (panneau ou PiP) ou du panneau s’il ne reste qu’un onglet. **À faire côté backend** : que ttyd (ou un proxy/wrapper) envoie ce message à la page parente quand la session shell se termine (ex. après `exit`), pour que l’onglet se ferme au lieu d’afficher « press enter to reconnect ».
+- **Commande `exit` → fermer l’onglet** : côté app c’est fait : écoute de `postMessage` `{ type: 'lab-cyber-terminal-exit' }` ; à la réception, fermeture de l’onglet courant (panneau ou PiP) ou du panneau s’il ne reste qu’un onglet. **À faire côté backend** : que ttyd (ou un proxy/wrapper) envoie ce message à la page parente quand la session shell se termine (ex. après `exit`), pour que l’onglet se ferme au lieu d’afficher « press enter to reconnect ». Sans ce message, la session se termine bien (exit ferme le shell) mais l’UI reste sur « press enter to reconnect ».
 - **Panneau – historique conservé** : le panneau n’est plus démonté à la fermeture ; il reste en DOM (masqué en CSS). Les iframes sont rendues une par onglet (pas seulement l’onglet actif), donc l’état et l’historique de chaque session sont conservés quand on ferme puis rouvre le panneau.
 - **PiP – plus de rechargement sur commandes** : l’URL de l’iframe PiP n’est plus mise à jour à chaque rendu ; elle est définie une seule fois au montage (`StableTerminalIframe`), ce qui évite le rechargement intempestif (ex. après `ls`) et la perte de l’affichage.
 - Bouton « + » nouvel onglet terminal : corriger si besoin (stopPropagation, persistance).
+
+**Diagnostic panneau terminal (corrections appliquées)**  
+1. **Historique perdu** : le body du panneau (et donc toutes les iframes) était rendu seulement quand `!terminalPanelMinimized`. Dès qu’on réduisait puis agrandissait, tout était démonté puis remonté → nouvelles iframes, plus d’historique. **Correction** : le body est toujours rendu dès que le panneau a été ouvert une fois ; en mode réduit il est caché en CSS (`.terminal-side-panel-minimized .terminal-side-panel-body`), les iframes restent en DOM.  
+2. **Clic sur un autre onglet « réactive » la même session** : tous les onglets chargeaient la même URL (`/terminal/`), donc une seule session ttyd partagée entre iframes. **Correction** : chaque onglet a une URL distincte avec `?session=<tabId>` (`getTerminalUrl(..., tabId)`), pour que le backend puisse associer une session par onglet. Si la gateway/ttyd n’utilise pas encore le paramètre `session`, il faudra l’implémenter côté serveur pour que chaque onglet ait sa propre session.  
+3. **Exit** : l’app ferme l’onglet uniquement si elle reçoit `postMessage({ type: 'lab-cyber-terminal-exit' })`. C’est à la gateway/ttyd d’envoyer ce message quand le shell se termine (après `exit`).
 
 ### Panneaux et lab
 

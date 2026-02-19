@@ -69,9 +69,9 @@ function hashFor(view, scenarioId, roomId) {
   return `#/${view}`;
 }
 
-/** Une seule iframe par onglet actif, URL mémorisée pour éviter rechargements en cascade. reloadKey force un remount (bouton Recharger). */
+/** Une iframe par onglet avec URL distincte (session=tabId) pour que chaque onglet ait sa propre session ttyd. reloadKey force un remount (bouton Recharger). */
 function TerminalPanelIframe({ terminalUseDefaultLab, tabName, tabId, reloadKey = 0, onReload, onIframeLoad }) {
-  const url = useMemo(() => getTerminalUrl(terminalUseDefaultLab), [terminalUseDefaultLab]);
+  const url = useMemo(() => getTerminalUrl(terminalUseDefaultLab, tabId), [terminalUseDefaultLab, tabId]);
   const iframeRef = useRef(null);
   return (
     <div class="terminal-iframe-wrap">
@@ -464,8 +464,7 @@ export default function App() {
             <button type="button" class="terminal-side-panel-minimize" onClick={() => { setTerminalPanelMinimized(m => !m); persistUiSession({ terminalPanelMinimized: !terminalPanelMinimized }); }} title={terminalPanelMinimized ? 'Afficher le panneau' : 'Réduire (cacher sans fermer)'} aria-label={terminalPanelMinimized ? 'Agrandir' : 'Réduire'}>{terminalPanelMinimized ? '▶' : '◀'}</button>
             <button type="button" class="terminal-side-panel-close" onClick={() => { setTerminalPanelOpen(false); persistUiSession({ terminalPanelOpen: false }); }} aria-label="Fermer le panneau">×</button>
           </header>
-          {!terminalPanelMinimized && (
-            <>
+          {/* Toujours rendre le body pour garder les iframes en DOM (évite démontage quand minimisé → perte d'historique). Caché en CSS via .terminal-side-panel-minimized. */}
           <p class="terminal-side-panel-hint">En cas d'erreur 502 : le terminal peut mettre 15–20 s à démarrer. Double-clic sur un onglet pour le renommer.</p>
           <div class="terminal-side-panel-body">
             {terminalTabs.map(tab => (
@@ -491,8 +490,6 @@ export default function App() {
             </ul>
             {terminalHistory.length === 0 && <p class="terminal-journal-empty">Aucune entrée. Ajoute une commande ou une note ci-dessus.</p>}
           </div>
-            </>
-          )}
         </div>
       )}
       {optionsPanelOpen && (
