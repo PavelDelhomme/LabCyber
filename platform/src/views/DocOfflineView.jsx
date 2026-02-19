@@ -95,7 +95,7 @@ export default function DocOfflineView({ docSources, docId, getOfflineDoc, setOf
           )}
           {cached?.content != null && (
             <div
-              class="doc-offline-content doc-rendered"
+              class="doc-offline-content doc-offline-content-isolated doc-rendered"
               dangerouslySetInnerHTML={{
                 __html: cached.contentType && cached.contentType.includes('html')
                   ? sanitizeHtml(cached.content).replace(/<a /g, '<a target="_blank" rel="noopener" ')

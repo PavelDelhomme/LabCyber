@@ -263,6 +263,9 @@ export default function CaptureView({ currentLabId = 'default', storage, isPanel
   const content = (
     <>
       <section class="room-section capture-upload">
+        <p class="capture-client-notice text-muted">
+          Pour analyser le trafic de <strong>votre machine</strong> (celle où tourne le navigateur : cartes réseau, WiFi, etc.), capturez sur votre PC avec Wireshark, tcpdump ou npcap, puis chargez le fichier .pcap ci-dessous. Le navigateur ne peut pas capturer en direct sur vos interfaces (sécurité).
+        </p>
         <label class="btn btn-primary">
           Choisir un fichier .pcap
           <input type="file" accept=".pcap,.cap" onChange={handleFile} style="display:none" />

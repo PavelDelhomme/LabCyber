@@ -336,7 +336,11 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
         <select
           class="api-client-select"
           value={currentSimId || ''}
-          onInput={(e) => setCurrentSimId(e.target.value || null)}
+          onInput={(e) => {
+            const newId = e.target.value || null;
+            if (currentSimId) persistCurrentSim(nodes, edges);
+            setCurrentSimId(newId);
+          }}
           style="minWidth:180px"
         >
           <option value="">— Nouvelle carte —</option>

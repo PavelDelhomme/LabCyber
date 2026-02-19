@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect, useRef, useMemo } from 'preact/hooks';
 import { useStore, useStorage, getTerminalUrl, getDesktopUrl } from './lib/store';
 
 const DEFAULT_LAB = { id: 'default', name: 'Lab par défaut', description: '' };
@@ -69,6 +69,20 @@ function hashFor(view, scenarioId, roomId) {
   return `#/${view}`;
 }
 
+/** Une seule iframe par onglet actif, URL mémorisée pour éviter rechargements en cascade. reloadKey force un remount (bouton Recharger). */
+function TerminalPanelIframe({ terminalUseDefaultLab, tabName, tabId, reloadKey = 0, onReload, onIframeLoad }) {
+  const url = useMemo(() => getTerminalUrl(terminalUseDefaultLab), [terminalUseDefaultLab]);
+  const iframeRef = useRef(null);
+  return (
+    <div class="terminal-iframe-wrap">
+      {onReload && (
+        <button type="button" class="terminal-reload-btn" onClick={onReload} title="Recharger le terminal (nouvelle session)">↻ Recharger</button>
+      )}
+      <iframe ref={iframeRef} src={url} title={tabName} class="terminal-side-panel-iframe" key={`terminal-${tabId}-${terminalUseDefaultLab}-${reloadKey}`} onLoad={() => { if (iframeRef.current?.contentWindow) onIframeLoad?.(iframeRef.current.contentWindow); }} />
+    </div>
+  );
+}
+
 export default function App() {
   const { data, scenarios, config, docs, learning, targets, challenges, docSources, loaded } = useStore();
   const storage = useStorage();
@@ -82,7 +96,7 @@ export default function App() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [cvePanelOpen, setCvePanelOpen] = useState(false);
   const [terminalPanelOpen, setTerminalPanelOpen] = useState(false);
-  const [terminalPanelReady, setTerminalPanelReady] = useState(false);
+  const [terminalPanelEverOpened, setTerminalPanelEverOpened] = useState(false);
   const [terminalTabs, setTerminalTabs] = useState([{ id: '1', name: 'Session 1' }]);
   const [activeTerminalTabId, setActiveTerminalTabId] = useState('1');
   const [terminalPanelMinimized, setTerminalPanelMinimized] = useState(false);
@@ -104,15 +118,17 @@ export default function App() {
   const [terminalUseDefaultLab, setTerminalUseDefaultLab] = useState(true);
   const [terminalHistory, setTerminalHistory] = useState([]);
   const [terminalJournalInput, setTerminalJournalInput] = useState('');
+  const [terminalReloadKeys, setTerminalReloadKeys] = useState({});
   const [labNotes, setLabNotesState] = useState('');
   const [labReport, setLabReportState] = useState('');
   const skipNextHashChange = useRef(false);
   const terminalResizeRef = useRef({ active: false, startX: 0, startW: 0 });
+  const panelIframeWindowsRef = useRef(new Set());
   const uiSessionRef = useRef({});
 
   useEffect(() => {
     uiSessionRef.current = { terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth };
-  });
+  }, [terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth]);
 
   const persistUiSession = (patch) => {
     if (storage?.setUiSession) storage.setUiSession({ ...uiSessionRef.current, ...patch });
@@ -155,7 +171,7 @@ export default function App() {
     };
     if (storage.ready) storage.ready().then(init);
     else init();
-  }, [storage]);
+  }, []); // une seule fois au montage pour éviter re-renders en cascade
 
   const labs = storage ? [DEFAULT_LAB, ...(storage.getLabs() || [])] : [DEFAULT_LAB];
   const currentLab = labs.find(l => l.id === currentLabId) || DEFAULT_LAB;
@@ -190,17 +206,41 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (terminalPanelOpen && storage) setTerminalHistory(storage.getTerminalHistory() || []);
-  }, [terminalPanelOpen, storage]);
+    const onEscape = (e) => {
+      if (e.key !== 'Escape') return;
+      if (labPanelOpen) { setLabPanelOpen(false); persistUiSession({ labPanelOpen: false }); e.preventDefault(); return; }
+      if (statsOpen) { setStatsOpen(false); e.preventDefault(); return; }
+      if (logOpen) { setLogOpen(false); e.preventDefault(); return; }
+      if (cvePanelOpen) { setCvePanelOpen(false); e.preventDefault(); return; }
+      if (optionsPanelOpen) { setOptionsPanelOpen(false); persistUiSession({ optionsPanelOpen: false }); e.preventDefault(); }
+    };
+    window.addEventListener('keydown', onEscape);
+    return () => window.removeEventListener('keydown', onEscape);
+  }, [labPanelOpen, statsOpen, logOpen, cvePanelOpen, optionsPanelOpen]);
 
   useEffect(() => {
-    if (!terminalPanelOpen) {
-      setTerminalPanelReady(false);
-      return;
-    }
-    const t = setTimeout(() => setTerminalPanelReady(true), 80);
-    return () => clearTimeout(t);
+    if (terminalPanelOpen && storage) setTerminalHistory(storage.getTerminalHistory() || []);
+  }, [terminalPanelOpen, storage]);
+  useEffect(() => {
+    if (terminalPanelOpen) setTerminalPanelEverOpened(true);
   }, [terminalPanelOpen]);
+
+  useEffect(() => {
+    const onMessage = (e) => {
+      if (e?.data?.type !== 'lab-cyber-terminal-exit') return;
+      const rest = terminalTabs.filter(t => t.id !== activeTerminalTabId);
+      if (rest.length === 0) {
+        setTerminalPanelOpen(false);
+        persistUiSession({ terminalPanelOpen: false });
+      } else {
+        setTerminalTabs(rest);
+        setActiveTerminalTabId(rest[0].id);
+        persistUiSession({ terminalTabs: rest, activeTerminalTabId: rest[0].id });
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [terminalTabs, activeTerminalTabId]);
 
   useEffect(() => {
     const onMove = (e) => {
@@ -367,12 +407,12 @@ export default function App() {
       {showPipButton && <PipPanel open={pipOpen} scenario={currentScenario} onClose={() => setPipOpen(false)} />}
       {view === 'scenario' && <ScenarioBottomBar scenario={currentScenario} storage={storage} collapsed={scenarioBarCollapsed} onCollapsed={setScenarioBarCollapsed} onExpand={() => window.location.hash = '#/scenario/' + (currentScenarioId || '')} />}
       <TerminalPipPanel open={terminalPipOpen} onClose={() => setTerminalPipOpen(false)} getTerminalUrl={getTerminalUrl} />
-      {terminalPanelOpen && (
+      {terminalPanelEverOpened && (
         <div
-          class={`terminal-side-panel ${terminalPanelMinimized ? 'terminal-side-panel-minimized' : ''}`}
+          class={`terminal-side-panel ${terminalPanelMinimized ? 'terminal-side-panel-minimized' : ''} ${!terminalPanelOpen ? 'terminal-side-panel-hidden' : ''}`}
           role="dialog"
           aria-label="Terminal web attaquant"
-          style={{ width: terminalPanelMinimized ? 48 : terminalPanelWidth }}
+          style={{ width: !terminalPanelOpen ? 0 : (terminalPanelMinimized ? 48 : terminalPanelWidth) }}
         >
           <div
             class="terminal-side-panel-resize-handle"
@@ -430,7 +470,7 @@ export default function App() {
           <div class="terminal-side-panel-body">
             {terminalTabs.map(tab => (
               <div key={tab.id} class="terminal-tab-pane" style={{ display: activeTerminalTabId === tab.id ? 'flex' : 'none' }}>
-                {terminalPanelReady && <iframe src={getTerminalUrl(terminalUseDefaultLab)} title={tab.name} class="terminal-side-panel-iframe" key={`${tab.id}-${terminalUseDefaultLab}`} />}
+                <TerminalPanelIframe terminalUseDefaultLab={terminalUseDefaultLab} tabName={tab.name} tabId={tab.id} reloadKey={terminalReloadKeys[tab.id] || 0} onReload={() => setTerminalReloadKeys(k => ({ ...k, [tab.id]: (k[tab.id] || 0) + 1 }))} onIframeLoad={(win) => { if (win) panelIframeWindowsRef.current.add(win); }} />
               </div>
             ))}
           </div>

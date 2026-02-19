@@ -6,17 +6,41 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ## 🚨 PRIORITÉ (à traiter en priorité)
 
-- **Scintillement panneau terminal** : l’affichage scintille encore un peu à l’activation ; délai iframe en place, à affiner si besoin.
-- **Bouton « + » nouvel onglet terminal** : ne fonctionne pas – corriger le clic (stopPropagation, persistance des onglets).
-- **Terminal PiP** : doit être **déplaçable** comme une vidéo YouTube (fenêtre flottante), ne pas prendre la place du panneau ; position et z-index à corriger pour qu’il soit bien au-dessus et déplaçable.
-- **Panneau terminal rétracté** : quand le terminal est réduit sur le côté, les boutons **Options, Stats, Journal d’activité** (et CVE, etc.) passent **sous** le panneau et ne sont plus cliquables. Idem si le journal d’activité est ouvert alors que le terminal est rétracté – on ne peut plus fermer. **À faire** : réserver une marge à droite au contenu principal (topbar + FAB) quand un panneau droit est ouvert (terminal, capture, etc.) pour que les boutons restent toujours visibles et accessibles.
-- **Lab actif – Ouvrir dans la page** : **Corrigé** : le terminal (panneau) ne se referme plus quand on l’ouvre depuis le popup lab (persistance via ref). **À faire** : « Ouvrir dans la page » = toujours ouvrir en **panneau** (comme le terminal), pas en changeant la page actuelle. Donc Simulateur réseau, Proxy config, Requêtes API, Capture pcap doivent s’ouvrir en **panneau** à droite (pas « page Simulateur » ou « page Proxy »). Système de panneaux à droite avec icônes des panneaux actifs, onglets en haut du panneau, menu Ouvrir à ce même endroit (Terminal, Capture, Simulateur, Proxy, API, Terminal PiP). Terminal PiP reste une fenêtre flottante à part ; **à améliorer** : pouvoir ouvrir **plusieurs onglets** dans le terminal PiP comme dans le panneau terminal.
-- **Session par lab** : quand un lab est actif, les panneaux ouverts (terminal, capture, etc.) doivent être **enregistrés en session de lab** pour retrouver la même configuration quand on revient sur ce lab après en avoir chargé un autre.
-- **Journal + Stats** : combiner **Journal d’activité** et **Stats** en un **seul bouton dropdown** (ex. « 📋 ▼ ») pour gagner de la place et libérer de l’espace pour une barre d’icônes de panneaux.
-- **CVE** : la recherche par mot-clé affiche déjà les résultats dans le panel ; s’assurer que le flux est clair (recherche → résultats dans le panel, pas ouverture NVD). **À faire plus tard** : « Ouvrir par ID » pourrait aussi afficher le CVE dans le panel au lieu d’ouvrir NVD ; possibilité d’**enregistrer les CVE détectés** (ex. pour un lab) pour les retrouver plus tard.
-- **Champs formulaire id/name** : compléter les `id` et `name` partout pour supprimer l’avertissement console (autofill).
-- **Redimensionnement panneau terminal** : poignée et listeners à corriger.
-- **Panneau capture** : parfois ne s’affiche pas au premier clic ; vérifier toggle et persistance.
+*Uniquement ce qui reste à faire. Les points déjà corrigés sont listés en bas dans « Réalisé ».*
+
+**Scintillement** : pour le moment plus de scintillement signalé (à surveiller). Si ça revient, désactiver `contain`/`translateZ(0)` et vérifier avec React DevTools Profiler.
+
+### Terminal web attaquant (panneau et PiP)
+
+- **Commande `exit` → fermer l’onglet** : côté app c’est fait : écoute de `postMessage` `{ type: 'lab-cyber-terminal-exit' }` ; à la réception, fermeture de l’onglet courant (panneau ou PiP) ou du panneau s’il ne reste qu’un onglet. **À faire côté backend** : que ttyd (ou un proxy/wrapper) envoie ce message à la page parente quand la session shell se termine (ex. après `exit`), pour que l’onglet se ferme au lieu d’afficher « press enter to reconnect ».
+- **Panneau – historique conservé** : le panneau n’est plus démonté à la fermeture ; il reste en DOM (masqué en CSS). Les iframes sont rendues une par onglet (pas seulement l’onglet actif), donc l’état et l’historique de chaque session sont conservés quand on ferme puis rouvre le panneau.
+- **PiP – plus de rechargement sur commandes** : l’URL de l’iframe PiP n’est plus mise à jour à chaque rendu ; elle est définie une seule fois au montage (`StableTerminalIframe`), ce qui évite le rechargement intempestif (ex. après `ls`) et la perte de l’affichage.
+- Bouton « + » nouvel onglet terminal : corriger si besoin (stopPropagation, persistance).
+
+### Panneaux et lab
+
+- **Panneau terminal rétracté** : marge à droite pour que Options, Stats, Journal, CVE restent visibles et cliquables.
+- **Lab actif – Ouvrir en panneau** : Simulateur, Proxy, Requêtes API, Capture en panneau ; onglets horizontaux (Terminal, Capture, Doc).
+- **Session par lab** : panneaux ouverts enregistrés par lab.
+
+### Simulateur réseau (à faire correctement – beaucoup manquant)
+
+- **Persistance des cartes** (super important) : quand on crée une nouvelle carte puis on revient sur l’ancienne, **on perd le contenu** de l’ancienne carte. Persister la carte courante avant de changer d’onglet et charger correctement au retour.
+- **Nouvelle carte** : pouvoir personnaliser (nom, contexte) dès la création.
+- **Design** : le **titre/nom** de l’appareil (ex. « PC ») est **décalé** par rapport au centre du bloc ; ajouter des **éléments visuels minimal** pour distinguer routeur, PC, switch, serveur (icônes ou formes spécifiques).
+- **Types d’appareils** : pas seulement PC, Routeur, Switch, Serveur — ajouter **téléphone**, **tablette**, **firewall**, **AP WiFi**, **cloud**, etc. pour un ensemble complet type Packet Tracer.
+- **Types de liaisons** : étendre au-delà d’Ethernet/Console/Fibre — **WiFi**, **données mobiles**, **RJ12**, etc. pour modéliser des liens réalistes.
+- **Carte et lab par défaut** : une **carte par défaut** avec au moins la **machine Kali (attaquant)** connectée, pour tester les intrusions dans les systèmes virtuels créés ; contexte « lab actuel » ou lab choisi, connecté au simulateur.
+- **Routeur / équipements** : pouvoir définir **modèle** (ex. Cisco, type) ; options plus poussées (config routeur/switch) : **interface minimal type terminal** pour configurer le routeur/PC (CLI simulée ou lien vers terminal).
+- **Capture pcap** : pouvoir indiquer que la capture s’exécute **dans le lab actuel** ou dans un lab donné ; lien clair simulateur ↔ lab ↔ capture.
+- **Scénarios à ajouter plus tard** : scénarios **SIP** et **téléphonie** (VoIP, etc.) en plus des scénarios existants.
+
+### CVE, formulaire, capture, autre
+
+- **CVE** : flux recherche → résultats clair ; plus tard : afficher par ID dans le panel, enregistrer les CVE (par lab).
+- **Champs formulaire** : compléter `id`/`name` partout (autofill).
+- **Redimensionnement panneau terminal** : poignée et listeners.
+- **Panneau capture** : toggle et persistance (parfois ne s’affiche pas au premier clic).
 
 ---
 
@@ -29,31 +53,41 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
    - **Historique / session terminal** : pouvoir enregistrer l’**état historique** du terminal (attaquant, lab, etc.), prendre des **notes par ligne/session**, et option pour **nettoyer** cet historique. Persistance des sessions/onglets et de l’historique des commandes si possible.
 
 2. **Système de panneaux (côté droit)**  
-   - **Multi-panneaux** : terminal, capture, simulateur, proxy, Requêtes API – tous ouvrables en **panneau** (pas en page). **Onglets** affichés en haut du panneau ; menu **Ouvrir** (dropdown) au même endroit : Terminal panneau, Capture, Simulateur réseau, Proxy config, Requêtes API, Terminal PiP. Barre d’**icônes** des panneaux actifs ; clic sur une icône affiche le panneau. Réduction du panneau sur le côté explicite (bouton « réduire » visible, pas seulement à côté de « Lab par défaut »). Simulateur réseau en panneau = plus grand, avec sélection par lab / session ou création d’une nouvelle session réseau.
+   - Multi-panneaux avec onglets (Terminal, Capture, Doc, Simulateur, Proxy, API). Menu Ouvrir, barre d’icônes des panneaux actifs. Simulateur en panneau avec carte par défaut / lab.
 
 3. **Lab actif – Ouvrir en panneau**  
    - Dans le popup Lab, « Ouvrir dans la page » doit **toujours** ouvrir en **panneau** (terminal, capture, simulateur, proxy, API), jamais en changeant la page courante ni en nouvel onglet.
 
 4. **Terminal PiP**  
-   - Garder le comportement actuel (fenêtre flottante déplaçable). **À faire** : pouvoir ouvrir **plusieurs onglets** dans le terminal PiP (comme dans le panneau terminal).
+   - Déplaçable validé, plusieurs onglets. PiP : plus de rechargement sur commandes (URL iframe fixée au montage). Exit → fermer l’onglet si le backend envoie `postMessage` (voir PRIORITÉ). Persistance des onglets en session si besoin.
 
 5. **CVE**  
    - Recherche : résultats dans le panel (déjà en place). À améliorer : affichage par ID dans le panel ; **enregistrer les CVE détectés** (par lab ou global) pour les consulter plus tard.
 
-6. **Capture pcap, simulateur, proxy, API**  
-   - Déjà en panneau ou en page. S’assurer que depuis le lab actif on peut tout ouvrir en panneau.
+6. **Capture pcap – analyse côté client (machine du navigateur)**  
+   - **À faire** : analyse complète du trafic de la **machine client** (où tourne le navigateur) : cartes réseau, WiFi, etc. — pas côté serveur/lab. **Contrainte** : le navigateur ne peut pas capturer en direct les interfaces (sécurité). Pistes : **(A)** Capturer sur son PC avec Wireshark/tcpdump/npcap, puis charger le .pcap ici (déjà possible). **(B)** À prévoir : agent/script local (npcap/libpcap) sur le client qui capture et produit un .pcap. — Déjà en panneau ou en page. S’assurer que depuis le lab actif on peut tout ouvrir en panneau.
 
 7. **Panneau scénario (barre en bas)**  
    - Afficher l’**avancement** des tâches (fait / en cours / pas commencé), revoir le design (pas décalé à droite).
 
 8. **Autres**  
    - Terminal : redimensionnement, réduction, persistance onglets.  
-   - Capture : décodage avancé, Wireshark-like.  
+   - Capture : décodage avancé, Wireshark-like ; **analyse complète client** (voir point 6 ci-dessus).  
    - Cours pentest, vuln-network/vuln-api, doc projet, sync doc, tests, etc. (voir ancienne section « À faire » pour le détail).
 
-### Infrastructure / doc / contenu
+### Doc & Cours / Bibliothèque doc
 
-- Sync doc automatique (déjà en place). Tests, doc & cours à compléter, données dynamiques, outils à documenter – voir structure détaillée ci-dessous si besoin.
+- **Panneau Doc** : ajouter un panneau droit « Doc & Cours » (ou onglet dans un panneau unifié) pour rechercher et lire les docs/cours sans quitter la page (comme le terminal en panneau).
+- **PDF** : si une documentation récupérée est un PDF, la gérer correctement (affichage ou lien de téléchargement) dans la Bibliothèque doc.
+- Sync doc automatique (déjà en place). Tests, doc & cours à compléter, données dynamiques.
+
+### Scénarios à ajouter plus tard
+
+- Scénarios **SIP** et **téléphonie** (VoIP, IP téléphony, etc.) en plus des scénarios actuels.
+
+### Infrastructure / contenu
+
+- Outils à documenter – voir structure détaillée ci-dessous si besoin.
 
 ---
 
@@ -67,11 +101,11 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ## 📌 Problèmes signalés (résumés)
 
-- Panneau terminal rétracté cache les boutons topbar/FAB → **à corriger** (marge droite).  
-- Terminal PiP pas déplaçable / mauvaise position → **à corriger**.  
-- Bouton + nouvel onglet terminal ne marche pas → **à corriger**.  
-- Lab actif : Capture / Simulateur ouvrent page ou onglet au lieu du panneau → **à corriger** (système de panneaux).  
-- Autres points déjà listés en PRIORITÉ et À faire.
+- Panneau terminal rétracté cache les boutons topbar/FAB → marge droite à faire.  
+- Terminal PiP : déplaçable et onglets implémentés → à valider en test.  
+- Bouton + nouvel onglet terminal → à valider / corriger si besoin.  
+- Lab actif : Capture / Simulateur en panneau (système de panneaux) → à faire.  
+- Voir PRIORITÉ et À faire ci-dessus pour le détail.
 
 ---
 
@@ -90,11 +124,18 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ## ✅ Réalisé (référence – à la fin pour ne pas surcharger le focus)
 
-- **Panneau terminal** : en place (iframe, onglets, journal). Redimensionnement / persistance à finaliser.
-- **Notes par lab**, **CVE** (recherche NVD, résultats en app), **Capture pcap** (colonnes type Wireshark, filtre, détail).
-- **Terminal** en nouvel onglet (`#/terminal-full`), **doc** unique `platform/docs/`, **Doc & Cours** (pages par thème), **nmap** (cap_add), **iframe terminal** (X-Frame-Options), **notes structurées** (Rapport / Failles, modèle).
-- **Bibliothèque doc** (hors ligne, préférences, catalogue, scénarios docRef), **menu déroulant « Ouvrir dans la page »**, **Lab dropdown**, **actions flottantes** (sidebar rétractée), **Options en page** `#/options`, **Make clean/clean-all**, **Make help** et **restart-clean**.
-- Problèmes résolus : modale Options, doc unique, terminal-full, notes lab, CVE in-app, capture Wireshark-like, nmap, default.conf gateway, Doc & Cours détaillé, menu unique Ouvrir, Lab dropdown, boutons flottants.
+*Ce qui a été corrigé ou livré (à valider en test si pas encore fait).*
+
+- **docModal** : variable définie dans `LearningView.jsx`, modale détail doc/cours au clic.
+- **Popup lab bloquée** : touche **Escape** ferme le popup lab et les autres overlays (Stats, Journal, CVE, Options).
+- **Lab actif – terminal** : ouverture du terminal en panneau depuis le popup lab ne referme plus le popup immédiatement (persistance via ref).
+- **Journal + Stats** : un seul bouton dropdown (📋 ▼) avec Journal d’activité et Stats.
+- **Panneau terminal** : en place (iframe, onglets, journal). Panneau gardé en DOM quand fermé (masqué en CSS) + une iframe par onglet → historique conservé à la fermeture/réouverture. Bouton Recharger. Exit → fermeture de l’onglet si le backend envoie `postMessage` (voir PRIORITÉ). Redimensionnement / persistance à finaliser.
+- **Terminal PiP** : déplaçable (validé), plusieurs onglets. Iframe avec URL fixée au montage → plus de rechargement (ex. après `ls`). Exit → fermeture de l’onglet si le backend envoie `postMessage`.
+- **Doc & Cours** : sous-navigation (sidebar thèmes + Doc / Cours / Outils), OWASP Top 10:2021 (catalogue + bloc Learning avec Ouvrir dans l’app / externe).
+- **Bibliothèque doc** : isolation du design (`.doc-offline-content-isolated`) pour le HTML récupéré.
+- **Capture pcap** : colonnes type Wireshark, filtre, détail ; notice « analyse machine client » (charger .pcap capturé sur son PC).
+- Notes par lab, CVE (recherche NVD en app), terminal-full, doc `platform/docs/`, nmap (cap_add), iframe terminal, notes structurées, menu Ouvrir, Lab dropdown, actions flottantes, Options en page, Make help / restart-clean.
 
 ---
 
