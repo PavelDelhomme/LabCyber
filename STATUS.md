@@ -35,6 +35,14 @@ Ce fichier liste ce qui a été fait récemment, ce qui reste à faire et les po
 
 ---
 
+## 🚨 PRIORITÉ ABSOLUE (à résoudre demain – tout corriger avant le reste)
+
+- **Bug modale Options** : la modale Options **s'affiche mais ne se ferme plus** (ni en cliquant sur ×, ni en cliquant en dehors). À corriger en priorité.
+- **Bug panneau terminal / capture** : le panneau **s'affiche maintenant** (progrès), mais il peut rester des cas où il ne s’ouvre pas au clic ou se ferme intempestivement. Vérifier et finaliser demain.
+- **À faire** : tout résoudre en priorité absolue avant de passer aux autres tâches.
+
+---
+
 ## 🔲 À faire / à améliorer
 
 ### Application
@@ -55,10 +63,13 @@ Ce fichier liste ce qui a été fait récemment, ce qui reste à faire et les po
 5. **Vue Doc. projet**  
    - S’assurer que la liste des docs (data/docs.json) inclut tous les fichiers de `platform/docs/` (ex. CVE.md, UTILISER_LE_LAB.md, 15-LINUX-RESEAU.md) pour qu’ils soient visibles et ouverts dans l’app.
 
-6. **Panneau terminal**  
+6. **Panneau terminal / capture**  
+   - **Progrès** : le panneau **s'affiche maintenant** au clic (menu Ouvrir ou Lab dropdown). Vérifier s'il reste des cas non résolus – voir PRIORITÉ ABSOLUE.
    - Si le panneau est fermé (croix), les onglets/sessions sont recréés au prochain ouvert ; les noms personnalisés ne sont pas persistés après fermeture du panneau (comportement actuel). À décider : persister les noms d’onglets même après fermeture.  
-   - **Problème signalé** : depuis certaines vues (ex. Doc & Cours), « Ouvrir dans la page (panneau) » n’affiche rien ou le panneau se referme. Vérifier après déploiement (X-Frame-Options + persistance déjà corrigés ; listener document différé appliqué sur `OpenInPageDropdown`).  
    - **Session terminal** : au rechargement de la page, la session ttyd (shell) est perdue (comportement normal du navigateur). Pour ne pas perdre : éviter de recharger, ou ouvrir le terminal en onglet dédié et ne pas le fermer.
+
+6b. **Modale Options – bug non résolu**  
+   - **Problème actuel** : la modale Options **ne se ferme plus** (bouton × ou clic en dehors). Priorité absolue (voir section ci-dessus).
 
 7. **vuln-network / vuln-api**  
    - Tous les cas de figure et scénarios d’apprentissage ne sont pas encore en place. Compléter les rooms, scénarios et doc pour couvrir l’usage de vuln-network (SSH, Redis) et vuln-api (endpoints, vulns) de A à Z.
@@ -134,7 +145,8 @@ Ce fichier liste ce qui a été fait récemment, ce qui reste à faire et les po
 - Logs gateway « default.conf is not a file or does not exist » → **résolu** (fichier placeholder ajouté dans gateway).
 - Doc & Cours : pas de pages détaillées par thème → **résolu** (pages par thème/sous-catégorie, fil d’Ariane, liens doc/cours/outils).
 - nmap « Operation not permitted » dans l’attaquant → **résolu** (cap_add NET_RAW, NET_ADMIN).
-- Terminal en panneau n’affiche rien / ne s’ouvre pas → **partiellement adressé** (X-Frame-Options SAMEORIGIN sur /terminal/, persistance à l’ouverture). À valider après rebuild gateway.
+- **Terminal / capture en panneau** → **partiellement résolu** (le panneau s'affiche maintenant ; à vérifier et finaliser).
+- **Modale Options ne se ferme plus** → **non résolu**. La modale s'affiche mais ne se ferme ni par le bouton × ni par clic en dehors. Priorité absolue.
 - Notes pas structurées pour rapports de test → **résolu** (zone Rapport / Failles + modèle insérable).
 - Menu / boutons trop dispersés pour ouvrir terminal, capture, etc. → **résolu** (menu déroulant unique « Ouvrir dans la page »).
 - Lab actif : pas d’accès rapide terminal/capture/simulateur depuis le bouton Lab → **résolu** (Lab dropdown quand lab actif non défaut).
