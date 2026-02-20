@@ -85,14 +85,23 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 
 ### Phase 2 – Persistance par lab + journal/notes complet (moyen terme)
 
-- [ ] Persister par lab : liste terminaux, historique commandes, sorties ; restauration à la reprise.
-- [ ] Plusieurs terminaux par lab ; chaque terminal restauré avec son contenu.
-- [ ] **Journal / Notes complet** (bouton Journal & Stats, vue dédiée) : capture résultats de commandes, captures d'écran, pièces jointes ; transfert terminal lab → journal ; consultation par lab/scénario ; lien optionnel scénarios en cours.
+- [x] Persister par lab : liste terminaux, historique commandes (journal), restauration à la reprise. Sorties (backend) : à venir.
+- [x] Plusieurs terminaux par lab ; chaque lab restaure ses onglets et journal. Contenu PTY (output) : à venir.
+- [ ] **Étape 3 – Journal / Notes complet + terminal flottant + contexte scénario** (à faire) :
+  - **Journal session** : par lab et par session terminal (chaque onglet = session) ; notes journal distinctes de l’historique commandes.
+  - **Terminal flottant (PiP)** : persistance par lab (ouvert/fermé, session PiP) ; restauration à la reprise du lab.
+  - **Journal / Notes complet** (bouton Journal & Stats, vue dédiée) :
+    - Capture résultats de commandes (output terminal) ; captures d’écran ; pièces jointes.
+    - Transfert terminal lab → journal (exporter sortie, commande, sélection).
+    - Consultation par lab et par scénario ; filtrage par lab/scénario en cours.
+    - Lien optionnel avec scénario actif (un journal peut être « lié » à un scénario pour retrouver les notes dans ce contexte).
+  - **Sorties PTY** : backend lab-terminal – persister les sorties par session/lab pour restauration (Phase 2 étape 2 complément).
+  - **Contexte scénario par lab** : lab peut avoir un scénario associé (en cours) ; le journal et les outils utilisent ce contexte. Référence pour Phase 3 prédéfinitions.
 
 ### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme)
 
 - [ ] Conteneur attaquant : conserver ou étendre la base type Kali (voire Black Arch, etc.) ; **outils de base** + **packs d’outils** (sélectionnables).
-- [ ] **Prédéfinitions à la création du lab** : config (JSON ou API) listant, par lab ou par scénario, les outils/packs nécessaires ; à la création du lab (ou au démarrage scénario), installation/activation de ces outils.
+- [ ] **Prédéfinitions à la création du lab** : config (JSON ou API) listant, par lab ou par scénario, les outils/packs nécessaires ; à la création du lab (ou au démarrage scénario), installation/activation de ces outils. *S’appuie sur Phase 2 étapes 2–3 : persistance par lab (terminaux, journal, contexte scénario) ; le scénario associé au lab permet de charger les prédéfinitions correspondantes.*
 - [ ] Backend terminal : lancer le shell dans ce conteneur attaquant (ou conteneur lab dérivé).
 
 ### Phase 4 – Bureau fait maison (léger, vrai bureau) (moyen / long terme)
@@ -146,3 +155,4 @@ Ce document sera mis à jour au fur et à mesure (phases cochées, décisions te
 - **2026-02-20** (branche `feature/terminal-integre`) : Client `terminal-client.html` adapté au protocole binaire ttyd. Création de la roadmap, mise à jour STATUS.md et README.md.
 - **2026-02-20** : Roadmap réécrite selon specs complètes ; vuln-network (Redis sysctl retiré du compose, note hôte) ; bWAPP en avertissements connus.
 - **2026-02-21** : PoC backend terminal **lab-terminal** (Go) : PTY + WebSocket, protocole binaire. Service dans docker-compose, route gateway `/terminal-house/`, client `?path=terminal-house`. Phase 2 partiellement cochée.
+- **2026-02-21** : Phase 2 étapes 1–2 implémentées (persistance terminal par lab : onglets, journal, restauration). Phase 2 étape 3 détaillée (journal complet, PiP par lab, contexte scénario, sorties PTY). Phase 3 : référence aux Phase 2 étapes 2–3 pour prédéfinitions.

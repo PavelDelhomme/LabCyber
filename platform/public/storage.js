@@ -23,6 +23,7 @@
   const KEY_CURRENT_LAB = 'currentLabId';
   const KEY_TOPOLOGIES = 'topologies';
   const KEY_TERMINAL_HISTORY = 'terminalHistory';
+  const KEY_LAB_TERMINAL_PREFIX = 'labTerminal_';
   const KEY_UI_SESSION = 'uiSession';
   const KEY_CAPTURE_META_PREFIX = 'captureMeta_';
   const KEY_CAPTURE_BLOB_PREFIX = 'captureBlob_';
@@ -363,6 +364,41 @@
     clearTerminalHistory: function () {
       cache.terminalHistory = [];
       writeQueue.push(setData(STORE_DATA, KEY_TERMINAL_HISTORY, cache.terminalHistory));
+    },
+
+    getLabTerminalState: function (labId) {
+      if (!labId) return null;
+      var key = KEY_LAB_TERMINAL_PREFIX + labId;
+      return getData(null, key).then(function (raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        return {
+          tabs: Array.isArray(raw.tabs) && raw.tabs.length > 0 ? raw.tabs.slice() : null,
+          activeTabId: raw.activeTabId != null ? String(raw.activeTabId) : null,
+          history: Array.isArray(raw.history) ? raw.history.slice() : []
+        };
+      });
+    },
+    setLabTerminalState: function (labId, state) {
+      if (!labId || !state || typeof state !== 'object') return;
+      var key = KEY_LAB_TERMINAL_PREFIX + labId;
+      var toSave = {
+        tabs: Array.isArray(state.tabs) && state.tabs.length > 0 ? state.tabs.slice() : null,
+        activeTabId: state.activeTabId != null ? String(state.activeTabId) : null,
+        history: Array.isArray(state.history) ? state.history.slice(-MAX_TERMINAL_HISTORY) : []
+      };
+      writeQueue.push(setData(STORE_DATA, key, toSave));
+    },
+    appendLabTerminalHistory: function (labId, entry) {
+      if (!labId || !entry) return Promise.resolve();
+      var key = KEY_LAB_TERMINAL_PREFIX + labId;
+      return getData(null, key).then(function (raw) {
+        var state = raw && typeof raw === 'object' ? raw : { tabs: null, activeTabId: null, history: [] };
+        var history = Array.isArray(state.history) ? state.history.slice() : [];
+        history.push({ id: String(Date.now()), ts: new Date().toISOString(), text: entry.text || '' });
+        if (history.length > MAX_TERMINAL_HISTORY) history = history.slice(-MAX_TERMINAL_HISTORY);
+        state.history = history;
+        writeQueue.push(setData(STORE_DATA, key, state));
+      });
     },
 
     getUiSession: function () {

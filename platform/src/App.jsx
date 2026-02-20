@@ -126,6 +126,8 @@ export default function App() {
   const panelIframeWindowsRef = useRef(new Set());
   const terminalPanelBodyRef = useRef(null);
   const uiSessionRef = useRef({});
+  const labTerminalLoadedRef = useRef(false);
+  const labSwitchInProgressRef = useRef(false);
 
   useEffect(() => {
     uiSessionRef.current = { terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth };
@@ -136,15 +138,32 @@ export default function App() {
   };
 
   const openTerminalPanel = () => {
-    const ui = storage?.getUiSession?.();
-    const savedTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
-    const savedActive = ui?.activeTerminalTabId && savedTabs.some(t => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : savedTabs[0].id;
-    setTerminalTabs(savedTabs);
-    setActiveTerminalTabId(savedActive);
+    const labId = currentLabId || 'default';
     setLabPanelOpen(false);
     setTerminalPanelOpen(true);
-    setTerminalHistory(storage?.getTerminalHistory?.() || []);
-    uiSessionRef.current = { ...uiSessionRef.current, terminalPanelOpen: true, labPanelOpen: false, terminalTabs: savedTabs, activeTerminalTabId: savedActive };
+    storage?.getLabTerminalState?.(labId)?.then?.((labState) => {
+      if (labState && Array.isArray(labState.tabs) && labState.tabs.length > 0) {
+        const tabs = labState.tabs;
+        const active = labState.activeTabId && tabs.some((t) => t.id === labState.activeTabId) ? labState.activeTabId : tabs[0].id;
+        setTerminalTabs(tabs);
+        setActiveTerminalTabId(active);
+        setTerminalHistory(Array.isArray(labState.history) ? labState.history : []);
+      } else {
+        const ui = storage?.getUiSession?.();
+        const fallbackTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
+        const fallbackActive = ui?.activeTerminalTabId && fallbackTabs.some((t) => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : fallbackTabs[0].id;
+        setTerminalTabs(fallbackTabs);
+        setActiveTerminalTabId(fallbackActive);
+        setTerminalHistory(storage?.getTerminalHistory?.() || []);
+      }
+    }).catch?.(() => {
+      const ui = storage?.getUiSession?.();
+      const fallbackTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
+      setTerminalTabs(fallbackTabs);
+      setActiveTerminalTabId(fallbackTabs[0].id);
+      setTerminalHistory([]);
+    });
+    uiSessionRef.current = { ...uiSessionRef.current, terminalPanelOpen: true, labPanelOpen: false };
     storage?.setUiSession?.({ ...uiSessionRef.current });
   };
 
@@ -152,22 +171,39 @@ export default function App() {
     if (!storage) return;
     const init = () => {
       const id = storage.getCurrentLabId();
-      if (id != null && id !== '') setCurrentLabId(id);
+      const labId = id != null && id !== '' ? id : 'default';
+      setCurrentLabId(labId);
       const ui = storage.getUiSession?.();
       if (ui) {
         setTerminalPanelOpen(!!ui.terminalPanelOpen);
         setLabPanelOpen(!!ui.labPanelOpen);
         setCapturePanelOpen(!!ui.capturePanelOpen);
         if (ui.capturePanelPosition === 'bottom' || ui.capturePanelPosition === 'left') setCapturePanelPosition(ui.capturePanelPosition);
-        if (Array.isArray(ui.terminalTabs) && ui.terminalTabs.length > 0) {
-          setTerminalTabs(ui.terminalTabs);
-          setActiveTerminalTabId(ui.activeTerminalTabId || ui.terminalTabs[0].id);
-        }
         if (typeof ui.terminalPanelMinimized === 'boolean') setTerminalPanelMinimized(ui.terminalPanelMinimized);
         if (typeof ui.terminalPanelWidth === 'number' && ui.terminalPanelWidth >= 320) setTerminalPanelWidth(ui.terminalPanelWidth);
         if (typeof ui.optionsInLeftPanel === 'boolean') setOptionsInLeftPanel(ui.optionsInLeftPanel);
         if (typeof ui.optionsPanelOpen === 'boolean') setOptionsPanelOpen(ui.optionsPanelOpen);
         if (typeof ui.terminalUseDefaultLab === 'boolean') setTerminalUseDefaultLab(ui.terminalUseDefaultLab);
+      }
+      // Charger l'état terminal du lab (tabs, history) – persistance par lab
+      const p = storage.getLabTerminalState?.(labId);
+      const onLabTerminalLoaded = () => {
+        labTerminalLoadedRef.current = true;
+      };
+      if (p && typeof p.then === 'function') {
+        p.then((labState) => {
+          if (labState && Array.isArray(labState.tabs) && labState.tabs.length > 0) {
+            setTerminalTabs(labState.tabs);
+            setActiveTerminalTabId(labState.activeTabId && labState.tabs.some((t) => t.id === labState.activeTabId) ? labState.activeTabId : labState.tabs[0].id);
+            setTerminalHistory(Array.isArray(labState.history) ? labState.history : []);
+          } else if (ui && Array.isArray(ui.terminalTabs) && ui.terminalTabs.length > 0) {
+            setTerminalTabs(ui.terminalTabs);
+            setActiveTerminalTabId(ui.activeTerminalTabId || ui.terminalTabs[0].id);
+            setTerminalHistory(storage.getTerminalHistory?.() || []);
+          }
+        }).finally(onLabTerminalLoaded);
+      } else {
+        onLabTerminalLoaded();
       }
     };
     if (storage.ready) storage.ready().then(init);
@@ -184,8 +220,33 @@ export default function App() {
 
   const onLabChange = (id) => {
     const next = id || 'default';
+    const prevLabId = currentLabId;
+    // Sauver l'état terminal du lab actuel avant de changer
+    if (prevLabId && storage?.setLabTerminalState) {
+      storage.setLabTerminalState(prevLabId, {
+        tabs: terminalTabs,
+        activeTabId: activeTerminalTabId,
+        history: terminalHistory,
+      });
+    }
     setCurrentLabId(next);
     storage?.setCurrentLabId?.(next);
+    // Charger l'état terminal du nouveau lab
+    storage?.getLabTerminalState?.(next)?.then?.((labState) => {
+      if (labState) {
+        const tabs = Array.isArray(labState.tabs) && labState.tabs.length > 0 ? labState.tabs : [{ id: '1', name: 'Session 1' }];
+        const activeTab = labState.activeTabId && tabs.some((t) => t.id === labState.activeTabId) ? labState.activeTabId : tabs[0].id;
+        setTerminalTabs(tabs);
+        setActiveTerminalTabId(activeTab);
+        setTerminalHistory(Array.isArray(labState.history) ? labState.history : []);
+      } else {
+        const ui = storage?.getUiSession?.();
+        const fallbackTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
+        setTerminalTabs(fallbackTabs);
+        setActiveTerminalTabId(ui?.activeTerminalTabId && fallbackTabs.some((t) => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : fallbackTabs[0].id);
+        setTerminalHistory([]);
+      }
+    });
   };
 
   useEffect(() => {
@@ -219,9 +280,18 @@ export default function App() {
     return () => window.removeEventListener('keydown', onEscape);
   }, [labPanelOpen, statsOpen, logOpen, cvePanelOpen, optionsPanelOpen]);
 
+  // Persister l'état terminal (tabs, history) par lab quand il change (après chargement initial, pas pendant switch)
   useEffect(() => {
-    if (terminalPanelOpen && storage) setTerminalHistory(storage.getTerminalHistory() || []);
-  }, [terminalPanelOpen, storage]);
+    if (!labTerminalLoadedRef.current || labSwitchInProgressRef.current) return;
+    const labId = currentLabId || 'default';
+    if (storage?.setLabTerminalState) {
+      storage.setLabTerminalState(labId, {
+        tabs: terminalTabs,
+        activeTabId: activeTerminalTabId,
+        history: terminalHistory,
+      });
+    }
+  }, [currentLabId, terminalTabs, activeTerminalTabId, terminalHistory, storage]);
   useEffect(() => {
     if (terminalPanelOpen) setTerminalPanelEverOpened(true);
   }, [terminalPanelOpen]);
@@ -360,7 +430,7 @@ export default function App() {
           onTerminalPip={() => setTerminalPipOpen(true)}
           capturePanelOpen={capturePanelOpen}
           onCapturePanelToggle={() => { setCapturePanelOpen(prev => { const next = !prev; setTimeout(() => persistUiSession({ capturePanelOpen: next }), 0); return next; }); }}
-          onDeactivateLab={() => { storage?.setCurrentLabId('default'); setCurrentLabId('default'); setLabPanelOpen(false); }}
+          onDeactivateLab={() => { onLabChange('default'); setLabPanelOpen(false); }}
           onNavigate={setView}
           getTerminalUrl={getTerminalUrl}
           getDesktopUrl={getDesktopUrl}
@@ -505,7 +575,7 @@ export default function App() {
           <div class="terminal-journal">
             <h4 class="terminal-journal-title">Journal de session (historique enregistré)</h4>
             <p class="terminal-journal-desc">Ajoute une ligne (commande ou note) pour la garder en mémoire.</p>
-            <form class="terminal-journal-form" onSubmit={(e) => { e.preventDefault(); const t = terminalJournalInput.trim(); if (t) { storage?.appendTerminalHistory?.({ text: t }); setTerminalHistory(storage?.getTerminalHistory?.() || []); setTerminalJournalInput(''); } }}>
+            <form class="terminal-journal-form" onSubmit={(e) => { e.preventDefault(); const t = terminalJournalInput.trim(); if (t) { setTerminalHistory(prev => [...prev, { id: String(Date.now()), ts: new Date().toISOString(), text: t }]); setTerminalJournalInput(''); } }}>
               <input id="terminal-journal-input" name="terminal-journal-entry" type="text" class="terminal-journal-input" value={terminalJournalInput} onInput={e => setTerminalJournalInput(e.target.value)} placeholder="Commande ou note à enregistrer" />
               <button type="submit" class="btn btn-secondary">Ajouter</button>
             </form>

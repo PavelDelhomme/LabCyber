@@ -96,6 +96,9 @@ export function useStorage() {
   const getTerminalHistory = useCallback(() => (storage ? storage.getTerminalHistory() : []) || [], []);
   const appendTerminalHistory = useCallback((entry) => storage && storage.appendTerminalHistory(entry), []);
   const clearTerminalHistory = useCallback(() => storage && storage.clearTerminalHistory(), []);
+  const getLabTerminalState = useCallback((labId) => (storage && storage.getLabTerminalState) ? storage.getLabTerminalState(labId) : Promise.resolve(null), []);
+  const setLabTerminalState = useCallback((labId, state) => storage && storage.setLabTerminalState && storage.setLabTerminalState(labId, state), []);
+  const appendLabTerminalHistory = useCallback((labId, entry) => (storage && storage.appendLabTerminalHistory) ? storage.appendLabTerminalHistory(labId, entry) : Promise.resolve(), []);
   const getUiSession = useCallback(() => (storage && storage.getUiSession) ? storage.getUiSession() : null, []);
   const setUiSession = useCallback((obj) => storage && storage.setUiSession && storage.setUiSession(obj), []);
   const getCaptureState = useCallback((labId) => (storage && storage.getCaptureState) ? storage.getCaptureState(labId) : Promise.resolve(null), []);
@@ -125,7 +128,7 @@ export function useStorage() {
     getTaskDone, setTaskDone, getScenarioStatus, setScenarioStatus, getChallengesDone, setChallengeDone,
     getLabs, setLabs, getCurrentLabId, setCurrentLabId, getTopologies, setTopology,
     getPipAuto, setPipAuto, clearProgress,
-    getTerminalHistory, appendTerminalHistory, clearTerminalHistory,
+    getTerminalHistory, appendTerminalHistory, clearTerminalHistory, getLabTerminalState, setLabTerminalState, appendLabTerminalHistory,
     getUiSession, setUiSession, getCaptureState, setCaptureState,
     getCaptureSessionsList, setCaptureSession, getCaptureSession, deleteCaptureSession,
     getLabNotes, setLabNotes, getLabReport, setLabReport,
