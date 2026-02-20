@@ -274,6 +274,7 @@ body {
   width: 100%;
   background: var(--bg-dark);
   -webkit-overflow-scrolling: touch;
+  transition: margin-right 0.2s ease;
 }
 
 .main:has(.view-scenario-with-terminal.active) {
@@ -1032,15 +1033,15 @@ body {
 /* PiP : scénario en miniature (flottant) */
 .pip-panel {
   position: fixed;
-  bottom: 1rem;
-  right: 1rem;
+  left: 1rem;
+  bottom: 220px;
   width: 280px;
   max-height: 320px;
   background: var(--bg-card);
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  z-index: 1000;
+  z-index: 9200;
   display: flex;
   flex-direction: column;
 }
@@ -1810,6 +1811,8 @@ body {
 /* Terminal PiP : fenêtre flottante déplaçable (au-dessus de tout) */
 .terminal-pip-panel {
   position: fixed;
+  right: 1rem;
+  bottom: 1rem;
   width: 400px;
   height: 320px;
   min-width: 280px;
@@ -1818,20 +1821,21 @@ body {
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  z-index: 10000;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
   pointer-events: auto;
   contain: layout style paint;
-}
-.terminal-pip-dragging {
-  will-change: transform;
+  isolation: isolate;
 }
 .terminal-pip-minimized {
   width: 220px;
   height: 48px;
   min-width: 180px;
   min-height: 48px;
+}
+.terminal-pip-minimized .terminal-pip-body {
+  display: none !important;
 }
 .terminal-pip-header {
   display: flex;
@@ -2429,7 +2433,7 @@ body {
   .engagement-form .topbar-btn { width: 100%; min-height: 38px; }
   .engagement-target-item { flex-direction: column; align-items: flex-start; gap: 0.3rem; font-size: 0.9rem; }
   .engagement-target-delete { margin-left: 0; min-height: 38px; }
-  .pip-panel { width: calc(100% - 0.75rem); max-width: 300px; right: 0.4rem; left: 0.4rem; margin: 0 auto; }
+  .pip-panel { width: calc(100% - 0.75rem); max-width: 300px; left: 0.4rem; bottom: 220px; right: auto; margin: 0; }
   .pip-close { min-width: 40px; min-height: 40px; font-size: 1.1rem; }
   .room-reading .reading-link { display: block; margin-bottom: 0.4rem; font-size: 0.9rem; }
   .log-panel { max-height: 50vh; }
@@ -2452,7 +2456,7 @@ body {
   .card, .scenario-card { padding: 1rem; }
   .machine-cards { flex-direction: column; }
   .machine-card { width: 100%; }
-  .pip-panel { right: 0.5rem; bottom: 0.5rem; width: 260px; max-height: 280px; }
+  .pip-panel { left: 1rem; bottom: 220px; right: auto; width: 260px; max-height: 280px; }
   .modal-content { max-height: 90vh; margin: 0.5rem; }
   .log-panel { width: 100%; min-width: 0; max-width: none; max-height: 40vh; border-left: none; border-top: 1px solid var(--border); }
 }

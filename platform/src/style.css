@@ -127,7 +127,7 @@ body {
   color: var(--text-muted);
 }
 
-/* Main */
+/* Main : marge droite quand panneau terminal ouvert (évite que le contenu soit couvert) */
 .main {
   flex: 1;
   min-width: 0;
@@ -136,6 +136,7 @@ body {
   padding: 1.75rem 2rem;
   max-width: 920px;
   -webkit-overflow-scrolling: touch;
+  transition: margin-right 0.2s ease;
 }
 
 .main:has(.view-scenario-with-terminal.active) {
@@ -731,18 +732,18 @@ body {
 .engagement-target-notes { color: var(--text-muted); font-size: 0.85rem; }
 .engagement-target-delete { margin-left: auto; }
 
-/* PiP : scénario en miniature (flottant) */
+/* PiP Récap : au-dessus de la barre scénario, à gauche (pas en bas à droite sous la barre) */
 .pip-panel {
   position: fixed;
-  bottom: 1rem;
-  right: 1rem;
+  left: 1rem;
+  bottom: 220px;
   width: 280px;
   max-height: 320px;
   background: var(--bg-card);
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  z-index: 1000;
+  z-index: 9200;
   display: flex;
   flex-direction: column;
 }
@@ -984,9 +985,11 @@ body {
 .scenario-bar-cible .btn-tiny:hover { border-color: var(--accent); color: var(--accent); }
 .btn-tiny { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
 
-/* Terminal PiP (style YouTube : flottant, déplaçable, réductible) */
+/* Terminal PiP : position fixe en bas à droite, z-index max. Pas de drag. Réduire = masquer le body en CSS (iframe reste montée pour éviter scintillement). */
 .terminal-pip-panel {
   position: fixed;
+  right: 1rem;
+  bottom: 1rem;
   width: 400px;
   height: 320px;
   min-width: 280px;
@@ -995,14 +998,11 @@ body {
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  z-index: 10000;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
   contain: layout style paint;
-}
-.terminal-pip-dragging {
-  will-change: transform;
-  pointer-events: auto;
+  isolation: isolate;
 }
 .terminal-pip-minimized {
   width: 220px;
@@ -1021,6 +1021,10 @@ body {
   user-select: none;
 }
 .terminal-pip-minimized .terminal-pip-header { border-bottom: none; }
+.terminal-pip-minimized .terminal-pip-body,
+.terminal-pip-body-hidden {
+  display: none !important;
+}
 .terminal-pip-title { font-size: 0.9rem; font-weight: 600; color: var(--accent); }
 .terminal-pip-actions { display: flex; gap: 0.25rem; }
 .terminal-pip-btn {
@@ -1523,7 +1527,7 @@ body {
   .engagement-form .topbar-btn { width: 100%; min-height: 44px; }
   .engagement-target-item { flex-direction: column; align-items: flex-start; gap: 0.35rem; font-size: 1rem; }
   .engagement-target-delete { margin-left: 0; min-height: 44px; }
-  .pip-panel { width: calc(100% - 1rem); max-width: 320px; right: 0.5rem; left: 0.5rem; margin: 0 auto; }
+  .pip-panel { width: calc(100% - 1rem); max-width: 320px; left: 0.5rem; bottom: 220px; right: auto; margin: 0; }
   .pip-close { min-width: 44px; min-height: 44px; }
   .room-reading .reading-link { display: block; margin-bottom: 0.5rem; font-size: 1rem; }
   .log-panel { max-height: 50vh; }
@@ -1546,7 +1550,7 @@ body {
   .card, .scenario-card { padding: 1rem; }
   .machine-cards { flex-direction: column; }
   .machine-card { width: 100%; }
-  .pip-panel { right: 0.5rem; bottom: 0.5rem; width: 260px; max-height: 280px; }
+  .pip-panel { left: 1rem; bottom: 220px; right: auto; width: 260px; max-height: 280px; }
   .modal-content { max-height: 90vh; margin: 0.5rem; }
   .log-panel { width: 100%; min-width: 0; max-width: none; max-height: 40vh; border-left: none; border-top: 1px solid var(--border); }
 }

@@ -1,3 +1,4 @@
+import { memo } from 'preact/compat';
 import { useState, useEffect, useRef, useMemo } from 'preact/hooks';
 import { useStore, useStorage, getTerminalUrl, getDesktopUrl } from './lib/store';
 
@@ -90,6 +91,26 @@ function TerminalPanelIframe({ terminalUseDefaultLab, tabName, tabId, reloadKey 
     </div>
   );
 }
+
+/** Contenu des onglets terminal (iframes). Mémoïsé pour ne pas re-render quand searchQuery ou d’autres états non liés changent, ce qui évite de casser l’affichage du terminal (xterm) lors de la recherche topbar. */
+const TerminalPanelTabsContent = memo(function TerminalPanelTabsContent({ terminalTabs, activeTerminalTabId, terminalUseDefaultLab, terminalReloadKeys, setTerminalReloadKeys, panelIframeWindowsRef }) {
+  return (
+    <div class="terminal-side-panel-content">
+      {terminalTabs.map(tab => (
+        <div key={tab.id} class={`terminal-tab-pane ${activeTerminalTabId === tab.id ? 'terminal-tab-pane-active' : 'terminal-tab-pane-inactive'}`}>
+          <TerminalPanelIframe
+            terminalUseDefaultLab={terminalUseDefaultLab}
+            tabName={tab.name}
+            tabId={tab.id}
+            reloadKey={terminalReloadKeys[tab.id] || 0}
+            onReload={() => setTerminalReloadKeys(k => ({ ...k, [tab.id]: (k[tab.id] || 0) + 1 }))}
+            onIframeLoad={(win) => { if (win && panelIframeWindowsRef.current) panelIframeWindowsRef.current.add(win); }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+});
 
 export default function App() {
   const { data, scenarios, config, docs, learning, targets, challenges, docSources, loaded } = useStore();
@@ -408,18 +429,24 @@ export default function App() {
     return () => clearTimeout(t);
   }, [terminalPanelOpen, terminalPanelMinimized, activeTerminalTabId]);
 
-  // À l'ouverture du PiP, charger l'état PiP du lab courant
-  useEffect(() => {
-    if (!terminalPipOpen || !storage || labSwitchInProgressRef.current) return;
-    storage.getLabTerminalState?.(currentLabId || 'default')?.then?.(labState => {
-      if (labState?.pip) {
-        setPipTabs(Array.isArray(labState.pip.tabs) && labState.pip.tabs.length > 0 ? labState.pip.tabs : [{ id: '1', name: 'Session 1' }]);
-        setPipActiveTabId(labState.pip.activeTabId && labState.pip.tabs?.length ? (labState.pip.tabs.some(t => t.id === labState.pip.activeTabId) ? labState.pip.activeTabId : labState.pip.tabs[0].id) : '1');
-        setPipMinimized(!!labState.pip.minimized);
-        if (labState.pip.pos && typeof labState.pip.pos.x === 'number' && typeof labState.pip.pos.y === 'number') setPipPos(labState.pip.pos);
-      }
-    });
-  }, [terminalPipOpen, currentLabId, storage]);
+  // Ouvrir le PiP après avoir chargé l'état du lab (évite scintillement : un seul rendu avec le bon state)
+  const openTerminalPip = () => {
+    const labId = currentLabId || 'default';
+    const p = storage?.getLabTerminalState?.(labId);
+    if (p && typeof p.then === 'function') {
+      p.then((labState) => {
+        if (labState?.pip) {
+          setPipTabs(Array.isArray(labState.pip.tabs) && labState.pip.tabs.length > 0 ? labState.pip.tabs : [{ id: '1', name: 'Session 1' }]);
+          setPipActiveTabId(labState.pip.activeTabId && labState.pip.tabs?.length && labState.pip.tabs.some(t => t.id === labState.pip.activeTabId) ? labState.pip.activeTabId : (labState.pip.tabs?.[0]?.id || '1'));
+          setPipMinimized(!!labState.pip.minimized);
+          if (labState.pip.pos && typeof labState.pip.pos.x === 'number' && typeof labState.pip.pos.y === 'number') setPipPos(labState.pip.pos);
+        }
+        setTerminalPipOpen(true);
+      }).catch(() => setTerminalPipOpen(true));
+    } else {
+      setTerminalPipOpen(true);
+    }
+  };
 
   useEffect(() => {
     const onMessage = (e) => {
@@ -608,7 +635,7 @@ export default function App() {
               onLabChange={onLabChange}
               onOpenTerminalInNewTab={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
               onOpenTerminalInPanel={openTerminalPanel}
-              onOpenTerminalPip={() => setTerminalPipOpen(true)}
+              onOpenTerminalPip={openTerminalPip}
               onStartScenario={handleStartScenario}
               onResumeScenario={handleResumeScenario}
               onScenarioStatusChange={() => setScenarioStatusRevision((r) => r + 1)}
@@ -632,7 +659,14 @@ export default function App() {
             storage={storage}
             collapsed={scenarioBarCollapsed}
             onCollapsed={setScenarioBarCollapsed}
-            onExpand={() => window.location.hash = '#/scenario/' + (currentScenarioId || '')}
+            onExpand={() => {
+              const id = currentScenarioId || '';
+              window.location.hash = '#/scenario/' + id;
+              requestAnimationFrame(() => {
+                const el = document.querySelector('#view-scenario .scenario-content-column');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              });
+            }}
             terminalStripWidth={terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : 0}
             onOpenTerminal={openTerminalPanel}
             onOpenPipRecap={() => setPipOpen(true)}
@@ -746,13 +780,14 @@ export default function App() {
                 <button type="button" class="terminal-tab-add terminal-tab-add-vertical" onClick={(e) => { e.stopPropagation(); const newTab = { id: String(Date.now()), name: `Session ${terminalTabs.length + 1}` }; const nextTabs = [...terminalTabs, newTab]; setTerminalTabs(nextTabs); setActiveTerminalTabId(newTab.id); persistUiSession({ terminalTabs: nextTabs, activeTerminalTabId: newTab.id }); }} title="Nouvel onglet">+</button>
               </nav>
             )}
-            <div class="terminal-side-panel-content">
-              {terminalTabs.map(tab => (
-                <div key={tab.id} class={`terminal-tab-pane ${activeTerminalTabId === tab.id ? 'terminal-tab-pane-active' : 'terminal-tab-pane-inactive'}`}>
-                  <TerminalPanelIframe terminalUseDefaultLab={terminalUseDefaultLab} tabName={tab.name} tabId={tab.id} reloadKey={terminalReloadKeys[tab.id] || 0} onReload={() => setTerminalReloadKeys(k => ({ ...k, [tab.id]: (k[tab.id] || 0) + 1 }))} onIframeLoad={(win) => { if (win) panelIframeWindowsRef.current.add(win); }} />
-                </div>
-              ))}
-            </div>
+            <TerminalPanelTabsContent
+              terminalTabs={terminalTabs}
+              activeTerminalTabId={activeTerminalTabId}
+              terminalUseDefaultLab={terminalUseDefaultLab}
+              terminalReloadKeys={terminalReloadKeys}
+              setTerminalReloadKeys={setTerminalReloadKeys}
+              panelIframeWindowsRef={panelIframeWindowsRef}
+            />
           </div>
           <div class="terminal-journal">
             <h4 class="terminal-journal-title">Journal de session (historique enregistré)</h4>

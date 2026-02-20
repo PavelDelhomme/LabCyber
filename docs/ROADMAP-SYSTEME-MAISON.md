@@ -104,6 +104,9 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 
 **À faire plus tard (backlog)**  
 - **Port knock** : implémenter ou documenter le port knocking (démonstration dans un scénario, service côté cible, client/outil côté attaquant) ; à planifier dans une phase ultérieure ou un scénario dédié.
+- **Cibles spécifiques** : **Windows Server**, **Active Directory (AD)**, **DHCP**, et autres machines/services pour scénarios dédiés. À documenter et intégrer dans : `docs/`, `platform/docs/` (voir 05-CIBLES-A-FAIRE.md), `platform/public/data/targets.json`, `platform/public/data/scenarios.json`, `platform/public/data/challenges.json`, `platform/public/docs/`, vuln-network / nouveaux conteneurs (ex. AD, Windows). Voir [platform/docs/05-CIBLES-A-FAIRE.md](platform/docs/05-CIBLES-A-FAIRE.md).
+- **Historique par session terminal** : chaque onglet terminal doit avoir **son propre historique** (affichage / replay des sorties PTY) ; partage optionnel entre sessions plus tard. À faire : actuellement un nouvel onglet (ex. Session 2) peut réafficher l’historique d’une autre session ; isoler l’historique par `session` (tabId) côté backend/client et par lab.
+- **Terminal PiP déplaçable** (à faire en dernier) : réactiver le drag du terminal flottant PiP une fois les conflits avec l’iframe `terminal-client.html` résolus (position fixe + z-index max pour l’instant).
 
 ### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme) – en cours
 
@@ -119,7 +122,11 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 - [x] Cibles dans la barre : design cohérent (chips, Copier / Terminal).
 - [x] Marge droite : contenu et barre = largeur panneau (pas de gap superflu).
 - [x] Un seul scénario « en cours » à la fois : au démarrage ou reprise d’un scénario, les autres passent automatiquement en pause.
+- [x] **Récap (PiP)** : popup « Récap » positionnée **à gauche, au-dessus** de la barre scénario (z-index 9200), plus en bas à droite sous la barre.
+- [x] **Voir tout** : le bouton « Voir tout » dans la barre scénario met à jour le hash puis fait défiler la colonne scénario vers le haut (scrollIntoView).
+- [x] **Contenu non couvert** : main avec margin-right quand le panneau terminal est ouvert + transition 0,2 s ; contenu reste lisible.
 - [ ] Vérification E2E : scénario + terminal + barre lisibles sans recouvrement.
+- [x] **Terminal PiP (position fixe)** : plus de déplacement (drag désactivé) – position **fixe** en bas à droite (`right: 1rem; bottom: 1rem`), **z-index 99999**, pour éviter conflits avec l’iframe terminal-client.html et comportement épileptique. **PiP déplaçable** reporté en fin de backlog.
 
 ### Phase 4 – Bureau fait maison (léger, vrai bureau) (moyen / long terme)
 
@@ -149,8 +156,9 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 
 - **STATUS.md** : section « Système maison » alignée sur cette roadmap (attaquant riche + packs + prédéfinitions, bureau fait maison, terminal multi + persistance, reprise lab, interconnexion).
 - **README.md** : lien vers cette roadmap, résumé des objectifs (système maison, pas de perte à la reprise).
-- **platform/docs/** : protocole WebSocket terminal ; config « outils / packs par lab » quand elle existera.
-- **docker-compose** : vuln-network (Redis sysctl) ; à venir : service lab-terminal, etc.
+- **platform/docs/** : protocole WebSocket terminal ; config « outils / packs par lab » ; **05-CIBLES-A-FAIRE.md** (Windows Server, AD, DHCP, cibles à intégrer).
+- **platform/public/data/** : targets.json, scenarios.json, challenges.json – à compléter quand cibles AD / Windows / DHCP ajoutées.
+- **docker-compose** : vuln-network (Redis sysctl) ; à venir : service lab-terminal ; cibles Windows Server / AD / DHCP (voir backlog).
 
 ---
 
@@ -181,3 +189,7 @@ Ce document sera mis à jour au fur et à mesure (phases cochées, décisions te
 - **2026-02-13** (branche `feature/phase3-conteneur-attaquant`) : **Conteneur attaquant Phase 3** : Dockerfile labellisé (Phase 3 packs), `/workspace/phase3-packs.txt` ; image opérationnelle avec tous les packs (base, network, web, bruteforce, osint) pour tests scénarios.
 - **2026-02-13** : **Vue scénario** : bouton « Ouvrir le terminal » disponible aussi quand le scénario est **en cours** ou **en pause** (plus seulement au démarrage). Backlog roadmap : **port knock** (à faire plus tard – démo scénario, service cible, outil attaquant).
 - **2026-02-13** : **Reprise / démarrage scénario** : au clic sur « Reprendre le scénario » (ou « Reprendre » dans la barre), reprise complète : restauration du **lab** lié au scénario, **ouverture et affichage** du panneau terminal (déminimisé), rappels et contexte corrects. Idem au « Démarrer le scénario » : panneau terminal ouvert et affiché. Callbacks `handleStartScenario` / `handleResumeScenario` dans App.
+- **2026-02-13** : **UX scénario** : Récap (popup) déplacé **à gauche, au-dessus** de la barre scénario (plus en bas à droite dessous). Bouton « Voir tout » : scroll vers la colonne scénario. Main : transition sur margin-right pour que l’ouverture du panneau terminal ne « couvre » pas le contenu ; rappel dans la roadmap (contenu non couvert).
+- **2026-02-13** : **Backlog** : cibles **Windows Server, AD, DHCP** (platform/docs/05-CIBLES-A-FAIRE.md, roadmap, targets, scenarios, challenges, vuln-network). **Terminal PiP** : drag stabilisé (deps réduites, refs) pour éviter scintillement et déplacements.
+- **2026-02-13** : **Bug recherche topbar** : le champ « Rechercher scénarios, rooms, docs… » provoquait un re-render qui cassait l’affichage du terminal en panneau. Correction : contenu des onglets terminal (iframes) extrait dans un composant mémoïsé `TerminalPanelTabsContent` (preact/compat `memo`) pour ne pas re-render quand `searchQuery` change. Build : import `memo` depuis `preact/compat` (pas `preact`).
+- **2026-02-13** : **Backlog** : **historique par session terminal** – chaque onglet = son propre historique (partage optionnel plus tard) ; à faire (actuellement nouvel onglet peut réafficher l’historique d’une autre session). STATUS.md mis à jour (système maison, bug recherche, suite roadmap).

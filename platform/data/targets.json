@@ -1,6 +1,6 @@
 {
   "title": "Cibles du lab",
-  "description": "Toutes les machines et services exposés pour les scénarios et challenges. Utilise la machine attaquant (terminal) pour les cibles réseau.",
+  "description": "Toutes les machines et services exposés pour les scénarios et challenges. Utilise la machine attaquant (terminal) pour les cibles réseau. Cibles à venir : Windows Server, AD, DHCP (voir platform/docs/05-CIBLES-A-FAIRE.md).",
   "targets": [
     {
       "id": "dvwa",

@@ -24,20 +24,17 @@ export default function TerminalPipPanel({
   pos: controlledPos,
   onStateChange,
 }) {
-  const [pos, setPos] = useState(controlledPos ?? { x: typeof window !== 'undefined' ? window.innerWidth - 420 : 400, y: typeof window !== 'undefined' ? window.innerHeight - 340 : 300 });
   const [minimized, setMinimized] = useState(controlledMinimized ?? false);
-  const [dragging, setDragging] = useState(false);
-  const [dragPos, setDragPos] = useState(null);
   const [tabs, setTabs] = useState(controlledTabs ?? [{ id: '1', name: 'Session 1' }]);
   const [activeTabId, setActiveTabId] = useState(controlledActiveTabId ?? '1');
-  const dragRef = useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 }, lastPos: { x: 0, y: 0 } });
   const pipIframeWindowRef = useRef(null);
+  const stateChangeRef = useRef(null);
 
   const isControlled = controlledTabs != null && controlledActiveTabId != null;
   const displayTabs = isControlled ? controlledTabs : tabs;
   const displayActiveTabId = isControlled ? controlledActiveTabId : activeTabId;
-  const basePos = controlledPos != null ? controlledPos : pos;
-  const displayPos = dragging && dragPos != null ? dragPos : basePos;
+  const displayPos = controlledPos ?? { x: 0, y: 0 };
+  stateChangeRef.current = { tabs: displayTabs, activeTabId: displayActiveTabId, minimized, pos: displayPos };
 
   useEffect(() => {
     if (controlledMinimized !== undefined) setMinimized(controlledMinimized);
@@ -48,23 +45,13 @@ export default function TerminalPipPanel({
   useEffect(() => {
     if (controlledActiveTabId != null) setActiveTabId(controlledActiveTabId);
   }, [controlledActiveTabId]);
-  useEffect(() => {
-    if (controlledPos != null) setPos(controlledPos);
-  }, [controlledPos]);
-
   const handleMinimize = () => {
     const next = !minimized;
     setMinimized(next);
-    onMinimize?.(next);
-    onStateChange?.({ tabs: displayTabs, activeTabId: displayActiveTabId, minimized: next, pos: displayPos });
-  };
-
-  const handleMouseDown = (e) => {
-    if (e.target.closest('button')) return;
-    const start = { ...basePos };
-    setDragging(true);
-    setDragPos(start);
-    dragRef.current = { startX: e.clientX, startY: e.clientY, startPos: start, lastPos: start };
+    requestAnimationFrame(() => {
+      onMinimize?.(next);
+      onStateChange?.({ tabs: displayTabs, activeTabId: displayActiveTabId, minimized: next, pos: displayPos });
+    });
   };
 
   useEffect(() => {
@@ -87,32 +74,6 @@ export default function TerminalPipPanel({
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
   }, [displayTabs, displayActiveTabId, minimized, displayPos, isControlled, onClose, onStateChange]);
-
-  useEffect(() => {
-    if (!dragging) return;
-    const onMove = (e) => {
-      const dx = e.clientX - dragRef.current.startX;
-      const dy = e.clientY - dragRef.current.startY;
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const nextPos = {
-        x: Math.max(0, Math.min(w - (minimized ? 220 : 400), dragRef.current.startPos.x + dx)),
-        y: Math.max(0, Math.min(h - (minimized ? 48 : 320), dragRef.current.startPos.y + dy)),
-      };
-      dragRef.current.lastPos = nextPos;
-      setDragPos(nextPos);
-    };
-    const onUp = () => {
-      const finalPos = { ...(dragRef.current.lastPos || dragRef.current.startPos) };
-      setDragging(false);
-      setDragPos(null);
-      setPos(finalPos);
-      onStateChange?.({ tabs: displayTabs, activeTabId: displayActiveTabId, minimized, pos: finalPos });
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-  }, [dragging, minimized, displayTabs, displayActiveTabId, onStateChange]);
 
   const addTab = (e) => {
     e.stopPropagation();
@@ -144,16 +105,11 @@ export default function TerminalPipPanel({
 
   return (
     <div
-      class={`terminal-pip-panel ${minimized ? 'terminal-pip-minimized' : ''} ${dragging ? 'terminal-pip-dragging' : ''}`}
-      style={{ left: displayPos.x, top: displayPos.y }}
+      class={`terminal-pip-panel ${minimized ? 'terminal-pip-minimized' : ''}`}
       role="dialog"
       aria-label="Terminal (PiP)"
     >
-      <header
-        class="terminal-pip-header"
-        onMouseDown={handleMouseDown}
-        style={{ cursor: dragging ? 'grabbing' : 'grab' }}
-      >
+      <header class="terminal-pip-header">
         <span class="terminal-pip-title">⌨ Terminal</span>
         {!minimized && displayTabs.length > 0 && (
           <div class="terminal-pip-tabs">
@@ -181,11 +137,9 @@ export default function TerminalPipPanel({
           <button type="button" class="terminal-pip-btn" onClick={onClose} title="Fermer" aria-label="Fermer">×</button>
         </div>
       </header>
-      {!minimized && (
-        <div class="terminal-pip-body">
-          {activeTab && termUrl && <StableTerminalIframe url={termUrl} title={activeTab.name} tabKey={`pip-${displayActiveTabId}`} onIframeLoad={(win) => { pipIframeWindowRef.current = win; }} />}
-        </div>
-      )}
+      <div class={`terminal-pip-body ${minimized ? 'terminal-pip-body-hidden' : ''}`} aria-hidden={minimized}>
+        {activeTab && termUrl && <StableTerminalIframe url={termUrl} title={activeTab.name} tabKey={`pip-${displayActiveTabId}`} onIframeLoad={(win) => { pipIframeWindowRef.current = win; }} />}
+      </div>
     </div>
   );
 }

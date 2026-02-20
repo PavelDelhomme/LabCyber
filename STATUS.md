@@ -26,10 +26,11 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 ### Terminal web attaquant (panneau et PiP)
 
 - **Backend** : lab-terminal (Go, PTY + WebSocket), route `/terminal-house/`, client `?path=terminal-house`. Sessions par onglet (`?session=<tabId>`).
-- **Panneau terminal** : onglets, resize (poignée, curseur col-resize), exit → fermeture de l’onglet. **Exit fonctionne** : le client envoie `postMessage({ type: 'lab-cyber-terminal-exit' })` à la fermeture du WebSocket, l’app ferme l’onglet concerné. Le reste du panneau (onglets, journal, largeur) est opérationnel.
+- **Panneau terminal** : onglets, resize (poignée, curseur col-resize), exit → fermeture de l’onglet. **Exit fonctionne** : le client envoie `postMessage({ type: 'lab-cyber-terminal-exit' })` à la fermeture du WebSocket, l’app ferme l’onglet concerné. Le reste du panneau (onglets, journal, largeur) est opérationnel. **Recherche topbar** : le champ « Rechercher scénarios, rooms, docs… » ne casse plus l’affichage du terminal (contenu des onglets mémoïsé via `TerminalPanelTabsContent`).
 - **Persistance par lab** : liste des onglets, onglet actif, journal de session (notes/commandes enregistrées), largeur du panneau, état PiP (ouvert/fermé, onglets PiP, position) – tout est **sauvegardé par lab** et restauré au changement de lab ou au rechargement de la page (côté app).
 - **Journal complet** : bouton Journal & Stats → « Journal complet (par lab) » : consultation par lab et par scénario ; les notes du panneau terminal sont aussi enregistrées dans ce journal (type note, sessionId, scenarioId).
-- **PiP** : persistance par lab (ouvert/fermé, onglets, position, minimisé) ; restauration à la reprise du lab.
+- **PiP** : persistance par lab (ouvert/fermé, onglets, position, minimisé) ; restauration à la reprise du lab. Position **fixe** (bas-droite, z-index 99999) ; drag désactivé pour éviter conflits avec l’iframe (backlog : PiP déplaçable en dernier).
+- **Backlog terminal** : **historique par session** – chaque onglet doit avoir son propre historique (affichage/replay) ; partage optionnel plus tard. À faire : isoler l’historique par tabId/session (actuellement nouvel onglet peut réafficher l’historique d’une autre session).
 
 **Ce qui est enregistré côté app**  
 - Par **lab** : onglets terminal (noms, nombre), onglet actif, journal de session (lignes ajoutées à la main), largeur panneau, état PiP (ouvert, onglets, position, minimisé), scenarioId en vue scénario. Restauré au rechargement et au changement de lab.
@@ -86,7 +87,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
    - Dans le popup Lab, « Ouvrir dans la page » doit **toujours** ouvrir en **panneau** (terminal, capture, simulateur, proxy, API), jamais en changeant la page courante ni en nouvel onglet.
 
 4. **Terminal PiP**  
-   - Déplaçable validé, plusieurs onglets. PiP : plus de rechargement sur commandes (URL iframe fixée au montage). Exit → fermer l’onglet si le backend envoie `postMessage` (voir PRIORITÉ). Persistance des onglets en session si besoin.
+   - Plusieurs onglets, position fixe (drag désactivé ; backlog : PiP déplaçable en dernier). URL iframe fixée au montage. Exit → fermeture de l’onglet. Persistance par lab. **Historique par session** : à faire – chaque onglet = son propre historique (partage optionnel plus tard).
 
 5. **CVE**  
    - Recherche : résultats dans le panel (déjà en place). À améliorer : affichage par ID dans le panel ; **enregistrer les CVE détectés** (par lab ou global) pour les consulter plus tard.
@@ -128,11 +129,11 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ## 📌 Problèmes signalés (résumés)
 
-- Panneau terminal rétracté cache les boutons topbar/FAB → marge droite à faire.  
-- Terminal PiP : déplaçable et onglets implémentés → à valider en test.  
-- Bouton + nouvel onglet terminal → à valider / corriger si besoin.  
+- Panneau terminal rétracté cache les boutons topbar/FAB → marge droite en place.  
+- Terminal PiP : position fixe, onglets OK ; drag reporté en backlog.  
+- **Historique par session** : nouvel onglet terminal peut réafficher l’historique d’une autre session → backlog (chaque onglet = son historique, partage optionnel plus tard).  
 - Lab actif : Capture / Simulateur en panneau (système de panneaux) → à faire.  
-- Voir PRIORITÉ et À faire ci-dessus pour le détail.
+- Voir [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md) et PRIORITÉ ci-dessus pour le détail.
 
 ---
 
@@ -157,8 +158,8 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Popup lab bloquée** : touche **Escape** ferme le popup lab et les autres overlays (Stats, Journal, CVE, Options).
 - **Lab actif – terminal** : ouverture du terminal en panneau depuis le popup lab ne referme plus le popup immédiatement (persistance via ref).
 - **Journal + Stats** : un seul bouton dropdown (📋 ▼) avec Journal d’activité et Stats.
-- **Panneau terminal** : onglets, resize, exit (fermeture de l’onglet) OK. Persistance **par lab** : onglets, journal de session, largeur ; restauration au changement de lab et au rechargement. **Session stable** : l’iframe du terminal ne reçoit plus `src` au re-render (src fixé une seule fois au montage), ce qui évite le rechargement intempestif et la perte des commandes pendant l’utilisation. Limite : au rechargement de la **page**, le contenu des sessions est perdu (sorties PTY non persistées côté backend).
-- **Terminal PiP** : déplaçable, plusieurs onglets, persistance **par lab** (ouvert/fermé, onglets, position, minimisé). Exit → fermeture de l’onglet. Restauration à la reprise du lab.
+- **Panneau terminal** : onglets, resize, exit (fermeture de l’onglet) OK. Persistance **par lab** : onglets, journal de session, largeur ; restauration au changement de lab et au rechargement. **Session stable** : l’iframe du terminal ne reçoit plus `src` au re-render (src fixé une seule fois au montage) ; contenu des onglets mémoïsé pour que la **recherche topbar** ne casse plus l’affichage. Sorties PTY : buffer par session côté backend, replay au reconnect.
+- **Terminal PiP** : plusieurs onglets, persistance **par lab** (ouvert/fermé, onglets, position, minimisé). Exit → fermeture de l’onglet. Restauration à la reprise du lab. Position fixe (drag désactivé ; backlog : PiP déplaçable en dernier).
 - **Journal complet** : Journal & Stats → « Journal complet (par lab) » ; consultation par lab et scénario ; notes du panneau enregistrées avec sessionId et scenarioId.
 - **Doc & Cours** : sous-navigation (sidebar thèmes + Doc / Cours / Outils), OWASP Top 10:2021 (catalogue + bloc Learning avec Ouvrir dans l’app / externe).
 - **Bibliothèque doc** : isolation du design (`.doc-offline-content-isolated`) pour le HTML récupéré.
