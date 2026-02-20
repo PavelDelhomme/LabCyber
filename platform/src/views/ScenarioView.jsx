@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { escapeHtml, getTerminalUrl } from '../lib/store';
 
-export default function ScenarioView({ scenarios, config, currentScenarioId, currentLabId, storage, onOpenTerminalInPanel, onOpenTerminalPip, docSources }) {
+export default function ScenarioView({ scenarios, config, currentScenarioId, currentLabId, storage, onOpenTerminalInPanel, onOpenTerminalPip, onStartScenario, onResumeScenario, onScenarioStatusChange, docSources }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
   const [taskIndex, setTaskIndex] = useState(0);
   const [toolPacks, setToolPacks] = useState(null);
@@ -14,8 +14,11 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
 
   useEffect(() => {
     if (!scenario || !storage) return;
-    if (allDone && status !== 'completed') storage.setScenarioStatus(scenario.id, 'completed');
-  }, [scenario?.id, allDone, status, storage]);
+    if (allDone && status !== 'completed') {
+      storage.setScenarioStatus(scenario.id, 'completed');
+      onScenarioStatusChange?.();
+    }
+  }, [scenario?.id, allDone, status, storage, onScenarioStatusChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,29 +52,37 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
   const termUrl = getTerminalUrl();
 
   const startScenario = () => {
-    (scenarios || []).forEach(s => {
-      if (s.id !== scenario.id && storage?.getScenarioStatus(s.id) === 'in_progress') {
-        storage.setScenarioStatus(s.id, 'paused');
-      }
-    });
-    storage?.setScenarioStatus(scenario.id, 'in_progress');
-    if (currentLabId && storage?.setScenarioLabId) storage.setScenarioLabId(scenario.id, currentLabId);
-    onOpenTerminalInPanel?.();
+    if (onStartScenario) {
+      onStartScenario(scenario.id);
+    } else {
+      (scenarios || []).forEach(s => {
+        if (s.id !== scenario.id && storage?.getScenarioStatus(s.id) === 'in_progress') {
+          storage.setScenarioStatus(s.id, 'paused');
+        }
+      });
+      storage?.setScenarioStatus(scenario.id, 'in_progress');
+      if (currentLabId && storage?.setScenarioLabId) storage.setScenarioLabId(scenario.id, currentLabId);
+      onOpenTerminalInPanel?.();
+    }
   };
   const prepareScenario = () => {
     onOpenTerminalInPanel?.();
   };
-  const pauseScenario = () => storage?.setScenarioStatus(scenario.id, 'paused');
+  const pauseScenario = () => { storage?.setScenarioStatus(scenario.id, 'paused'); onScenarioStatusChange?.(); };
   const resumeScenario = () => {
-    (scenarios || []).forEach(s => {
-      if (s.id !== scenario.id && storage?.getScenarioStatus(s.id) === 'in_progress') {
-        storage.setScenarioStatus(s.id, 'paused');
-      }
-    });
-    storage?.setScenarioStatus(scenario.id, 'in_progress');
+    if (onResumeScenario) {
+      onResumeScenario(scenario.id);
+    } else {
+      (scenarios || []).forEach(s => {
+        if (s.id !== scenario.id && storage?.getScenarioStatus(s.id) === 'in_progress') {
+          storage.setScenarioStatus(s.id, 'paused');
+        }
+      });
+      storage?.setScenarioStatus(scenario.id, 'in_progress');
+    }
   };
-  const abandonScenario = () => storage?.setScenarioStatus(scenario.id, 'abandoned');
-  const resetScenario = () => storage?.setScenarioStatus(scenario.id, 'not_started');
+  const abandonScenario = () => { storage?.setScenarioStatus(scenario.id, 'abandoned'); onScenarioStatusChange?.(); };
+  const resetScenario = () => { storage?.setScenarioStatus(scenario.id, 'not_started'); onScenarioStatusChange?.(); };
 
   const statusLabel = { not_started: 'Non commencé', in_progress: 'En cours', completed: 'Terminé', abandoned: 'Abandonné', paused: 'En pause' }[status] || status;
 
@@ -95,12 +106,14 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
             {status === 'in_progress' && (
               <>
                 <button type="button" class="btn btn-secondary" onClick={pauseScenario}>Mettre en pause</button>
+                <button type="button" class="btn btn-secondary" onClick={prepareScenario} title="Ouvrir le panneau terminal pour les commandes">Ouvrir le terminal</button>
                 <button type="button" class="topbar-btn" onClick={abandonScenario}>J'abandonne ce scénario</button>
               </>
             )}
             {status === 'paused' && (
               <>
                 <button type="button" class="btn btn-primary" onClick={resumeScenario}>Reprendre le scénario</button>
+                <button type="button" class="btn btn-secondary" onClick={prepareScenario} title="Ouvrir le panneau terminal">Ouvrir le terminal</button>
                 <button type="button" class="topbar-btn" onClick={abandonScenario}>Abandonner</button>
               </>
             )}
@@ -172,7 +185,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
                   type="checkbox"
                   class="task-checkbox"
                   checked={!!isDone(i)}
-                  onChange={e => { setDone(i, e.target.checked); storage?.setLastScenario(scenario.id, i); storage?.setScenarioStatus(scenario.id, 'in_progress'); }}
+                  onChange={e => { setDone(i, e.target.checked); storage?.setLastScenario(scenario.id, i); storage?.setScenarioStatus(scenario.id, 'in_progress'); onScenarioStatusChange?.(); }}
                 />
                 <div class="task-content">
                   <div class="task-title">{escapeHtml(t.title)}</div>

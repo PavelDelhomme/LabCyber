@@ -102,6 +102,9 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 - **Phase 4** : Bureau fait maison.  
 - **Phase 5** : Interconnexion + reprise lab complète.
 
+**À faire plus tard (backlog)**  
+- **Port knock** : implémenter ou documenter le port knocking (démonstration dans un scénario, service côté cible, client/outil côté attaquant) ; à planifier dans une phase ultérieure ou un scénario dédié.
+
 ### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme) – en cours
 
 - [x] **Config packs et prédéfinitions** : `platform/data/toolPacks.json` (packs : base, network, web, bruteforce) ; `platform/data/labToolPresets.json` (byScenario, byLab) ; doc `platform/docs/04-PHASE3-OUTILS.md`.
@@ -176,3 +179,5 @@ Ce document sera mis à jour au fur et à mesure (phases cochées, décisions te
 - **2026-02-13** : **Phase 3 UX** : barre scénario z-index 9100 (au-dessus du panneau terminal), design unifié ; panneau terminal avec onglets verticaux à gauche ; section Cibles en chips ; marge droite sans gap superflu ; roadmap mise à jour (bloc Phase 3 – UX layout et design).
 - **2026-02-13** : **Un seul scénario en cours** : au démarrage ou reprise d’un scénario, tout autre scénario « en cours » passe automatiquement en pause.
 - **2026-02-13** (branche `feature/phase3-conteneur-attaquant`) : **Conteneur attaquant Phase 3** : Dockerfile labellisé (Phase 3 packs), `/workspace/phase3-packs.txt` ; image opérationnelle avec tous les packs (base, network, web, bruteforce, osint) pour tests scénarios.
+- **2026-02-13** : **Vue scénario** : bouton « Ouvrir le terminal » disponible aussi quand le scénario est **en cours** ou **en pause** (plus seulement au démarrage). Backlog roadmap : **port knock** (à faire plus tard – démo scénario, service cible, outil attaquant).
+- **2026-02-13** : **Reprise / démarrage scénario** : au clic sur « Reprendre le scénario » (ou « Reprendre » dans la barre), reprise complète : restauration du **lab** lié au scénario, **ouverture et affichage** du panneau terminal (déminimisé), rappels et contexte corrects. Idem au « Démarrer le scénario » : panneau terminal ouvert et affiché. Callbacks `handleStartScenario` / `handleResumeScenario` dans App.

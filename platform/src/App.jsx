@@ -119,6 +119,7 @@ export default function App() {
   const [filterCategory, setFilterCategory] = useState('');
   const [currentScenarioId, setCurrentScenarioId] = useState(null);
   const [currentRoomId, setCurrentRoomId] = useState(null);
+  const [scenarioStatusRevision, setScenarioStatusRevision] = useState(0);
   const [learningTopicId, setLearningTopicId] = useState(null);
   const [learningSubId, setLearningSubId] = useState(null);
   const [docOfflineId, setDocOfflineId] = useState(null);
@@ -157,6 +158,40 @@ export default function App() {
 
   const persistUiSession = (patch) => {
     if (storage?.setUiSession) storage.setUiSession({ ...uiSessionRef.current, ...patch });
+  };
+
+  // Démarrage d'un scénario : pause les autres, lie le lab, ouvre et affiche le panneau terminal
+  const handleStartScenario = (scenarioId) => {
+    if (!storage || !scenarioId) return;
+    (scenarios || []).forEach(s => {
+      if (s.id !== scenarioId && storage.getScenarioStatus(s.id) === 'in_progress') {
+        storage.setScenarioStatus(s.id, 'paused');
+      }
+    });
+    storage.setScenarioStatus(scenarioId, 'in_progress');
+    if (currentLabId && storage.setScenarioLabId) storage.setScenarioLabId(scenarioId, currentLabId);
+    openTerminalPanel();
+    setTerminalPanelMinimized(false);
+    persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
+    setScenarioStatusRevision((r) => r + 1);
+  };
+
+  // Reprise complète d'un scénario (pause les autres, restaure le lab lié, ouvre et affiche le panneau terminal)
+  const handleResumeScenario = (scenarioId) => {
+    if (!storage || !scenarioId) return;
+    (scenarios || []).forEach(s => {
+      if (s.id !== scenarioId && storage.getScenarioStatus(s.id) === 'in_progress') {
+        storage.setScenarioStatus(s.id, 'paused');
+      }
+    });
+    storage.setScenarioStatus(scenarioId, 'in_progress');
+    const labId = storage.getScenarioLabId?.(scenarioId);
+    if (labId && labId !== currentLabId) onLabChange(labId);
+    setLabPanelOpen(false);
+    setTerminalPanelOpen(true);
+    setTerminalPanelMinimized(false);
+    persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
+    setScenarioStatusRevision((r) => r + 1);
   };
 
   const openTerminalPanel = () => {
@@ -574,6 +609,9 @@ export default function App() {
               onOpenTerminalInNewTab={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
               onOpenTerminalInPanel={openTerminalPanel}
               onOpenTerminalPip={() => setTerminalPipOpen(true)}
+              onStartScenario={handleStartScenario}
+              onResumeScenario={handleResumeScenario}
+              onScenarioStatusChange={() => setScenarioStatusRevision((r) => r + 1)}
               optionsInLeftPanel={optionsInLeftPanel}
               onOptionsInLeftPanelChange={(v) => { setOptionsInLeftPanel(v); persistUiSession({ optionsInLeftPanel: v }); }}
             />
@@ -598,8 +636,8 @@ export default function App() {
             terminalStripWidth={terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : 0}
             onOpenTerminal={openTerminalPanel}
             onOpenPipRecap={() => setPipOpen(true)}
-            onPause={currentScenario ? () => storage?.setScenarioStatus(currentScenario.id, 'paused') : undefined}
-            onResume={currentScenario ? () => storage?.setScenarioStatus(currentScenario.id, 'in_progress') : undefined}
+            onPause={currentScenario ? () => { storage?.setScenarioStatus(currentScenario.id, 'paused'); setScenarioStatusRevision((r) => r + 1); } : undefined}
+            onResume={currentScenario ? () => handleResumeScenario(currentScenario.id) : undefined}
             status={currentScenario ? (storage?.getScenarioStatus?.(currentScenario.id) || 'not_started') : 'not_started'}
             getTerminalUrl={() => getTerminalUrl(terminalUseDefaultLab, activeTerminalTabId)}
           />
