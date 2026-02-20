@@ -99,15 +99,16 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
   - [x] **Contexte scénario par lab** : scenarioId sauvegardé ; entrées journal liables à un scénario. Référence Phase 3.
 
 **Reste à faire (roadmap système maison)**  
-- **Phase 3** : Attaquant riche, packs, prédéfinitions à la création du lab.  
 - **Phase 4** : Bureau fait maison.  
 - **Phase 5** : Interconnexion + reprise lab complète.
 
-### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme)
+### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme) – en cours
 
+- [x] **Config packs et prédéfinitions** : `platform/data/toolPacks.json` (packs : base, network, web, bruteforce) ; `platform/data/labToolPresets.json` (byScenario, byLab) ; doc `platform/docs/04-PHASE3-OUTILS.md`.
 - [ ] Conteneur attaquant : conserver ou étendre la base type Kali (voire Black Arch, etc.) ; **outils de base** + **packs d’outils** (sélectionnables).
-- [ ] **Prédéfinitions à la création du lab** : config (JSON ou API) listant, par lab ou par scénario, les outils/packs nécessaires ; à la création du lab (ou au démarrage scénario), installation/activation de ces outils. *S’appuie sur Phase 2 étapes 2–3 : persistance par lab (terminaux, journal, contexte scénario) ; le scénario associé au lab permet de charger les prédéfinitions correspondantes.*
-- [ ] Backend terminal : lancer le shell dans ce conteneur attaquant (ou conteneur lab dérivé).
+- [ ] **UI** : afficher les packs recommandés pour le scénario actif (lecture des JSON).
+- [ ] **Prédéfinitions à la création du lab** : à la création du lab ou au démarrage scénario, installation/activation des outils des packs listés. *S’appuie sur Phase 2 : persistance par lab (terminaux, journal, contexte scénario).*
+- [ ] Backend terminal : lancer le shell dans ce conteneur attaquant (déjà le cas ; optionnel : conteneur lab dérivé).
 
 ### Phase 4 – Bureau fait maison (léger, vrai bureau) (moyen / long terme)
 
@@ -163,3 +164,4 @@ Ce document sera mis à jour au fur et à mesure (phases cochées, décisions te
 - **2026-02-21** : Phase 2 étapes 1–2 implémentées (persistance terminal par lab : onglets, journal, restauration). Phase 2 étape 3 détaillée (journal complet, PiP par lab, contexte scénario, sorties PTY). Phase 3 : référence aux Phase 2 étapes 2–3 pour prédéfinitions.
 - **2026-02** : Phase 2 étape 3 implémentée (PiP par lab, journal complet, journal session avec sessionId/scenarioId). STATUS.md mis à jour (panneau terminal OK, exit OK ; rechargement = perte contenu tant que sorties PTY non persistées). Roadmap : bloc « Reste à faire » ajouté (sorties PTY puis Phases 3–5).
 - **2026-02-13** : **Sorties PTY** implémentées : lab-terminal lit `session` en query WS, buffer 512 Ko/session, replay au reconnect ; terminal-client.html envoie `session` dans l’URL WS. Double-clic onglet terminal pour renommer (délai 500 ms). Phase 2 terminée pour le terminal.
+- **2026-02** : **Focus terminal** : à l’ouverture du panneau ou au changement d’onglet, focus automatique sur xterm (client : term.focus(), postMessage `lab-cyber-terminal-focus`, focus on window). **Phase 3 démarrée** : toolPacks.json, labToolPresets.json, 04-PHASE3-OUTILS.md ; STATUS et roadmap mis à jour.

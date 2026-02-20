@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import { EMBEDDED_DOCS, EMBEDDED_LEARNING, EMBEDDED_TARGETS, EMBEDDED_DOC_SOURCES } from './defaultData';
 
-const storage = typeof window !== 'undefined' ? window.LabCyberStorage : null;
+function getStorage() {
+  return typeof window !== 'undefined' ? window.LabCyberStorage : null;
+}
 
 /** URL du terminal : client intégré (terminal-client.html) qui se connecte au backend lab-terminal (path=terminal-house) et envoie postMessage à la fermeture (exit). sessionId optionnel pour une session par onglet. */
 export function getTerminalUrl(useDefaultLab = true, sessionId = '') {
@@ -73,6 +75,7 @@ export function useStore() {
 }
 
 export function useStorage() {
+  const storage = getStorage();
   const getEngagement = useCallback(() => storage ? storage.getEngagement() : { targets: [], proxies: [], proxyNotes: '', notes: '' }, []);
   const setEngagement = useCallback((d) => storage && storage.setEngagement(d), []);
   const getLastScenario = useCallback(() => storage ? storage.getLastScenario() : null, []);
@@ -136,14 +139,16 @@ export function useStorage() {
     getLabNotes, setLabNotes, getLabReport, setLabReport,
     getOfflineDoc, setOfflineDoc, getOfflineDocIds, getDocPreferences, setDocPreferences,
     getNetworkSimulations, setNetworkSimulations, getProxies, setProxies, getRequestData, setRequestData,
+    ready: storage?.ready ?? null,
   };
 }
 
 export function useStorageReady() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    if (!storage || !storage.ready) return setReady(true);
-    storage.ready().then(() => setReady(true)).catch(() => setReady(true));
+    const s = getStorage();
+    if (!s || !s.ready) return setReady(true);
+    s.ready().then(() => setReady(true)).catch(() => setReady(true));
   }, []);
   return ready;
 }

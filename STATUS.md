@@ -19,7 +19,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Reprise lab** : **ne rien perdre** – terminaux, historique, sorties, panneaux, comme c’était.
 
 - **Court terme** : fait (Phase 1) – terminal panel, backend lab-terminal, exit, resize.
-- **Moyen terme** : Phase 2 faite – persistance par lab (onglets, journal, PiP, contexte scénario, journal complet) **et sorties PTY** : backend lab-terminal bufferise les sorties par session (`?session=tabId`), replay au reconnect ; client envoie `session` dans l’URL du WebSocket. Au rechargement, l’historique des commandes affiché dans chaque onglet terminal est restauré. Puis Phase 3 (attaquant riche, packs), Phase 4 (bureau fait maison), Phase 5 (interconnexion, reprise lab complète).
+- **Moyen terme** : Phase 2 faite (persistance par lab + sorties PTY). **Phase 3 en cours** : structure config **packs d’outils** (`platform/data/toolPacks.json`) et **prédéfinitions par scénario/lab** (`labToolPresets.json`) ; doc `platform/docs/04-PHASE3-OUTILS.md`. À suivre : UI (afficher packs recommandés par scénario), installation des outils à la demande. Puis Phase 4 (bureau fait maison), Phase 5 (interconnexion, reprise lab complète).
 
 **Scintillement** : pour le moment plus de scintillement signalé (à surveiller). Si ça revient, désactiver `contain`/`translateZ(0)` et vérifier avec React DevTools Profiler.
 

@@ -1,0 +1,29 @@
+{
+  "description": "Packs d'outils pour le conteneur attaquant (Phase 3). Chaque pack liste des outils recommandés pour un type d'activité. Les prédéfinitions par scénario/lab référencent ces packs.",
+  "packs": [
+    {
+      "id": "base",
+      "name": "Outils de base",
+      "description": "Indispensables (bash, curl, wget, python3, etc.)",
+      "tools": ["bash", "curl", "wget", "python3", "openssl", "netcat-openbsd", "dnsutils", "iputils-ping"]
+    },
+    {
+      "id": "network",
+      "name": "Réseau",
+      "description": "Scan, analyse, capture",
+      "tools": ["nmap", "tcpdump", "scapy", "netcat-openbsd", "dnsutils"]
+    },
+    {
+      "id": "web",
+      "name": "Web",
+      "description": "Tests web et injection",
+      "tools": ["sqlmap", "nikto", "curl", "wget", "gobuster"]
+    },
+    {
+      "id": "bruteforce",
+      "name": "Authentification / bruteforce",
+      "description": "Hydra, dictionnaires",
+      "tools": ["hydra", "wordlists"]
+    }
+  ]
+}

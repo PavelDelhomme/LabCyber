@@ -1,0 +1,9 @@
+{
+  "description": "Prédéfinitions outils par scénario ou par lab (Phase 3). À la création du lab ou au démarrage d'un scénario, les packs listés peuvent être installés ou activés. Référence toolPacks.json.",
+  "byScenario": {
+    "scenario-01-scan-reseau": ["base", "network"],
+    "scenario-02-sqli-dvwa": ["base", "web"],
+    "scenario-03-redis": ["base", "network"]
+  },
+  "byLab": {}
+}

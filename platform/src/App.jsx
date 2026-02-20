@@ -25,6 +25,7 @@ import CaptureView from './views/CaptureView';
 import TerminalFullView from './views/TerminalFullView';
 import DocOfflineView from './views/DocOfflineView';
 import CvePanel from './components/CvePanel';
+import JournalCompletModal from './components/JournalCompletModal';
 
 const VIEWS = {
   dashboard: Dashboard,
@@ -351,6 +352,16 @@ export default function App() {
   useEffect(() => {
     if (terminalPanelOpen) setTerminalPanelEverOpened(true);
   }, [terminalPanelOpen]);
+
+  // Mettre le focus sur le terminal quand on ouvre le panneau ou qu'on change d'onglet
+  useEffect(() => {
+    if (!terminalPanelOpen || terminalPanelMinimized) return;
+    const t = setTimeout(() => {
+      const activeIframe = terminalPanelBodyRef.current?.querySelector('.terminal-tab-pane-active iframe');
+      try { activeIframe?.contentWindow?.postMessage({ type: 'lab-cyber-terminal-focus' }, '*'); } catch (_) {}
+    }, 150);
+    return () => clearTimeout(t);
+  }, [terminalPanelOpen, terminalPanelMinimized, activeTerminalTabId]);
 
   // À l'ouverture du PiP, charger l'état PiP du lab courant
   useEffect(() => {

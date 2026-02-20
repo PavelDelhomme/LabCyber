@@ -30,6 +30,12 @@
   function notifyExit() {
     try { window.parent.postMessage({ type: 'lab-cyber-terminal-exit' }, '*'); } catch (_) {}
   }
+  var termRef = null;
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'lab-cyber-terminal-focus' && termRef) {
+      try { termRef.focus(); } catch (_) {}
+    }
+  });
 
   var base = window.location.origin.replace(/\/$/, '');
   var wsScheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -47,11 +53,14 @@
         var ws = new WebSocket(wsUrl);
         ws.binaryType = 'arraybuffer';
         var term = new window.Terminal({ cursorBlink: true, theme: { background: '#0c0c0c' } });
+        termRef = term;
         var fitAddon = new window.FitAddon.FitAddon();
         term.loadAddon(fitAddon);
         term.open(terminalEl);
         fitAddon.fit();
         window.addEventListener('resize', function () { fitAddon.fit(); });
+        window.addEventListener('focus', function () { try { term.focus(); } catch (_) {} });
+        setTimeout(function () { try { term.focus(); } catch (_) {} }, 100);
 
         ws.onopen = function () {
           setStatus('Connecté. Tapez "exit" pour fermer l’onglet.');
@@ -60,6 +69,7 @@
           buf[0] = 0x31;
           for (var i = 0; i < payload.length; i++) buf[1 + i] = payload.charCodeAt(i);
           ws.send(buf.buffer);
+          try { term.focus(); } catch (_) {}
         };
         ws.onerror = function () { setStatus('Erreur WebSocket', true); };
         ws.onclose = function () {
