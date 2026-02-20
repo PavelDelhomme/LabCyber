@@ -19,7 +19,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Reprise lab** : **ne rien perdre** – terminaux, historique, sorties, panneaux, comme c’était.
 
 - **Court terme** : fait (Phase 1) – terminal panel, backend lab-terminal, exit, resize.
-- **Moyen terme** : Phase 2 faite (persistance par lab + sorties PTY). **Phase 3 en cours** : config **packs d’outils** (`platform/data/toolPacks.json`) et **prédéfinitions par scénario/lab** (`labToolPresets.json`) ; doc `platform/docs/04-PHASE3-OUTILS.md`. **UI** : dans la vue Scénario, bloc « Packs d'outils recommandés » (nom + outils). À suivre : installation des outils à la demande, option packs à la création du lab. Puis Phase 4 (bureau fait maison), Phase 5 (interconnexion, reprise lab complète).
+- **Moyen terme** : Phase 2 faite (persistance par lab + sorties PTY). **Phase 3** : config packs + **prédéfinitions à la création du lab** (sélection des packs à la création/édition, `lab.packIds` ; au démarrage scénario, application des packs recommandés au lab si vide). Puis Phase 4 (bureau fait maison), Phase 5 (interconnexion, reprise lab complète).
 
 **Scintillement** : pour le moment plus de scintillement signalé (à surveiller). Si ça revient, désactiver `contain`/`translateZ(0)` et vérifier avec React DevTools Profiler.
 

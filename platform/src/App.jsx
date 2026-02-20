@@ -181,7 +181,7 @@ export default function App() {
     if (storage?.setUiSession) storage.setUiSession({ ...uiSessionRef.current, ...patch });
   };
 
-  // Démarrage d'un scénario : pause les autres, lie le lab, ouvre et affiche le panneau terminal
+  // Démarrage d'un scénario : pause les autres, lie le lab, ouvre et affiche le panneau terminal. Si le lab (non défaut) n'a pas de packs, applique les packs recommandés du scénario (prédéfinitions Phase 3).
   const handleStartScenario = (scenarioId) => {
     if (!storage || !scenarioId) return;
     (scenarios || []).forEach(s => {
@@ -191,6 +191,18 @@ export default function App() {
     });
     storage.setScenarioStatus(scenarioId, 'in_progress');
     if (currentLabId && storage.setScenarioLabId) storage.setScenarioLabId(scenarioId, currentLabId);
+    if (currentLabId && currentLabId !== 'default' && storage.getLabs && storage.setLabs) {
+      fetch('/data/labToolPresets.json').then(r => r.ok ? r.json() : null).catch(() => null).then((presets) => {
+        const packIds = presets?.byScenario?.[scenarioId];
+        if (Array.isArray(packIds) && packIds.length > 0) {
+          const labs = storage.getLabs() || [];
+          const lab = labs.find((l) => l.id === currentLabId);
+          if (lab && (!lab.packIds || lab.packIds.length === 0)) {
+            storage.setLabs(labs.map((l) => (l.id === currentLabId ? { ...l, packIds: [...packIds] } : l)));
+          }
+        }
+      });
+    }
     openTerminalPanel();
     setTerminalPanelMinimized(false);
     persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
