@@ -493,6 +493,8 @@ body {
   border-color: var(--accent);
   color: var(--accent);
 }
+.btn-small { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
+.btn-tiny { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
 .terminal-card-actions .btn-primary { background: var(--accent); color: var(--bg-dark); border-color: var(--accent); }
 .terminal-card-actions .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .terminal-card-actions .btn-secondary { background: var(--bg-hover); color: var(--text); border-color: var(--border); }
@@ -1414,6 +1416,90 @@ body {
   overflow-x: auto;
   scrollbar-width: thin;
 }
+.terminal-side-panel-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+}
+.terminal-side-panel-tabs-vertical {
+  width: 56px;
+  min-width: 56px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 0.4rem 0.3rem;
+  background: var(--bg-hover);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.terminal-tab-btn-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.4rem 0.25rem;
+  font-size: 0.75rem;
+  min-height: 42px;
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.terminal-tab-btn-vertical:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+.terminal-tab-btn-vertical.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+.terminal-tab-btn-vertical .terminal-tab-btn-vertical-label {
+  max-width: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.terminal-tab-add-vertical {
+  width: 100%;
+  min-height: 36px;
+  margin-top: 0.25rem;
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+.terminal-tab-add-vertical:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  border-style: solid;
+}
+.terminal-side-panel-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  background: var(--bg-card);
+}
+.terminal-side-panel-content .terminal-tab-pane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
 .terminal-tab-btn {
   display: inline-flex;
   align-items: center;
@@ -1557,36 +1643,30 @@ body {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.terminal-side-panel-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
 .terminal-tab-pane {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
-.terminal-side-panel-body .terminal-tab-pane {
+/* Contenu des onglets dans la zone à droite des onglets verticaux */
+.terminal-side-panel-content .terminal-tab-pane {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
 }
-/* Inactif : visibility au lieu de display:none pour éviter que le navigateur suspende l'iframe et coupe le WebSocket (reconnexion à chaque changement d'onglet). */
-.terminal-side-panel-body .terminal-tab-pane-inactive {
+.terminal-side-panel-content .terminal-tab-pane-inactive {
   visibility: hidden;
   pointer-events: none;
   z-index: 0;
 }
-.terminal-side-panel-body .terminal-tab-pane-active {
+.terminal-side-panel-content .terminal-tab-pane-active {
   visibility: visible;
   z-index: 1;
 }
-.terminal-side-panel-body {
+.terminal-side-panel-content {
   position: relative;
 }
 .terminal-full-view { display: flex; flex-direction: column; height: calc(100vh - 52px); min-height: 360px; }
@@ -1667,7 +1747,67 @@ body {
 }
 .log-stats-item:hover { background: var(--bg-hover); color: var(--accent); }
 
-/* Terminal PiP : fenêtre flottante déplaçable (au-dessus du panneau terminal) */
+/* Barre scénario (fixe en bas, au-dessus du panneau terminal) */
+.scenario-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  background: var(--bg-hover);
+  border-top: 1px solid var(--border);
+  z-index: 9100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -1px 0 var(--border);
+}
+.scenario-bottom-bar-collapsed { max-height: 40px; }
+.scenario-bottom-bar-inner { display: flex; align-items: stretch; flex-shrink: 0; }
+.scenario-bottom-bar-toggle {
+  flex: 1; min-width: 0; padding: 0.5rem 1rem;
+  background: transparent; border: none; border-right: 1px solid var(--border);
+  color: var(--text); cursor: pointer; font-size: 0.9rem; text-align: left;
+}
+.scenario-bottom-bar-toggle:hover { background: var(--accent-soft); }
+.scenario-bar-section-terminal, .scenario-bar-section-pause, .scenario-bar-section-resume {
+  flex-shrink: 0; padding: 0.35rem 0.75rem; background: transparent;
+  border: none; border-left: 1px solid var(--border); cursor: pointer; font-size: 0.85rem;
+}
+.scenario-bar-section-terminal { color: var(--accent); font-weight: 500; }
+.scenario-bar-section-terminal:hover { background: var(--accent-soft); color: var(--text); }
+.scenario-bar-section-resume { color: var(--accent); }
+.scenario-bar-section-recap {
+  flex-shrink: 0;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.scenario-bar-section-recap:hover { background: var(--bg-card); color: var(--text); }
+.scenario-bottom-bar-title { font-weight: 600; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scenario-bottom-bar-chevron { font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem; }
+.scenario-bottom-bar-body {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem;
+  padding: 0.5rem 1rem; max-height: 150px; overflow: auto;
+  background: var(--bg-card); border-top: 1px solid var(--border);
+}
+.scenario-bar-section-tasks { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.scenario-bottom-bar-tasks { list-style: none; margin: 0; padding: 0; display: flex; gap: 0.4rem; flex-wrap: wrap; font-size: 0.85rem; }
+.scenario-bottom-bar-tasks li { padding: 0.25rem 0.5rem; background: var(--bg-hover); border-radius: var(--radius); white-space: nowrap; }
+.scenario-bottom-bar-tasks li.done { color: var(--text-muted); text-decoration: line-through; }
+.scenario-bottom-bar-expand { padding: 0.25rem 0.5rem; font-size: 0.85rem; background: var(--bg-hover); border-radius: var(--radius); color: var(--text); cursor: pointer; border: 1px solid transparent; }
+.scenario-bottom-bar-expand:hover { color: var(--accent); }
+.scenario-bar-cibles { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+.scenario-bar-cibles-title { width: 100%; margin: 0 0 0.2rem; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.scenario-bar-cible { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.45rem; background: var(--bg-hover); border-radius: var(--radius); }
+.scenario-bar-cible strong { font-weight: 600; color: var(--text); font-size: 0.85rem; }
+.scenario-bar-cible .btn-tiny { padding: 0.18rem 0.4rem; font-size: 0.75rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); cursor: pointer; }
+.scenario-bar-cible .btn-tiny:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Terminal PiP : fenêtre flottante déplaçable (au-dessus de tout) */
 .terminal-pip-panel {
   position: fixed;
   width: 400px;
@@ -1678,10 +1818,14 @@ body {
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  z-index: 9500;
+  z-index: 10000;
   display: flex;
   flex-direction: column;
   pointer-events: auto;
+  contain: layout style paint;
+}
+.terminal-pip-dragging {
+  will-change: transform;
 }
 .terminal-pip-minimized {
   width: 220px;
@@ -1753,15 +1897,13 @@ body {
 #log-entries li .log-action { color: var(--text); }
 #log-entries li .log-details { color: var(--text-muted); font-size: 0.7rem; margin-top: 0.2rem; }
 
-/* Bouton flottant Journal (masqué sur desktop) */
-.app.has-right-panel .log-fab { right: calc(var(--right-panel-width, 0px) + 1.25rem); }
-.app.has-right-panel .cve-fab { right: calc(var(--right-panel-width, 0px) + 5rem); }
+/* Boutons flottants à gauche pour ne pas gêner le panneau terminal / PiP à droite */
 .app.has-right-panel .log-panel { margin-right: var(--right-panel-width, 0); }
 .log-fab {
   display: none;
   position: fixed;
   bottom: 1.25rem;
-  right: 1.25rem;
+  left: 1rem;
   z-index: 100;
   width: 56px;
   height: 56px;
@@ -1778,14 +1920,14 @@ body {
 }
 .log-fab:hover { transform: scale(1.05); box-shadow: 0 6px 16px rgba(0, 210, 106, 0.5); }
 
-/* Bouton flottant CVE (toujours visible) */
+/* Bouton flottant CVE : à gauche en bas pour libérer la droite (terminal, PiP) */
 .cve-fab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   position: fixed;
   bottom: 1.25rem;
-  right: 5rem;
+  left: 1rem;
   z-index: 99;
   min-width: 48px;
   height: 48px;

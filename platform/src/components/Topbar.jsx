@@ -138,7 +138,7 @@ export default function Topbar({
           <LogStatsDropdown onLogToggle={onLogToggle} onStats={onStats} onJournalComplet={onJournalComplet} />
           <button type="button" class="topbar-btn" onClick={onOptions} title="Options">⚙️</button>
           {showPipButton && (
-            <button type="button" class="topbar-btn" onClick={onPipToggle} title="PiP scénario">📌</button>
+            <button type="button" class="topbar-btn" onClick={onPipToggle} title="Afficher le récap des tâches en popup">📌 Récap</button>
           )}
         </div>
       </div>

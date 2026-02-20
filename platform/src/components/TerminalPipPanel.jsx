@@ -27,15 +27,17 @@ export default function TerminalPipPanel({
   const [pos, setPos] = useState(controlledPos ?? { x: typeof window !== 'undefined' ? window.innerWidth - 420 : 400, y: typeof window !== 'undefined' ? window.innerHeight - 340 : 300 });
   const [minimized, setMinimized] = useState(controlledMinimized ?? false);
   const [dragging, setDragging] = useState(false);
+  const [dragPos, setDragPos] = useState(null);
   const [tabs, setTabs] = useState(controlledTabs ?? [{ id: '1', name: 'Session 1' }]);
   const [activeTabId, setActiveTabId] = useState(controlledActiveTabId ?? '1');
-  const dragRef = useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 } });
+  const dragRef = useRef({ startX: 0, startY: 0, startPos: { x: 0, y: 0 }, lastPos: { x: 0, y: 0 } });
   const pipIframeWindowRef = useRef(null);
 
   const isControlled = controlledTabs != null && controlledActiveTabId != null;
   const displayTabs = isControlled ? controlledTabs : tabs;
   const displayActiveTabId = isControlled ? controlledActiveTabId : activeTabId;
-  const displayPos = controlledPos != null ? controlledPos : pos;
+  const basePos = controlledPos != null ? controlledPos : pos;
+  const displayPos = dragging && dragPos != null ? dragPos : basePos;
 
   useEffect(() => {
     if (controlledMinimized !== undefined) setMinimized(controlledMinimized);
@@ -59,8 +61,10 @@ export default function TerminalPipPanel({
 
   const handleMouseDown = (e) => {
     if (e.target.closest('button')) return;
+    const start = { ...basePos };
     setDragging(true);
-    dragRef.current = { startX: e.clientX, startY: e.clientY, startPos: { ...displayPos } };
+    setDragPos(start);
+    dragRef.current = { startX: e.clientX, startY: e.clientY, startPos: start, lastPos: start };
   };
 
   useEffect(() => {
@@ -95,10 +99,16 @@ export default function TerminalPipPanel({
         x: Math.max(0, Math.min(w - (minimized ? 220 : 400), dragRef.current.startPos.x + dx)),
         y: Math.max(0, Math.min(h - (minimized ? 48 : 320), dragRef.current.startPos.y + dy)),
       };
-      setPos(nextPos);
-      onStateChange?.({ tabs: displayTabs, activeTabId: displayActiveTabId, minimized, pos: nextPos });
+      dragRef.current.lastPos = nextPos;
+      setDragPos(nextPos);
     };
-    const onUp = () => setDragging(false);
+    const onUp = () => {
+      const finalPos = { ...(dragRef.current.lastPos || dragRef.current.startPos) };
+      setDragging(false);
+      setDragPos(null);
+      setPos(finalPos);
+      onStateChange?.({ tabs: displayTabs, activeTabId: displayActiveTabId, minimized, pos: finalPos });
+    };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
@@ -134,7 +144,7 @@ export default function TerminalPipPanel({
 
   return (
     <div
-      class={`terminal-pip-panel ${minimized ? 'terminal-pip-minimized' : ''}`}
+      class={`terminal-pip-panel ${minimized ? 'terminal-pip-minimized' : ''} ${dragging ? 'terminal-pip-dragging' : ''}`}
       style={{ left: displayPos.x, top: displayPos.y }}
       role="dialog"
       aria-label="Terminal (PiP)"

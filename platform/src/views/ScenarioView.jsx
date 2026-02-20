@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { escapeHtml, getTerminalUrl } from '../lib/store';
 
-export default function ScenarioView({ scenarios, config, currentScenarioId, storage, onOpenTerminalInPanel, onOpenTerminalPip, docSources }) {
+export default function ScenarioView({ scenarios, config, currentScenarioId, currentLabId, storage, onOpenTerminalInPanel, onOpenTerminalPip, docSources }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
   const [taskIndex, setTaskIndex] = useState(0);
   const [toolPacks, setToolPacks] = useState(null);
@@ -50,6 +50,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
 
   const startScenario = () => {
     storage?.setScenarioStatus(scenario.id, 'in_progress');
+    if (currentLabId && storage?.setScenarioLabId) storage.setScenarioLabId(scenario.id, currentLabId);
     onOpenTerminalInPanel?.();
   };
   const prepareScenario = () => {
@@ -99,7 +100,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
         {recommendedPacks.length > 0 && (
           <section class="room-section scenario-tool-packs" aria-label="Packs d'outils recommandés">
             <h3>Packs d'outils recommandés pour ce scénario</h3>
-            <p class="scenario-tool-packs-desc">Le conteneur attaquant inclut ces ensembles d'outils. Utilise le terminal (panneau ou PiP) pour les commandes.</p>
+            <p class="scenario-tool-packs-desc">Le conteneur attaquant doit inclure ces outils (nmap, ping, etc.) pour ce lab. S'ils manquent, configure le conteneur ou l'image Docker. Utilise le terminal (panneau ou PiP) pour les commandes.</p>
             <div class="scenario-tool-packs-list">
               {recommendedPacks.map(pack => (
                 <div key={pack.id} class="scenario-tool-pack-badge" title={pack.description || ''}>
@@ -112,17 +113,9 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
             </div>
           </section>
         )}
-        <section class="room-section scenario-terminal-access" aria-label="Accès au terminal attaquant">
-          <h3>Terminal attaquant</h3>
-          <p class="scenario-terminal-access-desc">Ouvre le terminal (conteneur avec les outils du scénario) : dans le panneau à droite du lab, en flottant (PiP) ou dans un nouvel onglet navigateur.</p>
-          <div class="scenario-terminal-buttons">
-            <button type="button" class="btn btn-primary" onClick={() => { onOpenTerminalInPanel?.(); }}>Panneau (à droite)</button>
-            <button type="button" class="btn btn-secondary" onClick={() => { onOpenTerminalPip?.(); }}>Flottant (PiP)</button>
-            <a href={termUrl} target="_blank" rel="noopener" class="btn btn-secondary">Nouvel onglet navigateur</a>
-          </div>
-        </section>
-        <section class="room-section machines-section">
-          <h3>Cibles et accès</h3>
+        <section class="room-section machines-section" aria-label="Terminal et cibles">
+          <h3>Terminal et cibles</h3>
+          <p class="scenario-terminal-cibles-desc">Ouvre le terminal (panneau, flottant PiP ou nouvel onglet), puis accès aux cibles (commandes à copier).</p>
           <div class="machine-cards">
             {(scenario.machines || []).map((m, i) => (
               <div key={i} class={`machine-card ${m.urlKey === 'terminal' ? 'machine-card-terminal' : ''}`}>

@@ -18,6 +18,7 @@
   const KEY_ENGAGEMENT = 'engagement';
   const KEY_TASK_DONE_MAP = 'taskDoneMap';
   const KEY_SCENARIO_STATUS = 'scenarioStatus';
+  const KEY_SCENARIO_LAB = 'scenarioLab';
   const KEY_CHALLENGES_DONE = 'challengesDone';
   const KEY_LABS = 'labs';
   const KEY_CURRENT_LAB = 'currentLabId';
@@ -56,6 +57,7 @@
     engagement: null,
     taskDoneMap: Object.create(null),
     scenarioStatus: {},
+    scenarioLab: {},
     challengesDone: [],
     labs: [],
     currentLabId: null,
@@ -132,6 +134,7 @@
             case KEY_ENGAGEMENT: cache.engagement = row.v; break;
             case KEY_TASK_DONE_MAP: cache.taskDoneMap = row.v && typeof row.v === 'object' ? row.v : {}; break;
             case KEY_SCENARIO_STATUS: cache.scenarioStatus = row.v && typeof row.v === 'object' ? row.v : {}; break;
+            case KEY_SCENARIO_LAB: cache.scenarioLab = row.v && typeof row.v === 'object' ? row.v : {}; break;
             case KEY_CHALLENGES_DONE: cache.challengesDone = Array.isArray(row.v) ? row.v : []; break;
             case KEY_LABS: cache.labs = Array.isArray(row.v) ? row.v : []; break;
             case KEY_CURRENT_LAB: cache.currentLabId = row.v != null ? row.v : null; break;
@@ -324,6 +327,15 @@
       if (status === 'not_started') delete cache.scenarioStatus[scenarioId];
       else cache.scenarioStatus[scenarioId] = status;
       writeQueue.push(setData(STORE_DATA, KEY_SCENARIO_STATUS, cache.scenarioStatus));
+    },
+    getScenarioLabId: function (scenarioId) {
+      return (cache.scenarioLab && cache.scenarioLab[scenarioId]) || null;
+    },
+    setScenarioLabId: function (scenarioId, labId) {
+      if (!cache.scenarioLab) cache.scenarioLab = {};
+      if (labId == null || labId === '') delete cache.scenarioLab[scenarioId];
+      else cache.scenarioLab[scenarioId] = labId;
+      writeQueue.push(setData(STORE_DATA, KEY_SCENARIO_LAB, cache.scenarioLab));
     },
 
     getChallengesDone: function () {
@@ -649,11 +661,13 @@
     clearProgress: function () {
       cache.taskDoneMap = Object.create(null);
       cache.scenarioStatus = {};
+      cache.scenarioLab = {};
       cache.challengesDone = [];
       cache.lastScenario = null;
       cache.lastTask = null;
       writeQueue.push(setData(STORE_DATA, KEY_TASK_DONE_MAP, cache.taskDoneMap));
       writeQueue.push(setData(STORE_DATA, KEY_SCENARIO_STATUS, cache.scenarioStatus));
+      writeQueue.push(setData(STORE_DATA, KEY_SCENARIO_LAB, cache.scenarioLab));
       writeQueue.push(setData(STORE_DATA, KEY_CHALLENGES_DONE, cache.challengesDone));
       writeQueue.push(setData(STORE_DATA, KV_LAST_SCENARIO, null));
       writeQueue.push(setData(STORE_DATA, KV_LAST_TASK, null));

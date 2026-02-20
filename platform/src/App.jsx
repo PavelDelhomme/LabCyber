@@ -247,6 +247,16 @@ export default function App() {
     setLabReportState(storage?.getLabReport?.(currentLabId) || '');
   }, [currentLabId, storage]);
 
+  // Quand on affiche un scénario, utiliser le lab mémorisé pour ce scénario (1 lab = 1 scénario en cours)
+  const prevScenarioIdRef = useRef(null);
+  useEffect(() => {
+    if (view !== 'scenario' || !currentScenarioId || !storage?.getScenarioLabId) return;
+    if (prevScenarioIdRef.current === currentScenarioId) return;
+    prevScenarioIdRef.current = currentScenarioId;
+    const labId = storage.getScenarioLabId(currentScenarioId);
+    if (labId && labId !== currentLabId) setCurrentLabId(labId);
+  }, [view, currentScenarioId, storage, currentLabId]);
+
   const onLabChange = (id) => {
     const next = id || 'default';
     const prevLabId = currentLabId;
@@ -587,6 +597,11 @@ export default function App() {
             onExpand={() => window.location.hash = '#/scenario/' + (currentScenarioId || '')}
             terminalStripWidth={terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : 0}
             onOpenTerminal={openTerminalPanel}
+            onOpenPipRecap={() => setPipOpen(true)}
+            onPause={currentScenario ? () => storage?.setScenarioStatus(currentScenario.id, 'paused') : undefined}
+            onResume={currentScenario ? () => storage?.setScenarioStatus(currentScenario.id, 'in_progress') : undefined}
+            status={currentScenario ? (storage?.getScenarioStatus?.(currentScenario.id) || 'not_started') : 'not_started'}
+            getTerminalUrl={() => getTerminalUrl(terminalUseDefaultLab, activeTerminalTabId)}
           />
         )}
       <TerminalPipPanel
@@ -634,13 +649,18 @@ export default function App() {
                 <button type="button" class={`terminal-lab-choice-btn ${!terminalUseDefaultLab ? 'active' : ''}`} onClick={() => { setTerminalUseDefaultLab(false); persistUiSession({ terminalUseDefaultLab: false }); }} title="Terminal du lab actif">Lab actif</button>
               </div>
             )}
+            <button type="button" class="terminal-side-panel-minimize" onClick={() => { setTerminalPanelMinimized(m => !m); persistUiSession({ terminalPanelMinimized: !terminalPanelMinimized }); }} title={terminalPanelMinimized ? 'Afficher le panneau' : 'Réduire (cacher sans fermer)'} aria-label={terminalPanelMinimized ? 'Agrandir' : 'Réduire'}>{terminalPanelMinimized ? '▶' : '◀'}</button>
+            <button type="button" class="terminal-side-panel-close" onClick={() => { setTerminalPanelOpen(false); persistUiSession({ terminalPanelOpen: false }); }} aria-label="Fermer le panneau">×</button>
+          </header>
+          <p class="terminal-side-panel-hint">En cas d'erreur 502 : le terminal peut mettre 15–20 s à démarrer. Double-clic sur un onglet pour le renommer.</p>
+          <div class="terminal-side-panel-body" ref={terminalPanelBodyRef}>
             {!terminalPanelMinimized && (
-              <div class="terminal-side-panel-tabs">
+              <nav class="terminal-side-panel-tabs-vertical" aria-label="Sessions terminal">
                 {terminalTabs.map(tab => (
                   <button
                     key={tab.id}
                     type="button"
-                    class={`terminal-tab-btn ${activeTerminalTabId === tab.id ? 'active' : ''}`}
+                    class={`terminal-tab-btn terminal-tab-btn-vertical ${activeTerminalTabId === tab.id ? 'active' : ''}`}
                     title={tab.name}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -678,27 +698,23 @@ export default function App() {
                         onChange={(e) => setTerminalTabs(t => t.map(x => x.id === tab.id ? { ...x, name: e.target.value } : x))}
                       />
                     ) : (
-                      <span title="Double-clic pour renommer">{tab.name}</span>
+                      <span class="terminal-tab-btn-vertical-label" title="Double-clic pour renommer">{tab.name}</span>
                     )}
                     {terminalTabs.length > 1 && (
                       <span class="terminal-tab-close" onClick={(e) => { e.stopPropagation(); const rest = terminalTabs.filter(x => x.id !== tab.id); setTerminalTabs(rest); if (activeTerminalTabId === tab.id) setActiveTerminalTabId(rest[0]?.id || ''); }} aria-label="Fermer">×</span>
                     )}
                   </button>
                 ))}
-                <button type="button" class="terminal-tab-add" onClick={(e) => { e.stopPropagation(); const newTab = { id: String(Date.now()), name: `Session ${terminalTabs.length + 1}` }; const nextTabs = [...terminalTabs, newTab]; setTerminalTabs(nextTabs); setActiveTerminalTabId(newTab.id); persistUiSession({ terminalTabs: nextTabs, activeTerminalTabId: newTab.id }); }} title="Nouvel onglet">+</button>
-              </div>
+                <button type="button" class="terminal-tab-add terminal-tab-add-vertical" onClick={(e) => { e.stopPropagation(); const newTab = { id: String(Date.now()), name: `Session ${terminalTabs.length + 1}` }; const nextTabs = [...terminalTabs, newTab]; setTerminalTabs(nextTabs); setActiveTerminalTabId(newTab.id); persistUiSession({ terminalTabs: nextTabs, activeTerminalTabId: newTab.id }); }} title="Nouvel onglet">+</button>
+              </nav>
             )}
-            <button type="button" class="terminal-side-panel-minimize" onClick={() => { setTerminalPanelMinimized(m => !m); persistUiSession({ terminalPanelMinimized: !terminalPanelMinimized }); }} title={terminalPanelMinimized ? 'Afficher le panneau' : 'Réduire (cacher sans fermer)'} aria-label={terminalPanelMinimized ? 'Agrandir' : 'Réduire'}>{terminalPanelMinimized ? '▶' : '◀'}</button>
-            <button type="button" class="terminal-side-panel-close" onClick={() => { setTerminalPanelOpen(false); persistUiSession({ terminalPanelOpen: false }); }} aria-label="Fermer le panneau">×</button>
-          </header>
-          {/* Toujours rendre le body pour garder les iframes en DOM (évite démontage quand minimisé → perte d'historique). Caché en CSS via .terminal-side-panel-minimized. */}
-          <p class="terminal-side-panel-hint">En cas d'erreur 502 : le terminal peut mettre 15–20 s à démarrer. Double-clic sur un onglet pour le renommer.</p>
-          <div class="terminal-side-panel-body" ref={terminalPanelBodyRef}>
-            {terminalTabs.map(tab => (
-              <div key={tab.id} class={`terminal-tab-pane ${activeTerminalTabId === tab.id ? 'terminal-tab-pane-active' : 'terminal-tab-pane-inactive'}`}>
-                <TerminalPanelIframe terminalUseDefaultLab={terminalUseDefaultLab} tabName={tab.name} tabId={tab.id} reloadKey={terminalReloadKeys[tab.id] || 0} onReload={() => setTerminalReloadKeys(k => ({ ...k, [tab.id]: (k[tab.id] || 0) + 1 }))} onIframeLoad={(win) => { if (win) panelIframeWindowsRef.current.add(win); }} />
-              </div>
-            ))}
+            <div class="terminal-side-panel-content">
+              {terminalTabs.map(tab => (
+                <div key={tab.id} class={`terminal-tab-pane ${activeTerminalTabId === tab.id ? 'terminal-tab-pane-active' : 'terminal-tab-pane-inactive'}`}>
+                  <TerminalPanelIframe terminalUseDefaultLab={terminalUseDefaultLab} tabName={tab.name} tabId={tab.id} reloadKey={terminalReloadKeys[tab.id] || 0} onReload={() => setTerminalReloadKeys(k => ({ ...k, [tab.id]: (k[tab.id] || 0) + 1 }))} onIframeLoad={(win) => { if (win) panelIframeWindowsRef.current.add(win); }} />
+                </div>
+              ))}
+            </div>
           </div>
           <div class="terminal-journal">
             <h4 class="terminal-journal-title">Journal de session (historique enregistré)</h4>

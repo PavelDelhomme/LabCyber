@@ -110,6 +110,13 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 - [ ] **Prédéfinitions à la création du lab** : à la création du lab ou au démarrage scénario, installation/activation des outils des packs listés. *S’appuie sur Phase 2 : persistance par lab (terminaux, journal, contexte scénario).*
 - [ ] Backend terminal : lancer le shell dans ce conteneur attaquant (déjà le cas ; optionnel : conteneur lab dérivé).
 
+**Phase 3 – UX layout et design (en cours)**  
+- [x] Barre scénario : z-index au-dessus du panneau terminal (9100) ; design aligné app.
+- [x] Panneau terminal : onglets verticaux à gauche (sélection de session).
+- [x] Cibles dans la barre : design cohérent (chips, Copier / Terminal).
+- [x] Marge droite : contenu et barre = largeur panneau (pas de gap superflu).
+- [ ] Vérification E2E : scénario + terminal + barre lisibles sans recouvrement.
+
 ### Phase 4 – Bureau fait maison (léger, vrai bureau) (moyen / long terme)
 
 - [ ] Spécifier : stack (web + rendu graphique, ou serveur graphique léger + client web).
@@ -165,3 +172,4 @@ Ce document sera mis à jour au fur et à mesure (phases cochées, décisions te
 - **2026-02** : Phase 2 étape 3 implémentée (PiP par lab, journal complet, journal session avec sessionId/scenarioId). STATUS.md mis à jour (panneau terminal OK, exit OK ; rechargement = perte contenu tant que sorties PTY non persistées). Roadmap : bloc « Reste à faire » ajouté (sorties PTY puis Phases 3–5).
 - **2026-02-13** : **Sorties PTY** implémentées : lab-terminal lit `session` en query WS, buffer 512 Ko/session, replay au reconnect ; terminal-client.html envoie `session` dans l’URL WS. Double-clic onglet terminal pour renommer (délai 500 ms). Phase 2 terminée pour le terminal.
 - **2026-02** : **Focus terminal** : à l’ouverture du panneau ou au changement d’onglet, focus automatique sur xterm (client : term.focus(), postMessage `lab-cyber-terminal-focus`, focus on window). **Phase 3 démarrée** : toolPacks.json, labToolPresets.json, 04-PHASE3-OUTILS.md ; STATUS et roadmap mis à jour.
+- **2026-02-13** : **Phase 3 UX** : barre scénario z-index 9100 (au-dessus du panneau terminal), design unifié ; panneau terminal avec onglets verticaux à gauche ; section Cibles en chips ; marge droite sans gap superflu ; roadmap mise à jour (bloc Phase 3 – UX layout et design).

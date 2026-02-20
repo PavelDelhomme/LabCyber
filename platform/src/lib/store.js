@@ -85,6 +85,8 @@ export function useStorage() {
   const setTaskDone = useCallback((sid, idx, done) => storage && storage.setTaskDone(sid, idx, done), []);
   const getScenarioStatus = useCallback((sid) => storage ? storage.getScenarioStatus(sid) : 'not_started', []);
   const setScenarioStatus = useCallback((sid, status) => storage && storage.setScenarioStatus(sid, status), []);
+  const getScenarioLabId = useCallback((sid) => (storage && storage.getScenarioLabId) ? storage.getScenarioLabId(sid) : null, []);
+  const setScenarioLabId = useCallback((sid, labId) => storage && storage.setScenarioLabId && storage.setScenarioLabId(sid, labId), []);
   const getChallengesDone = useCallback(() => (storage ? storage.getChallengesDone() : []) || [], []);
   const setChallengeDone = useCallback((id, done) => storage && storage.setChallengeDone(id, done), []);
   const getLabs = useCallback(() => (storage ? storage.getLabs() : []) || [], []);
@@ -130,7 +132,7 @@ export function useStorage() {
 
   return {
     getEngagement, setEngagement, getLastScenario, setLastScenario, getLastTaskIndex,
-    getTaskDone, setTaskDone, getScenarioStatus, setScenarioStatus, getChallengesDone, setChallengeDone,
+    getTaskDone, setTaskDone, getScenarioStatus, setScenarioStatus, getScenarioLabId, setScenarioLabId, getChallengesDone, setChallengeDone,
     getLabs, setLabs, getCurrentLabId, setCurrentLabId, getTopologies, setTopology,
     getPipAuto, setPipAuto, clearProgress,
     getTerminalHistory, appendTerminalHistory, clearTerminalHistory, getLabTerminalState, setLabTerminalState, appendLabTerminalHistory, getLabJournal, appendLabJournalEntry,
