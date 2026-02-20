@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import { escapeHtml, getTerminalUrl } from '../lib/store';
+import { escapeHtml, getTerminalUrl, getMachineUrl } from '../lib/store';
 
 export default function ScenarioView({ scenarios, config, currentScenarioId, currentLabId, storage, onOpenTerminalInPanel, onOpenTerminalPip, onStartScenario, onResumeScenario, onScenarioStatusChange, docSources }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
@@ -95,6 +95,11 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
             <span class={`scenario-status-badge status-${status}`}>{statusLabel}</span>
           </div>
           <p class="room-description">{escapeHtml(scenario.description || '')}</p>
+          {scenario.howto && (
+            <div class="scenario-howto-box" role="region" aria-label="Comment faire">
+              <strong>Comment faire :</strong> {escapeHtml(scenario.howto)}
+            </div>
+          )}
           <p class="scenario-mode-hint">Utilise le <strong>terminal attaquant</strong> (panneau à droite, flottant PiP ou nouvel onglet) pour exécuter les commandes. C’est le même conteneur avec les outils recommandés ci‑dessous.</p>
           <div class="scenario-actions">
             {status === 'not_started' && (
@@ -138,23 +143,32 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
             </div>
           </section>
         )}
-        <section class="room-section machines-section" aria-label="Terminal et cibles">
-          <h3>Terminal et cibles</h3>
-          <p class="scenario-terminal-cibles-desc">Ouvre le terminal (panneau, flottant PiP ou nouvel onglet), puis accès aux cibles (commandes à copier).</p>
+        <section class="room-section machines-section" aria-label="Terminal attaquant et cibles">
+          <h3>Terminal attaquant et cibles</h3>
+          <p class="scenario-terminal-cibles-desc">Le <strong>terminal attaquant</strong> est celui où tu lances les commandes (sqlmap, curl, etc.) contre les cibles. Les cibles (DVWA, vuln-api…) sont des apps web ou API à ouvrir dans le navigateur ou à attaquer depuis le terminal.</p>
           <div class="machine-cards">
             {(scenario.machines || []).map((m, i) => (
               <div key={i} class={`machine-card ${m.urlKey === 'terminal' ? 'machine-card-terminal' : ''}`}>
                 <strong>{escapeHtml(m.name || m.urlKey || '')}</strong>
                 {m.urlKey === 'terminal' ? (
-                  <div class="machine-card-actions">
-                    <button type="button" class="btn btn-small" onClick={() => onOpenTerminalInPanel?.()}>Panneau</button>
-                    <button type="button" class="btn btn-small" onClick={() => onOpenTerminalPip?.()}>PiP</button>
-                    <a href={termUrl} target="_blank" rel="noopener" class="btn btn-small">Nouvel onglet</a>
-                  </div>
+                  <>
+                    <p class="machine-note">Panneau à droite, PiP flottant ou nouvel onglet. Même conteneur (outils : sqlmap, curl, etc.).</p>
+                    <div class="machine-card-actions">
+                      <button type="button" class="btn btn-small" onClick={() => onOpenTerminalInPanel?.()}>Panneau</button>
+                      <button type="button" class="btn btn-small" onClick={() => onOpenTerminalPip?.()}>PiP</button>
+                      <a href={termUrl} target="_blank" rel="noopener" class="btn btn-small">Nouvel onglet</a>
+                    </div>
+                  </>
                 ) : (
                   <>
                     {m.note && <p class="machine-note">{escapeHtml(m.note)}</p>}
                     <div class="machine-card-actions">
+                      {m.urlKey && m.urlKey !== 'terminal' && (() => {
+                        const { url, label } = getMachineUrl(m.urlKey);
+                        return url && url !== '#' ? (
+                          <a href={url} target="_blank" rel="noopener" class="btn btn-small" title={label}>Ouvrir {escapeHtml(m.name || m.urlKey)} (navigateur)</a>
+                        ) : null;
+                      })()}
                       {m.note && (
                         <button
                           type="button"
@@ -168,7 +182,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
                           Copier la commande
                         </button>
                       )}
-                      <button type="button" class="btn btn-small" onClick={() => onOpenTerminalInPanel?.()} title="Ouvrir le terminal pour coller la commande">Ouvrir le terminal</button>
+                      <button type="button" class="btn btn-small" onClick={() => onOpenTerminalInPanel?.()} title="Ouvrir le terminal attaquant (pour sqlmap, curl, etc.)">Ouvrir le terminal</button>
                     </div>
                   </>
                 )}

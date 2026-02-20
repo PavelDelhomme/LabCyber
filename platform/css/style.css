@@ -582,6 +582,7 @@ body {
 .scenario-status-badge.status-completed { background: rgba(0,160,0,0.15); color: #0a0; }
 .scenario-status-badge.status-abandoned { background: rgba(180,0,0,0.12); color: var(--red, #c00); }
 .scenario-status-badge.status-paused { background: rgba(234, 179, 8, 0.2); color: var(--yellow); }
+.scenario-howto-box { margin-top: 0.75rem; padding: 0.6rem 0.9rem; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius); font-size: 0.9rem; color: var(--text); }
 .scenario-mode-hint { margin-top: 0.75rem; font-size: 0.88rem; color: var(--text-muted); }
 .scenario-actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
@@ -1422,6 +1423,7 @@ body {
   flex-direction: row;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 .terminal-side-panel-tabs-vertical {
   width: 56px;
@@ -1465,6 +1467,13 @@ body {
   border-color: var(--accent);
   font-weight: 500;
 }
+.terminal-tab-num-vertical {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: inherit;
+}
 .terminal-tab-btn-vertical .terminal-tab-btn-vertical-label {
   max-width: 48px;
   overflow: hidden;
@@ -1493,6 +1502,7 @@ body {
   min-height: 0;
   position: relative;
   background: var(--bg-card);
+  overflow: hidden;
 }
 .terminal-side-panel-content .terminal-tab-pane {
   position: absolute;
@@ -1500,6 +1510,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
+  overflow: hidden;
 }
 .terminal-tab-btn {
   display: inline-flex;
@@ -1672,7 +1683,7 @@ body {
 }
 .terminal-full-view { display: flex; flex-direction: column; height: calc(100vh - 52px); min-height: 360px; }
 .terminal-full-iframe { flex: 1; width: 100%; min-height: 300px; border: none; }
-.terminal-iframe-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.terminal-iframe-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .terminal-reload-btn { position: absolute; top: 0.35rem; right: 0.35rem; z-index: 5; font-size: 0.75rem; padding: 0.25rem 0.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); cursor: pointer; }
 .terminal-reload-btn:hover { color: var(--accent); border-color: var(--accent); }
 .terminal-side-panel-iframe {
@@ -1853,6 +1864,14 @@ body {
 .terminal-pip-tab-btn { display: flex; align-items: center; gap: 0.2rem; padding: 0.2rem 0.4rem; font-size: 0.8rem; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 4px; color: var(--text-muted); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .terminal-pip-tab-btn:hover { color: var(--text); border-color: var(--accent); }
 .terminal-pip-tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.terminal-pip-tab-num {
+  flex-shrink: 0;
+  min-width: 1.1em;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: inherit;
+  opacity: 0.9;
+}
 .terminal-pip-tab-label { max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
 .terminal-pip-tab-close { margin-left: 0.15rem; padding: 0 0.15rem; opacity: 0.8; }
 .terminal-pip-tab-close:hover { opacity: 1; color: #fff; }

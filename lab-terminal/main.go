@@ -144,6 +144,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 			n, err := ptmx.Read(buf)
 			if err != nil {
 				if err != io.EOF {
+					// Attendu à la déconnexion/rechargement client (ex. input/output error après ptmx.Close())
 					log.Printf("pty read: %v", err)
 				}
 				conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))

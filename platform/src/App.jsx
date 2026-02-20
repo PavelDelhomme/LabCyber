@@ -71,16 +71,13 @@ function hashFor(view, scenarioId, roomId) {
   return `#/${view}`;
 }
 
-/** Une iframe par onglet avec URL distincte (session=tabId). src fixé une seule fois au montage pour éviter tout rechargement intempestif (re-renders parent). reloadKey change le key => nouveau montage => nouvelle session. */
+/** Une iframe par onglet avec URL distincte (session=tabId ou tabId-rN après rechargement). reloadKey > 0 => nouvelle session côté backend, évite affichage vide et PTY mort. */
 function TerminalPanelIframe({ terminalUseDefaultLab, tabName, tabId, reloadKey = 0, onReload, onIframeLoad }) {
-  const url = useMemo(() => getTerminalUrl(terminalUseDefaultLab, tabId), [terminalUseDefaultLab, tabId]);
+  const url = useMemo(() => getTerminalUrl(terminalUseDefaultLab, tabId, reloadKey), [terminalUseDefaultLab, tabId, reloadKey]);
   const iframeRef = useRef(null);
-  const srcSetRef = useRef(false);
   useEffect(() => {
     if (!iframeRef.current || !url) return;
-    if (srcSetRef.current) return;
     iframeRef.current.src = url;
-    srcSetRef.current = true;
   }, [url]);
   return (
     <div class="terminal-iframe-wrap">
@@ -209,7 +206,7 @@ export default function App() {
     setScenarioStatusRevision((r) => r + 1);
   };
 
-  // Reprise complète d'un scénario (pause les autres, restaure le lab lié, ouvre et affiche le panneau terminal)
+  // Reprise complète d'un scénario (pause les autres, restaure le lab lié, applique packs recommandés si besoin, ouvre terminal)
   const handleResumeScenario = (scenarioId) => {
     if (!storage || !scenarioId) return;
     (scenarios || []).forEach(s => {
@@ -220,6 +217,18 @@ export default function App() {
     storage.setScenarioStatus(scenarioId, 'in_progress');
     const labId = storage.getScenarioLabId?.(scenarioId);
     if (labId && labId !== currentLabId) onLabChange(labId);
+    if (labId && labId !== 'default' && storage.getLabs && storage.setLabs) {
+      fetch('/data/labToolPresets.json').then(r => r.ok ? r.json() : null).catch(() => null).then((presets) => {
+        const packIds = presets?.byScenario?.[scenarioId];
+        if (Array.isArray(packIds) && packIds.length > 0) {
+          const labs = storage.getLabs() || [];
+          const lab = labs.find((l) => l.id === labId);
+          if (lab && (!lab.packIds || lab.packIds.length === 0)) {
+            storage.setLabs(labs.map((l) => (l.id === labId ? { ...l, packIds: [...packIds] } : l)));
+          }
+        }
+      });
+    }
     setLabPanelOpen(false);
     setTerminalPanelOpen(true);
     setTerminalPanelMinimized(false);
@@ -231,6 +240,7 @@ export default function App() {
     const labId = currentLabId || 'default';
     setLabPanelOpen(false);
     setTerminalPanelOpen(true);
+    setTerminalPanelEverOpened(true);
     storage?.getLabTerminalState?.(labId)?.then?.((labState) => {
       if (labState && Array.isArray(labState.tabs) && labState.tabs.length > 0) {
         const tabs = labState.tabs;
@@ -782,7 +792,10 @@ export default function App() {
                         onChange={(e) => setTerminalTabs(t => t.map(x => x.id === tab.id ? { ...x, name: e.target.value } : x))}
                       />
                     ) : (
-                      <span class="terminal-tab-btn-vertical-label" title="Double-clic pour renommer">{tab.name}</span>
+                      <>
+                        <span class="terminal-tab-num-vertical" aria-hidden="true">{terminalTabs.findIndex((t) => t.id === tab.id) + 1}</span>
+                        <span class="terminal-tab-btn-vertical-label" title="Double-clic pour renommer">{tab.name}</span>
+                      </>
                     )}
                     {terminalTabs.length > 1 && (
                       <span class="terminal-tab-close" onClick={(e) => { e.stopPropagation(); const rest = terminalTabs.filter(x => x.id !== tab.id); setTerminalTabs(rest); if (activeTerminalTabId === tab.id) setActiveTerminalTabId(rest[0]?.id || ''); }} aria-label="Fermer">×</span>

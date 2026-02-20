@@ -190,7 +190,7 @@ export default function TerminalPipPanel({
         <span class="terminal-pip-title">⌨ Terminal</span>
         {!minimized && displayTabs.length > 0 && (
           <div class="terminal-pip-tabs">
-            {displayTabs.map(tab => (
+            {displayTabs.map((tab, i) => (
               <button
                 key={tab.id}
                 type="button"
@@ -198,6 +198,7 @@ export default function TerminalPipPanel({
                 onClick={(e) => { e.stopPropagation(); if (!isControlled) setActiveTabId(tab.id); onStateChange?.({ tabs: displayTabs, activeTabId: tab.id, minimized, pos: displayPos }); }}
                 title={tab.name}
               >
+                <span class="terminal-pip-tab-num" aria-hidden="true">{i + 1}</span>
                 <span class="terminal-pip-tab-label">{tab.name}</span>
                 {displayTabs.length > 1 && (
                   <span class="terminal-pip-tab-close" onClick={(e) => closeTab(tab.id, e)} aria-label="Fermer">×</span>
