@@ -1,93 +1,112 @@
 # Roadmap – Système maison Lab Cyber
 
-Ce document décrit la vision et le plan pour **remplacer les briques externes** (ttyd, Kali, éventuellement noVNC) par un **système maison** : terminal web + environnement de lab minimal, performant et entièrement maîtrisé.
+Ce document décrit la vision et le plan pour le **système maison** : terminal web, environnement de lab (attaquant riche + prédéfinitions), bureau léger fait maison, persistance complète par lab, et interconnexion de tous les outils (simulateur réseau, capture pcap, requêtes API, terminal, client graphique web).
 
 ---
 
 ## Objectifs
 
-1. **Terminal panel qui fonctionne vraiment** : affichage PTY en temps réel, saisie, resize, exit → fermeture d’onglet, sans dépendre au comportement de ttyd.
-2. **Environnement de lab dédié** : pas « un Kali générique », mais un **environnement minimal** par lab, avec **outils pré-sélectionnés** à la création du lab (nmap, curl, scripts, etc.).
-3. **Performance et contrôle** : backend léger (C, C++ ou Go), pas de couches inutiles ; protocole WebSocket simple et documenté.
-4. **Optionnel – « Bureau » sans VNC** : si on veut une interface type bureau (navigation web, notes, etc.), la faire **en pur web** (SPA, onglets, éditeur, liens) plutôt qu’un vrai bureau graphique (noVNC). Ultra léger, optimisé pour le lab.
+1. **Conteneur attaquant** : disposition d’**autant d’outils que Kali** (voire plus : Black Arch, autres distros cyber), avec **sélection de packs d’outils** et **outils de base** (non dédiés cyber mais nécessaires). **Prédéfinitions à la création du lab** : packs d’outils choisis par lab/scénario.
+2. **Terminal** : simple d’usage mais **maximum de fonctionnalités** ; **plusieurs terminaux** par lab ; **historique complet conservé** (commandes + sorties) ; **connecté au lab** ; à la **reprise d’un lab existant**, ne rien perdre – retrouver tous les terminaux et leur historique/sorties comme avant.
+3. **Bureau / interface graphique** : un **vrai bureau** voulu, **léger** mais **fait maison** (pas du noVNC/XFCE lourd) – une interface type bureau réelle, implémentée par nous.
+4. **Interconnexion** : **simulateur réseau**, **capture pcap**, **requêtes API**, **terminal lab**, **client graphique web** – tous **connectés au lab** et entre eux (contexte lab, données partagées).
+5. **Scénario + lab** : au **démarrage d’un scénario**, avec un lab connecté (toujours un **lab par défaut** créé/connecté), **installation des outils nécessaires** au lab pour ce scénario.
+6. **Reprise de lab** : en rouvrant un lab existant, **rien perdre** : tous les terminaux, historique des commandes, résultats de commandes, état des panneaux – tout restauré comme c’était.
 
 ---
 
 ## État actuel (à remplacer / compléter)
 
-| Composant | Actuel | Problème / limite |
-|-----------|--------|--------------------|
-| Terminal web | ttyd (C + libwebsockets) + iframe client (xterm.js) | Client maison (`terminal-client.html`) corrigé pour le protocole binaire ttyd ; sinon dépendance à l’injection nginx, exit pas fiable. |
-| Environnement exécution | Conteneur Kali (attaquant) | Lourd, générique ; pas de « lab spécifique » avec outils choisis. |
-| Bureau / GUI | noVNC + XFCE (lab-desktop) | Lourd ; utile surtout pour « voir un bureau » ; on peut viser un équivalent 100 % web (onglets, notes, liens). |
+| Composant | Actuel | Cible |
+|-----------|--------|--------|
+| Terminal web | ttyd + client maison (xterm.js, protocole binaire) | Backend terminal maison (Go/C) ; multi-terminaux ; historique + sorties persistés par lab. |
+| Attaquant | Conteneur Kali (riche mais générique) | Même richesse (Kali+ ou plus) + **packs d’outils** + **outils de base** + **prédéfinitions à la création du lab**. |
+| Bureau | noVNC + XFCE (lourd) | **Bureau fait maison**, léger, vrai bureau (pas juste web pur). |
+| Persistance lab | Liste onglets, journal manuel ; pas d’historique terminal ni sorties | **Tout** persisté par lab : terminaux, historique commandes, sorties, état panneaux. |
+| Outils (simulateur, pcap, API) | Présents mais pas tous reliés au lab/terminal | **Interconnectés** : même lab, données partagées, reliés au terminal lab et au client graphique web. |
 
 ---
 
-## Architecture cible – Système maison
+## Architecture cible – Détail
 
-### 1. Backend « Lab Terminal » (nouveau service)
+### 1. Conteneur attaquant (environnement lab)
 
-- **Rôle** : exposer un **PTY** (pseudo-terminal) sur **WebSocket** ; exécuter un **shell** (ou un environnement minimal) dans un conteneur ou une VM légère.
-- **Stack proposée** : **Go** (bon compromis perf / rapidité de dev, stdlib net, crypto, facile à déployer en binaire) ou **C** (max perf, plus long à maintenir). C++ possible.
-- **Fonctionnalités** :
-  - Écoute HTTP/WebSocket (ou derrière la gateway existante).
-  - Protocole simple : **texte ou binaire** (type + payload), ex. `0` = output PTY, `1` = input clavier, `2` = resize (rows/cols).
-  - Un processus PTY par session (ou par lab) ; option « session id » pour multi-onglets.
-  - À la fermeture du WebSocket (ex. `exit` dans le shell) : pas de reconnexion auto ; le client envoie `postMessage` → l’app ferme l’onglet (déjà en place côté front).
-- **Environnement exécuté** : au choix
-  - **Option A** : image Docker **minimale** (Alpine + shell + paquets définis par config du lab), pas Kali.
-  - **Option B** : **« micro-OS »** ou script d’init qui installe uniquement les outils listés dans la config du lab (fichier ou API).
+- **Disponibilité** : autant d’outils que Kali (nmap, hydra, sqlmap, tcpdump, scapy, etc.), voire plus (Black Arch, autres).
+- **Organisation** :
+  - **Outils de base** : indispensables mais pas dédiés cyber (curl, wget, bash, python3, etc.).
+  - **Packs d’outils** : sélectionnables (ex. « web », « réseau », « forensique »).
+  - **Prédéfinitions à la création du lab** : à la création d’un lab (ou au démarrage d’un scénario), les outils **nécessaires au lab / au scénario** sont indiqués (config) et, si besoin, installés ou activés.
+- **Pas** un environnement minimal : on garde un **max de trucs**, avec **sélection et prédéfinitions** pour que chaque lab ait ce qu’il faut.
 
-### 2. Client terminal web (déjà en place, à garder)
+### 2. Backend « Lab Terminal » (système maison)
 
-- **Fichier** : `platform/public/terminal-client.html`.
-- **Rôle** : xterm.js + WebSocket vers le **nouveau** backend (ou temporairement vers ttyd avec protocole binaire corrigé).
-- **Comportement** : token/session si besoin ; envoi input en binaire (type 0x30 + data) ; réception output (type 0 + data) ; resize (type 0x31 + JSON) ; à la fermeture WS → `postMessage('lab-cyber-terminal-exit')` pour fermer l’onglet.
+- **Rôle** : exposer un ou plusieurs **PTY** (pseudo-terminaux) sur **WebSocket** ; un processus PTY par terminal (ou par onglet) ; shell dans le conteneur attaquant (ou futur conteneur lab).
+- **Stack** : Go (ou C) ; protocole binaire (type + payload), compatible client actuel.
+- **Persistance** : par **lab** (et par session) – historique des commandes + **sorties** enregistrés ; à la reprise du lab, restauration de tous les terminaux et de leur contenu (historique + sorties).
 
-### 3. Environnement « lab » (packs d’outils)
+### 3. Client terminal web (panneau / PiP)
 
-- **Idée** : chaque **lab** (ou type de lab) a une **liste d’outils** (nmap, hydra, curl, python3, scripts custom, etc.).
-- **À la création du lab** (ou au build d’image) : installer uniquement ces outils (Dockerfile ou script Ansible/Packer).
-- **Stockage** : config JSON (ex. `platform/data/labs.json` ou par scénario) avec `tools: ["nmap", "curl", ...]` ; le backend ou le script de build lit cette config et prépare l’image/container.
+- **Fichier** : `platform/public/terminal-client.html` (ou évolution).
+- **Fonctionnalités** : plusieurs terminaux ; chacun **lié à un lab** ; affichage + saisie + resize + exit → fermeture onglet ; à la **reprise du lab**, restauration du contenu (historique + sorties) depuis le backend.
 
-### 4. « Bureau » / interface étendue (optionnel, sans VNC)
+### 4. Bureau / interface graphique (fait maison)
 
-- **Besoin** : navigation web, notes, liens, sans lancer un vrai bureau graphique (XFCE + noVNC).
-- **Solution cible** : **interface 100 % web** dans la plateforme existante :
-  - Onglets « Notes », « Liens », « Doc » (déjà en partie là).
-  - Intégration d’un **navigateur simplifié** (iframe vers des URLs autorisées) ou liste de liens utiles pour le lab.
-  - Pas de VNC ni X11 ; tout dans le navigateur de l’utilisateur.
+- **Besoin** : un **vrai bureau** (interface type bureau), **léger**, mais **fait maison** (pas noVNC/XFCE tel quel).
+- **Solution cible** : implémentation maison d’un bureau (affichage graphique léger, fenêtres, navigation, notes, etc.) – à préciser (stack : web + canvas, ou serveur graphique léger + client web, etc.). L’objectif est d’avoir une **vraie interface bureau** utilisable pour le lab, pas uniquement des onglets web.
+
+### 5. Interconnexion (simulateur, pcap, API, terminal, client web)
+
+- **Simulateur réseau**, **capture pcap**, **requêtes API**, **terminal lab**, **client graphique web** : tous **connectés au même lab**.
+- **Données partagées** : contexte lab (machines, IP, scénario), résultats de capture, requêtes – cohérence et lien entre les outils.
+- **Terminal lab** et **client graphique web** font partie de ce tout connecté.
+
+### 6. Scénario + lab (outils au démarrage)
+
+- **Toujours** un **lab par défaut** créé/connecté.
+- Au **démarrage d’un scénario** (lab connecté) : **installation / activation des outils nécessaires** au lab pour ce scénario (définis en config : packs ou liste d’outils par scénario).
+
+### 7. Reprise d’un lab existant (zéro perte)
+
+- En rouvrant un **lab existant** :
+  - **Tous les terminaux** : restaurés (nombre, noms, ordre).
+  - **Historique des commandes** et **résultats/sorties** : retrouvés tels quels.
+  - **État des panneaux** (simulateur, pcap, API, bureau, etc.) : restauré comme à la dernière session.
+- Objectif : **ne rien perdre** ; reprise exacte de l’état du lab.
 
 ---
 
 ## Plan de mise en œuvre (ordre proposé)
 
-### Phase 1 – Terminal panel fiable (court terme)
+### Phase 1 – Terminal panel fiable + persistance côté app (court terme)
 
-- [x] **Client** : protocole binaire ttyd dans `terminal-client.html` (input 0x30, output 0, resize 0x31) — **fait**.
-- [ ] **Vérifier** : en conditions réelles (make up, panneau terminal), affichage + saisie + resize + exit → fermeture onglet.
-- [ ] Si ttyd reste insatisfaisant : démarrer un **proof-of-concept backend Go** (PTY + WebSocket, même protocole que le client) et faire pointer le client vers ce service.
+- [x] Client `terminal-client.html` en protocole binaire ttyd (input 0x30, output 0, resize 0x31).
+- [ ] Vérifier en conditions réelles : affichage, saisie, resize, exit → fermeture onglet.
+- [ ] Si besoin : PoC backend Go (PTY + WebSocket) à la place de ttyd.
+- [ ] Côté app : persister par lab la liste des terminaux + contenu (historique + sorties) dès que le backend le permet.
 
-### Phase 2 – Backend terminal maison (moyen terme)
+### Phase 2 – Backend terminal maison + multi-terminaux + persistance (moyen terme)
 
-- [ ] **Service** : binaire Go (ou C) qui :
-  - Écoute un port (ou un socket) pour WebSocket.
-  - Pour chaque connexion : crée un PTY, lance un shell (ex. `/bin/sh` ou bash), relaie stdin/stdout + resize.
-  - Protocole : compatible avec le client actuel (octet type + payload) ou version simplifiée (texte pur si on préfère).
-- [ ] **Intégration** : nouveau conteneur Docker « lab-terminal » (ou intégré dans un conteneur existant) ; la gateway route `/terminal/` vers ce service au lieu de ttyd.
-- [ ] **Session / token** : optionnel ; soit une session par connexion WS, soit token pour associer à un lab/utilisateur.
+- [ ] Service Go (ou C) : WebSocket, un PTY par terminal, protocole binaire.
+- [ ] **Persistance par lab** : enregistrer pour chaque terminal (par lab) : historique des commandes + sorties ; restauration à la reprise du lab.
+- [ ] Intégration : conteneur « lab-terminal », gateway route `/terminal/` vers ce service.
+- [ ] Plusieurs terminaux par lab ; chaque terminal restauré avec son contenu.
 
-### Phase 3 – Environnement lab dédié (moyen / long terme)
+### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme)
 
-- [ ] **Config « outils par lab »** : format (JSON ou autre) listant les paquets/scripts par lab ou par scénario.
-- [ ] **Image ou script** : build d’une image Docker minimale (Alpine/Debian slim) qui n’installe que ces outils ; ou script d’init dans un conteneur existant.
-- [ ] **Backend terminal** : lancer le shell dans ce conteneur « lab » au lieu d’un Kali générique.
+- [ ] Conteneur attaquant : conserver ou étendre la base type Kali (voire Black Arch, etc.) ; **outils de base** + **packs d’outils** (sélectionnables).
+- [ ] **Prédéfinitions à la création du lab** : config (JSON ou API) listant, par lab ou par scénario, les outils/packs nécessaires ; à la création du lab (ou au démarrage scénario), installation/activation de ces outils.
+- [ ] Backend terminal : lancer le shell dans ce conteneur attaquant (ou conteneur lab dérivé).
 
-### Phase 4 – « Bureau » web (optionnel, sans VNC)
+### Phase 4 – Bureau fait maison (léger, vrai bureau) (moyen / long terme)
 
-- [ ] Définir les besoins précis : navigation web (quelles URLs), notes, captures, etc.
-- [ ] Étendre la plateforme (onglets, iframes, éditeur de notes) pour couvrir ces cas sans noVNC.
-- [ ] Documenter la dépréciation possible de lab-desktop (noVNC) si tout est remplacé par le web.
+- [ ] Spécifier : stack (web + rendu graphique, ou serveur graphique léger + client web).
+- [ ] Implémenter un **bureau fait maison** : vrai bureau, léger, pour navigation, notes, outils graphiques du lab.
+- [ ] Remplacer ou compléter noVNC/XFCE à terme.
+
+### Phase 5 – Interconnexion + reprise lab complète (long terme)
+
+- [ ] **Interconnexion** : simulateur réseau, capture pcap, requêtes API, terminal lab, client graphique web – tous connectés au lab, données partagées.
+- [ ] **Reprise lab** : persister et restaurer tout (terminaux + historique + sorties, panneaux, état bureau, etc.) pour qu’à la reprise d’un lab existant on retrouve tout comme c’était.
 
 ---
 
@@ -95,34 +114,36 @@ Ce document décrit la vision et le plan pour **remplacer les briques externes**
 
 | Sujet | Options | Recommandation courte |
 |-------|---------|------------------------|
-| Langage backend | C, C++, Go | **Go** : perf correcte, déploiement simple, stdlib PTY/WebSocket. C si besoin perf maximale. |
-| Protocole WebSocket | Texte (JSON) vs binaire (octet + payload) | **Binaire** : déjà utilisé par le client, peu de parsing, faible overhead. |
-| Environnement d’exécution | Docker (Alpine + outils), VM, bare metal | **Docker** : cohérent avec le lab actuel ; image par type de lab possible. |
-| Bureau / GUI | Garder noVNC, ou tout en web | **Tout en web** : pas de VNC pour un « bureau lab » ; onglets, notes, liens dans la SPA. |
+| Langage backend terminal | C, C++, Go | **Go** : perf correcte, déploiement simple, stdlib PTY/WebSocket. |
+| Protocole WebSocket | Texte vs binaire | **Binaire** : déjà utilisé par le client, faible overhead. |
+| Bureau fait maison | Rendu web (canvas), serveur X léger, autre | À définir : objectif = vrai bureau, léger, fait maison. |
+| Stockage persistance lab | Fichiers (JSON, SQLite), API dédiée | À définir : par lab, par utilisateur/session ; restaurer terminaux + historique + sorties + panneaux. |
 
 ---
 
 ## Fichiers et docs à mettre à jour
 
-- **STATUS.md** : section « Terminal » + nouvelle section « Système maison (roadmap) » avec lien vers ce fichier.
-- **README.md** : mentionner la roadmap et le fait que le terminal peut évoluer vers un backend maison.
-- **platform/docs/** : décrire le protocole WebSocket du terminal (octets de commande, format resize) pour les contributeurs.
-- **docker-compose** : quand le nouveau service existera, ajouter le conteneur et la route gateway.
+- **STATUS.md** : section « Système maison » alignée sur cette roadmap (attaquant riche + packs + prédéfinitions, bureau fait maison, terminal multi + persistance, reprise lab, interconnexion).
+- **README.md** : lien vers cette roadmap, résumé des objectifs (système maison, pas de perte à la reprise).
+- **platform/docs/** : protocole WebSocket terminal ; config « outils / packs par lab » quand elle existera.
+- **docker-compose** : vuln-network (Redis sysctl) ; à venir : service lab-terminal, etc.
 
 ---
 
 ## Résumé
 
-- **Court terme** : le client `terminal-client.html` parle correctement le protocole binaire ttyd → le terminal panel doit afficher et réagir. Si ce n’est pas suffisant, on enchaîne sur un PoC backend Go.
-- **Moyen terme** : backend terminal maison (Go) + environnement par lab (packs d’outils, image Docker dédiée).
-- **Long terme** : « bureau » lab 100 % web (notes, liens, navigation) sans VNC ; système lab entièrement maîtrisé et optimisé.
+- **Attaquant** : max d’outils (Kali+), packs + outils de base, **prédéfinitions à la création du lab** (et au démarrage scénario).
+- **Terminal** : plusieurs terminaux, **historique + sorties conservés**, connecté au lab ; **reprise lab = tout retrouver**.
+- **Bureau** : **vrai bureau**, léger, **fait maison** (pas seulement web pur).
+- **Interconnexion** : simulateur, pcap, API, terminal, client web – **tous connectés au lab**.
+- **Scénario** : au démarrage, **outils nécessaires au lab** installés/activés pour le scénario.
+- **Reprise lab** : **rien perdre** – terminaux, historique, sorties, panneaux, comme c’était.
 
-Ce document sera mis à jour au fur et à mesure de l'avancement (phases cochées, décisions techniques, nouveaux fichiers).
+Ce document sera mis à jour au fur et à mesure (phases cochées, décisions techniques, nouveaux fichiers).
 
 ---
 
 ## Historique des changements
 
-- **2026-02-20** (branche `feature/terminal-integre`) : Client `terminal-client.html` adapté au protocole binaire ttyd (0 = output, 0x30 = input, 0x31 = resize). Création de cette roadmap, mise à jour STATUS.md et README.md. Commit poussé sur `origin/feature/terminal-integre`.
-
-Ce document sera mis à jour au fur et à mesure de l’avancement (phases cochées, décisions techniques, nouveaux fichiers).
+- **2026-02-20** (branche `feature/terminal-integre`) : Client `terminal-client.html` adapté au protocole binaire ttyd. Création de la roadmap, mise à jour STATUS.md et README.md.
+- **2026-02-20** : Roadmap réécrite selon specs complètes : attaquant riche + packs + prédéfinitions ; bureau fait maison (vrai bureau léger) ; terminal multi + persistance historique/sorties ; interconnexion (simulateur, pcap, API, terminal, client web) ; démarrage scénario = outils nécessaires au lab ; reprise lab = ne rien perdre (terminaux, historique, sorties). Vuln-network : ajout sysctl Redis `vm.overcommit_memory` (compose + entrypoint). Note bWAPP (CRIT/WARN supervisor) en avertissements connus.

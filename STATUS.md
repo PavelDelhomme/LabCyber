@@ -10,11 +10,17 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ### Système maison (terminal + environnement lab)
 
-**Vision** : remplacer la dépendance à ttyd/Kali (et optionnellement noVNC) par un **système maison** : backend terminal dédié (Go ou C), environnement de lab minimal avec **outils pré-sélectionnés par lab**, terminal panel fiable, et optionnellement un « bureau » 100 % web (notes, liens, navigation) sans VNC. **Roadmap détaillée** : [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md).
+**Vision** : **système maison** complet – voir [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md). En résumé :
+- **Conteneur attaquant** : autant d’outils que Kali (voire plus, ex. Black Arch) + **sélection de packs** + **outils de base** + **prédéfinitions à la création du lab** (outils nécessaires au lab/scénario).
+- **Terminal** : plusieurs terminaux par lab ; **historique + sorties conservés** ; à la **reprise d’un lab**, tout retrouver (terminaux, commandes, résultats).
+- **Bureau** : **vrai bureau** léger, **fait maison** (pas noVNC/XFCE lourd).
+- **Interconnexion** : simulateur réseau, capture pcap, requêtes API, terminal lab, client graphique web – **tous connectés au lab**.
+- **Scénario** : au démarrage (lab connecté, lab par défaut), **installation des outils nécessaires** au lab pour ce scénario.
+- **Reprise lab** : **ne rien perdre** – terminaux, historique, sorties, panneaux, comme c’était.
 
-- **Court terme** : vérifier que le client `terminal-client.html` (protocole binaire ttyd corrigé) affiche bien le terminal en panel ; si non, PoC backend Go (PTY + WebSocket).
-- **Moyen terme** : backend terminal maison, conteneur lab avec outils définis en config, plus de Kali générique.
-- **Long terme** : « bureau » lab en pur web (pas de VNC), tout optimisé et maîtrisé.
+- **Court terme** : terminal panel fiable (client protocole binaire) ; si besoin PoC backend Go.
+- **Moyen terme** : backend terminal maison, persistance par lab (historique + sorties), attaquant riche + packs + prédéfinitions.
+- **Long terme** : bureau fait maison, interconnexion complète, reprise lab sans perte.
 
 **Scintillement** : pour le moment plus de scintillement signalé (à surveiller). Si ça revient, désactiver `contain`/`translateZ(0)` et vérifier avec React DevTools Profiler.
 
@@ -58,6 +64,11 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Routeur / équipements** : pouvoir définir **modèle** (ex. Cisco, type) ; options plus poussées (config routeur/switch) : **interface minimal type terminal** pour configurer le routeur/PC (CLI simulée ou lien vers terminal).
 - **Capture pcap** : pouvoir indiquer que la capture s’exécute **dans le lab actuel** ou dans un lab donné ; lien clair simulateur ↔ lab ↔ capture.
 - **Scénarios à ajouter plus tard** : scénarios **SIP** et **téléphonie** (VoIP, etc.) en plus des scénarios existants.
+
+### Avertissements connus (logs)
+
+- **lab-vuln-network (Redis)** : « Memory overcommit must be enabled » → corrigé par `sysctls: vm.overcommit_memory: "1"` dans docker-compose et tentative dans entrypoint ; si le conteneur n’a pas les droits, sur l’hôte : `sudo sysctl vm.overcommit_memory=1`.
+- **lab-bwapp** : « CRIT Set uid to user 0 », « WARN Included extra file » (supervisor) – attendu dans l’image actuelle (supervisor en root) ; pas bloquant.
 
 ### CVE, formulaire, capture, autre
 
