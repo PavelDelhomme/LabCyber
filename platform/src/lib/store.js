@@ -3,12 +3,12 @@ import { EMBEDDED_DOCS, EMBEDDED_LEARNING, EMBEDDED_TARGETS, EMBEDDED_DOC_SOURCE
 
 const storage = typeof window !== 'undefined' ? window.LabCyberStorage : null;
 
-/** URL du terminal : client intégré (terminal-client.html) qui se connecte au WebSocket ttyd et envoie postMessage à la fermeture (exit). sessionId optionnel pour une session par onglet. */
+/** URL du terminal : client intégré (terminal-client.html) qui se connecte au backend lab-terminal (path=terminal-house) et envoie postMessage à la fermeture (exit). sessionId optionnel pour une session par onglet. */
 export function getTerminalUrl(useDefaultLab = true, sessionId = '') {
   if (typeof window === 'undefined') return '#';
   const base = window.location.origin.replace(/\/$/, '');
-  let url = `${base}/terminal-client.html`;
-  if (sessionId) url += '?session=' + encodeURIComponent(sessionId);
+  let url = `${base}/terminal-client.html?path=terminal-house`;
+  if (sessionId) url += '&session=' + encodeURIComponent(sessionId);
   return url;
 }
 
@@ -24,7 +24,7 @@ export function getMachineUrl(urlKey) {
   if (typeof window === 'undefined') return { url: '#', label: '' };
   const base = window.location.origin.replace(/\/$/, '');
   const port = window.location.port || '80';
-  if (urlKey === 'terminal') return { url: `${base}/terminal-client.html`, label: `Terminal (${base}/terminal-client.html)` };
+  if (urlKey === 'terminal') return { url: `${base}/terminal-client.html?path=terminal-house`, label: `Terminal (${base}/terminal-client.html)` };
   if (urlKey === 'desktop') return { url: `${base}/desktop/`, label: `Bureau (${base}/desktop/)` };
   const hostnames = { dvwa: 'dvwa.lab', juice: 'juice.lab', api: 'api.lab', bwapp: 'bwapp.lab' };
   const host = hostnames[urlKey] || urlKey + '.lab';

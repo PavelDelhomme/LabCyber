@@ -60,7 +60,12 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 
 	shell := os.Getenv("SHELL")
 	if shell == "" {
-		shell = "/bin/bash"
+		// Alpine a /bin/sh (busybox) ; si bash est installé on l’utilise
+		if _, err := exec.LookPath("/bin/bash"); err == nil {
+			shell = "/bin/bash"
+		} else {
+			shell = "/bin/sh"
+		}
 	}
 	cmd := exec.Command(shell)
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")

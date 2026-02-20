@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html
+.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -22,6 +22,7 @@ help:
 	@echo ""
 	@echo "  Redémarrage et nettoyage"
 	@echo "  -------------------------"
+	@echo "  make start          down + build platform (--no-cache) + dev + status (rebuild complet puis état)"
 	@echo "  make restart        down puis up (redémarrage rapide, pas de rebuild)"
 	@echo "  make restart-clean  down + clean + up (arrêt, rebuild plateforme sans perdre les données, puis up)"
 	@echo "  make restart-clean-all  down + clean-all + up (tout supprimer y compris volumes, rebuild, up)"
@@ -48,6 +49,15 @@ up:
 	@echo ""
 	@echo "  Interface web (lab) : http://127.0.0.1:8080"
 	@echo "  Terminal (navigateur) : http://127.0.0.1:8080/terminal/  |  CLI : make shell"
+	@echo ""
+
+# Rebuild complet : down, rebuild plateforme (--no-cache), dev, puis status
+start: down
+	cd $(ROOT) && docker compose build platform --no-cache
+	cd $(ROOT) && docker compose up -d --build
+	$(MAKE) status
+	@echo ""
+	@echo "  Interface : http://127.0.0.1:8080   |   Terminal (panel / PiP / nouvel onglet) : lab-terminal"
 	@echo ""
 
 # Tout arrêter (lab + lab-minimal), libérer les ports

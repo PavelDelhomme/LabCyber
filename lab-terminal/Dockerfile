@@ -8,7 +8,7 @@ COPY . .
 RUN CGO_ENABLED=1 go build -o /lab-terminal .
 
 FROM alpine:3.19
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates bash
 COPY --from=builder /lab-terminal /lab-terminal
 EXPOSE 7682
 ENV PORT=7682
