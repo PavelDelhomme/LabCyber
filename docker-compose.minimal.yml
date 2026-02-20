@@ -41,8 +41,6 @@ services:
         aliases: [vuln-network, vulnbox]
     expose: ["22", "6379"]
     mem_limit: 128m
-    sysctls:
-      vm.overcommit_memory: "1"
 
   vuln-api:
     build: ./vuln-api

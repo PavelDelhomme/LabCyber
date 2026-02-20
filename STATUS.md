@@ -18,8 +18,8 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Scénario** : au démarrage (lab connecté, lab par défaut), **installation des outils nécessaires** au lab pour ce scénario.
 - **Reprise lab** : **ne rien perdre** – terminaux, historique, sorties, panneaux, comme c’était.
 
-- **Court terme** : terminal panel fiable (client protocole binaire) ; si besoin PoC backend Go.
-- **Moyen terme** : backend terminal maison, persistance par lab (historique + sorties), attaquant riche + packs + prédéfinitions.
+- **Court terme** : terminal panel fiable (client protocole binaire). **PoC backend Go** : `lab-terminal/` (PTY + WebSocket), route `/terminal-house/` + client `?path=terminal-house` pour tester.
+- **Moyen terme** : persistance par lab (historique + sorties), attaquant riche + packs + prédéfinitions.
 - **Long terme** : bureau fait maison, interconnexion complète, reprise lab sans perte.
 
 **Scintillement** : pour le moment plus de scintillement signalé (à surveiller). Si ça revient, désactiver `contain`/`translateZ(0)` et vérifier avec React DevTools Profiler.
@@ -67,7 +67,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ### Avertissements connus (logs)
 
-- **lab-vuln-network (Redis)** : « Memory overcommit must be enabled » → corrigé par `sysctls: vm.overcommit_memory: "1"` dans docker-compose et tentative dans entrypoint ; si le conteneur n’a pas les droits, sur l’hôte : `sudo sysctl vm.overcommit_memory=1`.
+- **lab-vuln-network (Redis)** : « Memory overcommit must be enabled » – ce sysctl n’est pas dans un namespace isolé, donc on ne peut pas le passer au conteneur (erreur runc). Pour supprimer le warning : sur l’**hôte** : `sudo sysctl vm.overcommit_memory=1` (optionnel ; Redis fonctionne malgré le warning).
 - **lab-bwapp** : « CRIT Set uid to user 0 », « WARN Included extra file » (supervisor) – attendu dans l’image actuelle (supervisor en root) ; pas bloquant.
 
 ### CVE, formulaire, capture, autre

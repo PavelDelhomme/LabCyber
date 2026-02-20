@@ -34,13 +34,14 @@
   var base = window.location.origin.replace(/\/$/, '');
   var wsScheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   var wsBase = wsScheme + '//' + window.location.host;
+  var path = (new URLSearchParams(window.location.search)).get('path') || 'terminal';
 
   function run() {
-    fetch(base + '/terminal/token')
+    fetch(base + '/' + path + '/token')
       .then(function (r) { if (!r.ok) throw new Error('Token ' + r.status); return r.text(); })
       .then(function (token) {
         token = (token || '').trim();
-        var wsUrl = wsBase + '/terminal/ws' + (token ? '?token=' + encodeURIComponent(token) : '');
+        var wsUrl = wsBase + '/' + path + '/ws' + (token ? '?token=' + encodeURIComponent(token) : '');
         var ws = new WebSocket(wsUrl);
         ws.binaryType = 'arraybuffer';
         var term = new window.Terminal({ cursorBlink: true, theme: { background: '#0c0c0c' } });

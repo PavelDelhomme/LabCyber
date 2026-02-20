@@ -86,9 +86,9 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 
 ### Phase 2 – Backend terminal maison + multi-terminaux + persistance (moyen terme)
 
-- [ ] Service Go (ou C) : WebSocket, un PTY par terminal, protocole binaire.
+- [x] **Service Go (PoC)** : WebSocket, un PTY par connexion, protocole binaire (0, 0x30, 0x31). Voir `lab-terminal/`. Route optionnelle gateway `/terminal-house/` ; client avec `?path=terminal-house` pour l’utiliser.
 - [ ] **Persistance par lab** : enregistrer pour chaque terminal (par lab) : historique des commandes + sorties ; restauration à la reprise du lab.
-- [ ] Intégration : conteneur « lab-terminal », gateway route `/terminal/` vers ce service.
+- [x] **Intégration** : conteneur `lab-terminal` dans docker-compose ; gateway expose `/terminal-house/` vers lab-terminal:7682.
 - [ ] Plusieurs terminaux par lab ; chaque terminal restauré avec son contenu.
 
 ### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme)
@@ -146,4 +146,5 @@ Ce document sera mis à jour au fur et à mesure (phases cochées, décisions te
 ## Historique des changements
 
 - **2026-02-20** (branche `feature/terminal-integre`) : Client `terminal-client.html` adapté au protocole binaire ttyd. Création de la roadmap, mise à jour STATUS.md et README.md.
-- **2026-02-20** : Roadmap réécrite selon specs complètes : attaquant riche + packs + prédéfinitions ; bureau fait maison (vrai bureau léger) ; terminal multi + persistance historique/sorties ; interconnexion (simulateur, pcap, API, terminal, client web) ; démarrage scénario = outils nécessaires au lab ; reprise lab = ne rien perdre (terminaux, historique, sorties). Vuln-network : ajout sysctl Redis `vm.overcommit_memory` (compose + entrypoint). Note bWAPP (CRIT/WARN supervisor) en avertissements connus.
+- **2026-02-20** : Roadmap réécrite selon specs complètes ; vuln-network (Redis sysctl retiré du compose, note hôte) ; bWAPP en avertissements connus.
+- **2026-02-21** : PoC backend terminal **lab-terminal** (Go) : PTY + WebSocket, protocole binaire. Service dans docker-compose, route gateway `/terminal-house/`, client `?path=terminal-house`. Phase 2 partiellement cochée.

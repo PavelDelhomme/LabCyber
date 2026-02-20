@@ -67,8 +67,6 @@ services:
       lab-network:
         aliases: [vuln-network, vulnbox]
     expose: ["22", "6379"]
-    sysctls:
-      vm.overcommit_memory: "1"
 
   vuln-api:
     build: ./vuln-api

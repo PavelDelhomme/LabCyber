@@ -24,6 +24,14 @@ services:
     networks: [lab-network]
     expose: ["80"]
 
+  # ========== Backend terminal maison (Go, PTY + WebSocket) – optionnel ==========
+  lab-terminal:
+    build: ./lab-terminal
+    container_name: lab-terminal
+    networks: [lab-network]
+    expose: ["7682"]
+    # Pour utiliser ce backend au lieu de ttyd : dans gateway, faire proxy /terminal/ vers lab-terminal:7682
+
   # ========== Terminal web : http://localhost:TTYD_PORT (ttyd) ==========
   attaquant:
     build: ./attacker
@@ -100,9 +108,7 @@ services:
       lab-network:
         aliases: [vuln-network, vulnbox]
     expose: ["22", "6379"]
-    sysctls:
-      vm.overcommit_memory: "1"
-    # Si sysctl refusé (sécurité hôte), sur l'hôte : sudo sysctl vm.overcommit_memory=1
+    # Redis : pour supprimer le warning "Memory overcommit must be enabled", sur l'hôte : sudo sysctl vm.overcommit_memory=1
 
   # ========== API (accès via gateway → api.lab) ==========
   vuln-api:

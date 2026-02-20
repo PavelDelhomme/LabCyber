@@ -8,6 +8,9 @@ __pycache__/
 *.egg-info/
 .eggs/
 
+# Binaire backend terminal (Go)
+lab-terminal/lab-terminal
+
 # Docker
 .docker/
 *.log
