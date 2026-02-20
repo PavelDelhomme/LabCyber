@@ -77,19 +77,17 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 
 ## Plan de mise en œuvre (ordre proposé)
 
-### Phase 1 – Terminal panel fiable + persistance côté app (court terme)
+### Phase 1 – Terminal panel fiable (court terme) – validée
 
-- [x] Client `terminal-client.html` en protocole binaire ttyd (input 0x30, output 0, resize 0x31).
-- [ ] Vérifier en conditions réelles : affichage, saisie, resize, exit → fermeture onglet.
-- [ ] Si besoin : PoC backend Go (PTY + WebSocket) à la place de ttyd.
-- [ ] Côté app : persister par lab la liste des terminaux + contenu (historique + sorties) dès que le backend le permet.
+- [x] Client `terminal-client.html` en protocole binaire (input 0x30, output 0, resize 0x31).
+- [x] PoC backend Go lab-terminal (PTY + WebSocket). Intégration : conteneur, gateway /terminal-house/, client path=terminal-house. Panel, PiP, nouvel onglet OK.
+- [x] Exit et resize panel (handle, curseur col-resize pendant drag).
 
-### Phase 2 – Backend terminal maison + multi-terminaux + persistance (moyen terme)
+### Phase 2 – Persistance par lab + journal/notes complet (moyen terme)
 
-- [x] **Service Go (PoC)** : WebSocket, un PTY par connexion, protocole binaire (0, 0x30, 0x31). Voir `lab-terminal/`. Route optionnelle gateway `/terminal-house/` ; client avec `?path=terminal-house` pour l’utiliser.
-- [ ] **Persistance par lab** : enregistrer pour chaque terminal (par lab) : historique des commandes + sorties ; restauration à la reprise du lab.
-- [x] **Intégration** : conteneur `lab-terminal` dans docker-compose ; gateway expose `/terminal-house/` vers lab-terminal:7682.
+- [ ] Persister par lab : liste terminaux, historique commandes, sorties ; restauration à la reprise.
 - [ ] Plusieurs terminaux par lab ; chaque terminal restauré avec son contenu.
+- [ ] **Journal / Notes complet** (bouton Journal & Stats, vue dédiée) : capture résultats de commandes, captures d'écran, pièces jointes ; transfert terminal lab → journal ; consultation par lab/scénario ; lien optionnel scénarios en cours.
 
 ### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme)
 

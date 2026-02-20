@@ -122,7 +122,7 @@ export default function App() {
   const [labNotes, setLabNotesState] = useState('');
   const [labReport, setLabReportState] = useState('');
   const skipNextHashChange = useRef(false);
-  const terminalResizeRef = useRef({ active: false, startX: 0, startW: 0 });
+  const terminalResizeRef = useRef({ active: false, startX: 0, startW: 0, lastW: 0 });
   const panelIframeWindowsRef = useRef(new Set());
   const terminalPanelBodyRef = useRef(null);
   const uiSessionRef = useRef({});
@@ -249,22 +249,36 @@ export default function App() {
   }, [terminalTabs, activeTerminalTabId]);
 
   useEffect(() => {
-    const onMove = (e) => {
+    const onPointerMove = (e) => {
       if (!terminalResizeRef.current.active) return;
       const delta = terminalResizeRef.current.startX - e.clientX;
       const next = Math.min(900, Math.max(320, terminalResizeRef.current.startW + delta));
+      terminalResizeRef.current.lastW = next;
       setTerminalPanelWidth(next);
     };
-    const onUp = () => {
+    const onPointerUp = () => {
       if (terminalResizeRef.current.active) {
         terminalResizeRef.current.active = false;
-        persistUiSession({ terminalPanelWidth });
+        const w = terminalResizeRef.current.lastW ?? terminalResizeRef.current.startW;
+        if (storage?.setUiSession) storage.setUiSession({ ...uiSessionRef.current, terminalPanelWidth: w });
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
       }
     };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-  }, []);
+    const onLostPointerCapture = (e) => {
+      if (terminalResizeRef.current.active && e.pointerId === terminalResizeRef.current.pointerId) onPointerUp();
+    };
+    document.documentElement.addEventListener('pointermove', onPointerMove, { capture: true });
+    document.documentElement.addEventListener('pointerup', onPointerUp, { capture: true });
+    document.documentElement.addEventListener('pointercancel', onPointerUp, { capture: true });
+    document.documentElement.addEventListener('lostpointercapture', onLostPointerCapture, { capture: true });
+    return () => {
+      document.documentElement.removeEventListener('pointermove', onPointerMove, { capture: true });
+      document.documentElement.removeEventListener('pointerup', onPointerUp, { capture: true });
+      document.documentElement.removeEventListener('pointercancel', onPointerUp, { capture: true });
+      document.documentElement.removeEventListener('lostpointercapture', onLostPointerCapture, { capture: true });
+    };
+  }, [storage]);
 
   useEffect(() => {
     if (!storage?.setUiSession) return;
@@ -423,7 +437,16 @@ export default function App() {
           <div
             class="terminal-side-panel-resize-handle"
             aria-label="Redimensionner"
-            onMouseDown={(e) => { if (!terminalPanelMinimized) { e.preventDefault(); terminalResizeRef.current = { active: true, startX: e.clientX, startW: terminalPanelWidth }; } }}
+            onPointerDown={(e) => {
+              if (!terminalPanelMinimized) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.setPointerCapture(e.pointerId);
+                terminalResizeRef.current = { active: true, pointerId: e.pointerId, startX: e.clientX, startW: terminalPanelWidth, lastW: terminalPanelWidth };
+                document.body.style.userSelect = 'none';
+                document.body.style.cursor = 'col-resize';
+              }
+            }}
           />
           <header class="terminal-side-panel-header">
             <h3>{terminalPanelMinimized ? '⌨' : 'Terminal web (attaquant)'}</h3>
