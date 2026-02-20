@@ -155,20 +155,20 @@ body {
 .view { display: none; }
 .view.active { display: block; }
 
-/* Vue scénario : colonne contenu + panneau terminal */
+/* Vue scénario : une seule colonne (terminal via panneau droit / PiP / nouvel onglet) */
 .view-scenario-with-terminal.active {
   display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  align-items: stretch;
+  flex-direction: column;
   min-height: 0;
   flex: 1;
+  overflow-y: auto;
 }
 
 .scenario-content-column {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
+  width: 100%;
 }
 
 .scenario-terminal-panel {
@@ -406,6 +406,13 @@ body {
   color: var(--text-muted);
   font-weight: 400;
   font-family: var(--font-mono);
+  margin: 0.25rem 0 0;
+}
+.machine-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 /* Tasks – THM style with checkbox */
@@ -809,7 +816,7 @@ body {
 }
 .pip-resize-handle:hover { background: linear-gradient(135deg, transparent 50%, var(--accent) 50%); }
 
-/* Barre scénario fixe en bas (toujours visible pendant un scénario) */
+/* Barre scénario fixe en bas : ne chevauche pas le panneau terminal (right = largeur du strip terminal) */
 .scenario-bottom-bar {
   position: fixed;
   bottom: 0;
@@ -817,30 +824,51 @@ body {
   right: 0;
   max-height: 200px;
   background: var(--bg-card);
-  border-top: 1px solid var(--accent);
+  border-top: 1px solid var(--border);
   box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
-  z-index: 900;
+  z-index: 800;
   display: flex;
   flex-direction: column;
 }
 .scenario-bottom-bar-collapsed {
-  max-height: 44px;
+  max-height: 48px;
+}
+.scenario-bottom-bar-inner {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
 }
 .scenario-bottom-bar-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 0.5rem 1rem;
-  background: var(--accent-soft);
+  background: var(--bg-hover);
   border: none;
+  border-right: 1px solid var(--border);
   color: var(--text);
   cursor: pointer;
   font-family: inherit;
   font-size: 0.9rem;
   text-align: left;
 }
-.scenario-bottom-bar-toggle:hover { background: var(--bg-hover); }
+.scenario-bottom-bar-toggle:hover { background: var(--accent-soft); }
+.scenario-bar-section-terminal {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  background: var(--bg-hover);
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.scenario-bar-section-terminal:hover { background: var(--accent-soft); color: var(--text); }
 .scenario-bottom-bar-title { font-weight: 600; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .scenario-bottom-bar-chevron { font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem; }
 .scenario-bottom-bar-body {
@@ -850,6 +878,8 @@ body {
   padding: 0.5rem 1rem;
   overflow-x: auto;
   overflow-y: hidden;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
 }
 .scenario-bottom-bar-tasks {
   list-style: none;
@@ -942,7 +972,7 @@ body {
 
 /* Main avec barre scénario : réserver l'espace en bas */
 .main.has-scenario-bar { padding-bottom: 220px; }
-.main.has-scenario-bar.scenario-bar-collapsed { padding-bottom: 52px; }
+.main.has-scenario-bar.scenario-bar-collapsed { padding-bottom: 56px; }
 
 /* Modales (stats, options) */
 .modal {

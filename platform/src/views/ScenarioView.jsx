@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { escapeHtml, getTerminalUrl } from '../lib/store';
 
-export default function ScenarioView({ scenarios, config, currentScenarioId, storage, onOpenTerminalInPanel, docSources }) {
+export default function ScenarioView({ scenarios, config, currentScenarioId, storage, onOpenTerminalInPanel, onOpenTerminalPip, docSources }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
   const [taskIndex, setTaskIndex] = useState(0);
   const [toolPacks, setToolPacks] = useState(null);
@@ -71,7 +71,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
             <span class={`scenario-status-badge status-${status}`}>{statusLabel}</span>
           </div>
           <p class="room-description">{escapeHtml(scenario.description || '')}</p>
-          <p class="scenario-mode-hint">Tu peux faire les étapes depuis le navigateur (cibles, Proxy / Requêtes dans le menu) ou depuis le terminal à côté — pas besoin de te connecter au conteneur attaquant si tu préfères rester dans le navigateur.</p>
+          <p class="scenario-mode-hint">Utilise le <strong>terminal attaquant</strong> (panneau à droite, flottant PiP ou nouvel onglet) pour exécuter les commandes. C’est le même conteneur avec les outils recommandés ci‑dessous.</p>
           <div class="scenario-actions">
             {status === 'not_started' && (
               <>
@@ -99,7 +99,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
         {recommendedPacks.length > 0 && (
           <section class="room-section scenario-tool-packs" aria-label="Packs d'outils recommandés">
             <h3>Packs d'outils recommandés pour ce scénario</h3>
-            <p class="scenario-tool-packs-desc">Le conteneur attaquant inclut ces ensembles d'outils. Utilise le terminal à côté pour les commandes.</p>
+            <p class="scenario-tool-packs-desc">Le conteneur attaquant inclut ces ensembles d'outils. Utilise le terminal (panneau ou PiP) pour les commandes.</p>
             <div class="scenario-tool-packs-list">
               {recommendedPacks.map(pack => (
                 <div key={pack.id} class="scenario-tool-pack-badge" title={pack.description || ''}>
@@ -112,13 +112,48 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
             </div>
           </section>
         )}
+        <section class="room-section scenario-terminal-access" aria-label="Accès au terminal attaquant">
+          <h3>Terminal attaquant</h3>
+          <p class="scenario-terminal-access-desc">Ouvre le terminal (conteneur avec les outils du scénario) : dans le panneau à droite du lab, en flottant (PiP) ou dans un nouvel onglet navigateur.</p>
+          <div class="scenario-terminal-buttons">
+            <button type="button" class="btn btn-primary" onClick={() => { onOpenTerminalInPanel?.(); }}>Panneau (à droite)</button>
+            <button type="button" class="btn btn-secondary" onClick={() => { onOpenTerminalPip?.(); }}>Flottant (PiP)</button>
+            <a href={termUrl} target="_blank" rel="noopener" class="btn btn-secondary">Nouvel onglet navigateur</a>
+          </div>
+        </section>
         <section class="room-section machines-section">
-          <h3>Déployer / Accéder aux cibles</h3>
+          <h3>Cibles et accès</h3>
           <div class="machine-cards">
             {(scenario.machines || []).map((m, i) => (
-              <div key={i} class="machine-card">
+              <div key={i} class={`machine-card ${m.urlKey === 'terminal' ? 'machine-card-terminal' : ''}`}>
                 <strong>{escapeHtml(m.name || m.urlKey || '')}</strong>
-                {m.urlKey && <a href={termUrl} target="_blank" rel="noopener">Ouvrir</a>}
+                {m.urlKey === 'terminal' ? (
+                  <div class="machine-card-actions">
+                    <button type="button" class="btn btn-small" onClick={() => onOpenTerminalInPanel?.()}>Panneau</button>
+                    <button type="button" class="btn btn-small" onClick={() => onOpenTerminalPip?.()}>PiP</button>
+                    <a href={termUrl} target="_blank" rel="noopener" class="btn btn-small">Nouvel onglet</a>
+                  </div>
+                ) : (
+                  <>
+                    {m.note && <p class="machine-note">{escapeHtml(m.note)}</p>}
+                    <div class="machine-card-actions">
+                      {m.note && (
+                        <button
+                          type="button"
+                          class="btn btn-small"
+                          onClick={() => {
+                            const cmd = (m.note || '').replace(/^[^:]*:\s*/i, '').trim() || m.note;
+                            if (cmd && navigator.clipboard?.writeText) navigator.clipboard.writeText(cmd);
+                          }}
+                          title="Copier la commande d'accès"
+                        >
+                          Copier la commande
+                        </button>
+                      )}
+                      <button type="button" class="btn btn-small" onClick={() => onOpenTerminalInPanel?.()} title="Ouvrir le terminal pour coller la commande">Ouvrir le terminal</button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -149,16 +184,6 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
           </div>
         </section>
       </div>
-      <aside class="scenario-terminal-panel">
-        <div class="terminal-panel-header">
-          <h3>⌨ Terminal attaquant</h3>
-          <a href={termUrl} target="_blank" rel="noopener" class="topbar-btn">Nouvel onglet</a>
-        </div>
-        <div class="terminal-status">Terminal via la gateway (même port que cette page). Ouvre dans un onglet si l’iframe bloque.</div>
-        <div class="terminal-container">
-          <iframe title="Terminal" src={termUrl} class="terminal-iframe" />
-        </div>
-      </aside>
     </div>
   );
 }

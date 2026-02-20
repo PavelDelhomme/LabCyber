@@ -295,20 +295,20 @@ body {
 .main > .view.active { display: block; }
 .main > .view.active > .view { display: block; min-height: 60vh; }
 
-/* Vue scénario : colonne contenu + panneau terminal */
+/* Vue scénario : une seule colonne (terminal via panneau droit / PiP / nouvel onglet) */
 .view-scenario-with-terminal.active {
   display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  align-items: stretch;
+  flex-direction: column;
   min-height: 0;
   flex: 1;
+  overflow-y: auto;
 }
 
 .scenario-content-column {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
+  width: 100%;
 }
 
 .scenario-terminal-panel {
@@ -637,6 +637,14 @@ body {
   color: var(--text-muted);
   font-weight: 400;
   font-family: var(--font-mono);
+  margin: 0.25rem 0 0;
+}
+
+.machine-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 /* Tasks – THM style with checkbox */

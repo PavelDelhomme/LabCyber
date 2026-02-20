@@ -563,6 +563,7 @@ export default function App() {
               onLabChange={onLabChange}
               onOpenTerminalInNewTab={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
               onOpenTerminalInPanel={openTerminalPanel}
+              onOpenTerminalPip={() => setTerminalPipOpen(true)}
               optionsInLeftPanel={optionsInLeftPanel}
               onOptionsInLeftPanelChange={(v) => { setOptionsInLeftPanel(v); persistUiSession({ optionsInLeftPanel: v }); }}
             />
@@ -577,7 +578,17 @@ export default function App() {
       <button type="button" class="cve-fab" onClick={() => setCvePanelOpen(true)} aria-label="Recherche CVE" title="Rechercher un CVE">CVE</button>
       <CvePanel open={cvePanelOpen} onClose={() => setCvePanelOpen(false)} />
       {showPipButton && <PipPanel open={pipOpen} scenario={currentScenario} onClose={() => setPipOpen(false)} />}
-      {view === 'scenario' && <ScenarioBottomBar scenario={currentScenario} storage={storage} collapsed={scenarioBarCollapsed} onCollapsed={setScenarioBarCollapsed} onExpand={() => window.location.hash = '#/scenario/' + (currentScenarioId || '')} />}
+      {view === 'scenario' && (
+          <ScenarioBottomBar
+            scenario={currentScenario}
+            storage={storage}
+            collapsed={scenarioBarCollapsed}
+            onCollapsed={setScenarioBarCollapsed}
+            onExpand={() => window.location.hash = '#/scenario/' + (currentScenarioId || '')}
+            terminalStripWidth={terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : 0}
+            onOpenTerminal={openTerminalPanel}
+          />
+        )}
       <TerminalPipPanel
         open={terminalPipOpen}
         onClose={() => setTerminalPipOpen(false)}
