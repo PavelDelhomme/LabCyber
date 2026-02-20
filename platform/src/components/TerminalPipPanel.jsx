@@ -1,16 +1,38 @@
-import { useState, useRef, useEffect, useMemo } from 'preact/hooks';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'preact/hooks';
 
-/** Iframe dont le src n'est défini qu'une fois au montage pour éviter tout rechargement au re-render (ex. ls qui faisait tout recharger). */
-function StableTerminalIframe({ url, title, tabKey, onIframeLoad }) {
-  const iframeRef = useRef(null);
-  const urlSetRef = useRef(null);
-  useEffect(() => {
-    if (!iframeRef.current || !url) return;
-    if (urlSetRef.current === tabKey) return;
-    iframeRef.current.src = url;
-    urlSetRef.current = tabKey;
-  }, [url, tabKey]);
-  return <iframe ref={iframeRef} title={title} class="terminal-pip-iframe" key={tabKey} onLoad={() => { if (iframeRef.current?.contentWindow) onIframeLoad?.(iframeRef.current.contentWindow); }} />;
+const DRAG_STEP_PX = 5;
+const PANEL_WIDTH = 400;
+const PANEL_HEIGHT = 320;
+const PANEL_MINIMIZED_WIDTH = 220;
+const PANEL_MINIMIZED_HEIGHT = 48;
+
+function getDefaultPosition() {
+  if (typeof window === 'undefined') return { x: 400, y: 300 };
+  return {
+    x: Math.max(0, window.innerWidth - PANEL_WIDTH - 16),
+    y: Math.max(0, window.innerHeight - PANEL_HEIGHT - 16),
+  };
+}
+
+/** Conteneur div pour le terminal : charge l’URL via <object> (équivalent iframe, même zone de rendu). */
+function StableTerminalObject({ url, title, tabKey, onContentLoad }) {
+  const objectRef = useRef(null);
+  const handleLoad = useCallback(() => {
+    const win = objectRef.current?.contentDocument?.defaultView ?? objectRef.current?.contentWindow;
+    if (win) onContentLoad?.(win);
+  }, [onContentLoad]);
+  return (
+    <div class="terminal-pip-iframe" key={tabKey} style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+      <object
+        ref={objectRef}
+        data={url}
+        type="text/html"
+        title={title}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+        onLoad={handleLoad}
+      />
+    </div>
+  );
 }
 
 export default function TerminalPipPanel({
@@ -27,14 +49,63 @@ export default function TerminalPipPanel({
   const [minimized, setMinimized] = useState(controlledMinimized ?? false);
   const [tabs, setTabs] = useState(controlledTabs ?? [{ id: '1', name: 'Session 1' }]);
   const [activeTabId, setActiveTabId] = useState(controlledActiveTabId ?? '1');
-  const pipIframeWindowRef = useRef(null);
+  const [internalPos, setInternalPos] = useState(getDefaultPosition);
+  const pipContentWindowRef = useRef(null);
   const stateChangeRef = useRef(null);
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, startPos: { x: 0, y: 0 } });
 
   const isControlled = controlledTabs != null && controlledActiveTabId != null;
   const displayTabs = isControlled ? controlledTabs : tabs;
   const displayActiveTabId = isControlled ? controlledActiveTabId : activeTabId;
-  const displayPos = controlledPos ?? { x: 0, y: 0 };
+  const displayPos = controlledPos ?? internalPos;
   stateChangeRef.current = { tabs: displayTabs, activeTabId: displayActiveTabId, minimized, pos: displayPos };
+
+  const applyNewPos = useCallback((newPos) => {
+    if (controlledPos != null) {
+      onStateChange?.({ tabs: displayTabs, activeTabId: displayActiveTabId, minimized, pos: newPos });
+    } else {
+      setInternalPos(newPos);
+      onStateChange?.({ tabs: displayTabs, activeTabId: displayActiveTabId, minimized, pos: newPos });
+    }
+  }, [controlledPos, displayTabs, displayActiveTabId, minimized, onStateChange]);
+
+  const onHeaderPointerDown = useCallback((e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    dragRef.current = {
+      active: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      startPos: { x: displayPos.x, y: displayPos.y },
+    };
+    const onPointerMove = (ev) => {
+      if (!dragRef.current.active) return;
+      const { startX, startY, startPos } = dragRef.current;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      const stepX = Math.round(dx / DRAG_STEP_PX) * DRAG_STEP_PX;
+      const stepY = Math.round(dy / DRAG_STEP_PX) * DRAG_STEP_PX;
+      const w = minimized ? PANEL_MINIMIZED_WIDTH : PANEL_WIDTH;
+      const h = minimized ? PANEL_MINIMIZED_HEIGHT : PANEL_HEIGHT;
+      const maxX = typeof window !== 'undefined' ? Math.max(0, window.innerWidth - w) : 0;
+      const maxY = typeof window !== 'undefined' ? Math.max(0, window.innerHeight - h) : 0;
+      const newX = Math.max(0, Math.min(maxX, startPos.x + stepX));
+      const newY = Math.max(0, Math.min(maxY, startPos.y + stepY));
+      applyNewPos({ x: newX, y: newY });
+      dragRef.current.startX = ev.clientX;
+      dragRef.current.startY = ev.clientY;
+      dragRef.current.startPos = { x: newX, y: newY };
+    };
+    const onPointerUp = () => {
+      dragRef.current.active = false;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+    };
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+  }, [displayPos, minimized, applyNewPos]);
 
   useEffect(() => {
     if (controlledMinimized !== undefined) setMinimized(controlledMinimized);
@@ -57,7 +128,7 @@ export default function TerminalPipPanel({
   useEffect(() => {
     const onMessage = (e) => {
       if (e?.data?.type !== 'lab-cyber-terminal-exit') return;
-      if (e.source !== pipIframeWindowRef.current) return;
+      if (e.source !== pipContentWindowRef.current) return;
       const rest = displayTabs.filter(t => t.id !== displayActiveTabId);
       if (rest.length === 0) {
         onClose?.();
@@ -108,8 +179,14 @@ export default function TerminalPipPanel({
       class={`terminal-pip-panel ${minimized ? 'terminal-pip-minimized' : ''}`}
       role="dialog"
       aria-label="Terminal (PiP)"
+      style={{
+        position: 'fixed',
+        left: displayPos.x,
+        top: displayPos.y,
+        zIndex: 99999,
+      }}
     >
-      <header class="terminal-pip-header">
+      <header class="terminal-pip-header" onPointerDown={onHeaderPointerDown}>
         <span class="terminal-pip-title">⌨ Terminal</span>
         {!minimized && displayTabs.length > 0 && (
           <div class="terminal-pip-tabs">
@@ -138,7 +215,7 @@ export default function TerminalPipPanel({
         </div>
       </header>
       <div class={`terminal-pip-body ${minimized ? 'terminal-pip-body-hidden' : ''}`} aria-hidden={minimized}>
-        {activeTab && termUrl && <StableTerminalIframe url={termUrl} title={activeTab.name} tabKey={`pip-${displayActiveTabId}`} onIframeLoad={(win) => { pipIframeWindowRef.current = win; }} />}
+        {activeTab && termUrl && <StableTerminalObject url={termUrl} title={activeTab.name} tabKey={`pip-${displayActiveTabId}`} onContentLoad={(win) => { pipContentWindowRef.current = win; }} />}
       </div>
     </div>
   );

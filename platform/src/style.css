@@ -985,11 +985,9 @@ body {
 .scenario-bar-cible .btn-tiny:hover { border-color: var(--accent); color: var(--accent); }
 .btn-tiny { padding: 0.2rem 0.4rem; font-size: 0.75rem; }
 
-/* Terminal PiP : position fixe en bas à droite, z-index max. Pas de drag. Réduire = masquer le body en CSS (iframe reste montée pour éviter scintillement). */
+/* Terminal PiP : position left/top en inline (spawn bas-droite), z-index max, drag 5px. */
 .terminal-pip-panel {
   position: fixed;
-  right: 1rem;
-  bottom: 1rem;
   width: 400px;
   height: 320px;
   min-width: 280px;
