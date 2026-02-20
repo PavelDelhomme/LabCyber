@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'preact/hooks';
 import OpenInPageDropdown from './OpenInPageDropdown';
 import LabButtonDropdown from './LabButtonDropdown';
 
-function LogStatsDropdown({ onLogToggle, onStats }) {
+function LogStatsDropdown({ onLogToggle, onStats, onJournalComplet }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -17,6 +17,7 @@ function LogStatsDropdown({ onLogToggle, onStats }) {
       {open && (
         <ul class="log-stats-menu" role="menu">
           <li><button type="button" class="log-stats-item" onClick={(e) => { e.stopPropagation(); onLogToggle?.(); setOpen(false); }}>📋 Journal d'activité</button></li>
+          <li><button type="button" class="log-stats-item" onClick={(e) => { e.stopPropagation(); onJournalComplet?.(); setOpen(false); }}>📓 Journal complet (par lab)</button></li>
           <li><button type="button" class="log-stats-item" onClick={(e) => { e.stopPropagation(); onStats?.(); setOpen(false); }}>📊 Statistiques</button></li>
         </ul>
       )}
@@ -40,6 +41,7 @@ export default function Topbar({
   onLogToggle,
   onPipToggle,
   onStats,
+  onJournalComplet,
   onOptions,
   onTerminal,
   onTerminalInPanel,
@@ -133,7 +135,7 @@ export default function Topbar({
             captureOpen={capturePanelOpen}
             label="Ouvrir"
           />
-          <LogStatsDropdown onLogToggle={onLogToggle} onStats={onStats} />
+          <LogStatsDropdown onLogToggle={onLogToggle} onStats={onStats} onJournalComplet={onJournalComplet} />
           <button type="button" class="topbar-btn" onClick={onOptions} title="Options">⚙️</button>
           {showPipButton && (
             <button type="button" class="topbar-btn" onClick={onPipToggle} title="PiP scénario">📌</button>

@@ -18,34 +18,26 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Scénario** : au démarrage (lab connecté, lab par défaut), **installation des outils nécessaires** au lab pour ce scénario.
 - **Reprise lab** : **ne rien perdre** – terminaux, historique, sorties, panneaux, comme c’était.
 
-- **Court terme** : terminal panel fiable (client protocole binaire). **PoC backend Go** : `lab-terminal/` (PTY + WebSocket), route `/terminal-house/` + client `?path=terminal-house` pour tester.
-- **Moyen terme** : persistance par lab (historique + sorties), attaquant riche + packs + prédéfinitions.
-- **Long terme** : bureau fait maison, interconnexion complète, reprise lab sans perte.
+- **Court terme** : fait (Phase 1) – terminal panel, backend lab-terminal, exit, resize.
+- **Moyen terme** : Phase 2 faite – persistance par lab (onglets, journal, PiP, contexte scénario, journal complet) **et sorties PTY** : backend lab-terminal bufferise les sorties par session (`?session=tabId`), replay au reconnect ; client envoie `session` dans l’URL du WebSocket. Au rechargement, l’historique des commandes affiché dans chaque onglet terminal est restauré. Puis Phase 3 (attaquant riche, packs), Phase 4 (bureau fait maison), Phase 5 (interconnexion, reprise lab complète).
 
 **Scintillement** : pour le moment plus de scintillement signalé (à surveiller). Si ça revient, désactiver `contain`/`translateZ(0)` et vérifier avec React DevTools Profiler.
 
 ### Terminal web attaquant (panneau et PiP)
 
-- **Affichage terminal** : client `terminal-client.html` en protocole binaire ttyd (0 = output, 0x30 = input, 0x31 = resize) ; à valider en conditions réelles.
-- **Commande `exit` → fermer l’onglet** : **implémenté** (app + backend). Côté app : écoute de `postMessage` `{ type: 'lab-cyber-terminal-exit' }` et fermeture de l’onglet courant (panneau ou PiP) ; le handler ne réagit que si le message vient d’un iframe du panneau (ou du PiP pour le PiP). Côté backend : la gateway (nginx) injecte un script **avant la première balise `<script>`** dans la page ttyd ; ce script enveloppe `WebSocket` et envoie le message à la page parente **avant** le handler ttyd (pour que l’onglet se ferme avant toute tentative de reconnexion / refreshToken). Voir `gateway/nginx.conf` (location `/terminal/`, `sub_filter`). **Test** : après modification de la gateway, `make dev` ou rebuild gateway puis redémarrer ; recharger la page du lab (ou ouvrir le terminal en panneau/PiP) puis taper `exit` → l’onglet doit se fermer. **Vérifier l’injection** : avec le lab démarré, lancer `make terminal-html` ; le résultat s’affiche dans le terminal (« Injection exit : OK » ou « ABSENTE »), sans fichier à ouvrir.
-- **Panneau – historique conservé** : le panneau n’est plus démonté à la fermeture ; il reste en DOM (masqué en CSS). Les iframes sont rendues une par onglet (pas seulement l’onglet actif), donc l’état et l’historique de chaque session sont conservés quand on ferme puis rouvre le panneau.
-- **PiP – plus de rechargement sur commandes** : l’URL de l’iframe PiP n’est plus mise à jour à chaque rendu ; elle est définie une seule fois au montage (`StableTerminalIframe`), ce qui évite le rechargement intempestif (ex. après `ls`) et la perte de l’affichage.
-- Bouton « + » nouvel onglet terminal : corriger si besoin (stopPropagation, persistance).
+- **Backend** : lab-terminal (Go, PTY + WebSocket), route `/terminal-house/`, client `?path=terminal-house`. Sessions par onglet (`?session=<tabId>`).
+- **Panneau terminal** : onglets, resize (poignée, curseur col-resize), exit → fermeture de l’onglet. **Exit fonctionne** : le client envoie `postMessage({ type: 'lab-cyber-terminal-exit' })` à la fermeture du WebSocket, l’app ferme l’onglet concerné. Le reste du panneau (onglets, journal, largeur) est opérationnel.
+- **Persistance par lab** : liste des onglets, onglet actif, journal de session (notes/commandes enregistrées), largeur du panneau, état PiP (ouvert/fermé, onglets PiP, position) – tout est **sauvegardé par lab** et restauré au changement de lab ou au rechargement de la page (côté app).
+- **Journal complet** : bouton Journal & Stats → « Journal complet (par lab) » : consultation par lab et par scénario ; les notes du panneau terminal sont aussi enregistrées dans ce journal (type note, sessionId, scenarioId).
+- **PiP** : persistance par lab (ouvert/fermé, onglets, position, minimisé) ; restauration à la reprise du lab.
 
 **Ce qui est enregistré côté app**  
-- Liste des onglets (noms, nombre), onglet actif, largeur du panneau, etc. : sauvegardé dans le storage (session UI) et restauré au rechargement de la page.  
-- Chaque onglet a une URL distincte `?session=<tabId>` pour que le backend puisse associer une session par onglet (à implémenter côté ttyd/gateway si pas déjà fait).  
-- **Journal de session** (historique enregistré) : les lignes ajoutées manuellement (commandes ou notes) sont persistées en storage et restent après rechargement.
+- Par **lab** : onglets terminal (noms, nombre), onglet actif, journal de session (lignes ajoutées à la main), largeur panneau, état PiP (ouvert, onglets, position, minimisé), scenarioId en vue scénario. Restauré au rechargement et au changement de lab.
 
-**Limites connues (pas encore complètement opérationnel)**  
-1. **Connexions WebSocket qui se rouvrent** : en changeant d’onglet terminal, l’historique affiché dans le terminal (scrollback ttyd) peut se réinitialiser car le navigateur peut suspendre les iframes non visibles et couper le WebSocket. **Correction partielle** : les onglets inactifs utilisent `visibility: hidden` au lieu de `display: none` pour limiter la suspension des iframes. Pour un comportement totalement stable, le backend doit gérer `?session=<tabId>` (une session ttyd par onglet, éventuellement persistée).  
-2. **Rechargement de la page ou autre navigateur** : on **perd le contenu des sessions** (shell, scrollback). Seuls sont restaurés : la liste des onglets (noms, nombre), l’onglet actif, le journal de session (lignes enregistrées à la main). Les iframes sont rechargées donc nouvelles connexions ttyd = nouveaux shells. Pour ne pas perdre au rechargement, il faudrait une **persistance côté serveur** (ttyd ou gateway) : associer une session à un id, la restaurer au reload (hors scope actuel).  
-3. **Exit** : implémenté (client intégré (terminal-client.html) ; à la fermeture du WebSocket, postMessage `postMessage` et l’app ferme l’onglet).
-
-**Diagnostic panneau terminal (corrections déjà appliquées)**  
-1. **Historique perdu** : le body du panneau (et donc toutes les iframes) était rendu seulement quand `!terminalPanelMinimized`. Dès qu’on réduisait puis agrandissait, tout était démonté puis remonté → nouvelles iframes, plus d’historique. **Correction** : le body est toujours rendu ; en mode réduit il est caché en CSS ; les iframes restent en DOM.  
-2. **Clic sur un autre onglet** : chaque onglet a une URL avec `?session=<tabId>`. Onglets inactifs en `visibility: hidden` (au lieu de `display: none`) pour limiter la coupure WebSocket.  
-3. **Exit** : la gateway injecte un script dans la page ttyd qui envoie `postMessage({ type: 'lab-cyber-terminal-exit' })` à la fermeture du WebSocket ; l’app ferme alors l’onglet.
+**Rechargement de la page**  
+- **Sorties PTY persistées** : le backend lab-terminal enregistre les sorties par session (`?session=<tabId>`) et les renvoie au reconnect (replay). Le client `terminal-client.html` envoie le paramètre `session` dans l’URL du WebSocket. Au rechargement, chaque onglet retrouve son historique affiché (scrollback, commandes et sorties). Buffer limité à 512 Ko par session.
+- **Exit** : implémenté et opérationnel (panneau et PiP).
+- **Double-clic sur un onglet** : ouvre le renommage (délai 500 ms entre deux clics pour distinguer clic simple / double-clic).
 
 ### Panneaux et lab
 
@@ -165,8 +157,9 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Popup lab bloquée** : touche **Escape** ferme le popup lab et les autres overlays (Stats, Journal, CVE, Options).
 - **Lab actif – terminal** : ouverture du terminal en panneau depuis le popup lab ne referme plus le popup immédiatement (persistance via ref).
 - **Journal + Stats** : un seul bouton dropdown (📋 ▼) avec Journal d’activité et Stats.
-- **Panneau terminal** : en place (iframe, onglets, journal). Panneau gardé en DOM quand fermé (masqué en CSS) + une iframe par onglet → historique conservé à la fermeture/réouverture. Onglets inactifs en `visibility: hidden` (pas `display: none`) pour limiter la reconnexion WebSocket au changement d’onglet. Chaque onglet enregistré (liste, noms) en storage, URL `?session=<tabId>`. Bouton Recharger. Exit → fermeture de l’onglet si le backend envoie `postMessage`. Limite : rechargement page ou autre navigateur = perte du contenu des sessions (shell), seule la liste des onglets et le journal restent.
-- **Terminal PiP** : déplaçable (validé), plusieurs onglets. Iframe avec URL fixée au montage → plus de rechargement (ex. après `ls`). Historique conservé tant que la fenêtre PiP reste ouverte. Exit → fermeture de l’onglet si le backend envoie `postMessage`.
+- **Panneau terminal** : onglets, resize, exit (fermeture de l’onglet) OK. Persistance **par lab** : onglets, journal de session, largeur ; restauration au changement de lab et au rechargement. **Session stable** : l’iframe du terminal ne reçoit plus `src` au re-render (src fixé une seule fois au montage), ce qui évite le rechargement intempestif et la perte des commandes pendant l’utilisation. Limite : au rechargement de la **page**, le contenu des sessions est perdu (sorties PTY non persistées côté backend).
+- **Terminal PiP** : déplaçable, plusieurs onglets, persistance **par lab** (ouvert/fermé, onglets, position, minimisé). Exit → fermeture de l’onglet. Restauration à la reprise du lab.
+- **Journal complet** : Journal & Stats → « Journal complet (par lab) » ; consultation par lab et scénario ; notes du panneau enregistrées avec sessionId et scenarioId.
 - **Doc & Cours** : sous-navigation (sidebar thèmes + Doc / Cours / Outils), OWASP Top 10:2021 (catalogue + bloc Learning avec Ouvrir dans l’app / externe).
 - **Bibliothèque doc** : isolation du design (`.doc-offline-content-isolated`) pour le HTML récupéré.
 - **Capture pcap** : colonnes type Wireshark, filtre, détail ; notice « analyse machine client » (charger .pcap capturé sur son PC).

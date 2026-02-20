@@ -69,16 +69,23 @@ function hashFor(view, scenarioId, roomId) {
   return `#/${view}`;
 }
 
-/** Une iframe par onglet avec URL distincte (session=tabId) pour que chaque onglet ait sa propre session ttyd. reloadKey force un remount (bouton Recharger). */
+/** Une iframe par onglet avec URL distincte (session=tabId). src fixé une seule fois au montage pour éviter tout rechargement intempestif (re-renders parent). reloadKey change le key => nouveau montage => nouvelle session. */
 function TerminalPanelIframe({ terminalUseDefaultLab, tabName, tabId, reloadKey = 0, onReload, onIframeLoad }) {
   const url = useMemo(() => getTerminalUrl(terminalUseDefaultLab, tabId), [terminalUseDefaultLab, tabId]);
   const iframeRef = useRef(null);
+  const srcSetRef = useRef(false);
+  useEffect(() => {
+    if (!iframeRef.current || !url) return;
+    if (srcSetRef.current) return;
+    iframeRef.current.src = url;
+    srcSetRef.current = true;
+  }, [url]);
   return (
     <div class="terminal-iframe-wrap">
       {onReload && (
         <button type="button" class="terminal-reload-btn" onClick={onReload} title="Recharger le terminal (nouvelle session)">↻ Recharger</button>
       )}
-      <iframe ref={iframeRef} src={url} title={tabName} class="terminal-side-panel-iframe" key={`terminal-${tabId}-${terminalUseDefaultLab}-${reloadKey}`} onLoad={() => { if (iframeRef.current?.contentWindow) onIframeLoad?.(iframeRef.current.contentWindow); }} />
+      <iframe ref={iframeRef} title={tabName} class="terminal-side-panel-iframe" key={`terminal-${tabId}-${terminalUseDefaultLab}-${reloadKey}`} onLoad={() => { if (iframeRef.current?.contentWindow) onIframeLoad?.(iframeRef.current.contentWindow); }} />
     </div>
   );
 }
@@ -92,6 +99,11 @@ export default function App() {
   const [logOpen, setLogOpen] = useState(false);
   const [pipOpen, setPipOpen] = useState(false);
   const [terminalPipOpen, setTerminalPipOpen] = useState(false);
+  const [pipTabs, setPipTabs] = useState([{ id: '1', name: 'Session 1' }]);
+  const [pipActiveTabId, setPipActiveTabId] = useState('1');
+  const [pipMinimized, setPipMinimized] = useState(false);
+  const [pipPos, setPipPos] = useState(() => (typeof window !== 'undefined' ? { x: window.innerWidth - 420, y: window.innerHeight - 340 } : { x: 400, y: 300 }));
+  const [journalCompletOpen, setJournalCompletOpen] = useState(false);
   const [scenarioBarCollapsed, setScenarioBarCollapsed] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [cvePanelOpen, setCvePanelOpen] = useState(false);
@@ -128,10 +140,19 @@ export default function App() {
   const uiSessionRef = useRef({});
   const labTerminalLoadedRef = useRef(false);
   const labSwitchInProgressRef = useRef(false);
+  const terminalTabClickRef = useRef({ tabId: null, timeout: null });
 
   useEffect(() => {
     uiSessionRef.current = { terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth };
   }, [terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth]);
+
+  // Focus du champ renommage quand on passe en mode édition (double-clic onglet)
+  useEffect(() => {
+    if (!editingTerminalTabId) return;
+    const id = `terminal-tab-rename-${editingTerminalTabId}`;
+    const t = setTimeout(() => { document.getElementById(id)?.focus(); }, 0);
+    return () => clearTimeout(t);
+  }, [editingTerminalTabId]);
 
   const persistUiSession = (patch) => {
     if (storage?.setUiSession) storage.setUiSession({ ...uiSessionRef.current, ...patch });
@@ -201,6 +222,13 @@ export default function App() {
             setActiveTerminalTabId(ui.activeTerminalTabId || ui.terminalTabs[0].id);
             setTerminalHistory(storage.getTerminalHistory?.() || []);
           }
+          if (labState?.pip) {
+            setTerminalPipOpen(!!labState.pip.open);
+            setPipTabs(Array.isArray(labState.pip.tabs) && labState.pip.tabs.length > 0 ? labState.pip.tabs : [{ id: '1', name: 'Session 1' }]);
+            setPipActiveTabId(labState.pip.activeTabId && labState.pip.tabs?.length ? (labState.pip.tabs.some((t) => t.id === labState.pip.activeTabId) ? labState.pip.activeTabId : labState.pip.tabs[0].id) : '1');
+            setPipMinimized(!!labState.pip.minimized);
+            if (labState.pip.pos && typeof labState.pip.pos.x === 'number' && typeof labState.pip.pos.y === 'number') setPipPos(labState.pip.pos);
+          }
         }).finally(onLabTerminalLoaded);
       } else {
         onLabTerminalLoaded();
@@ -221,32 +249,52 @@ export default function App() {
   const onLabChange = (id) => {
     const next = id || 'default';
     const prevLabId = currentLabId;
-    // Sauver l'état terminal du lab actuel avant de changer
+    labSwitchInProgressRef.current = true;
+    // Sauver l'état terminal + PiP du lab actuel avant de changer
     if (prevLabId && storage?.setLabTerminalState) {
       storage.setLabTerminalState(prevLabId, {
         tabs: terminalTabs,
         activeTabId: activeTerminalTabId,
         history: terminalHistory,
+        scenarioId: view === 'scenario' ? currentScenarioId : undefined,
+        pip: {
+          open: terminalPipOpen,
+          tabs: pipTabs,
+          activeTabId: pipActiveTabId,
+          minimized: pipMinimized,
+          pos: pipPos,
+        },
       });
     }
     setCurrentLabId(next);
     storage?.setCurrentLabId?.(next);
-    // Charger l'état terminal du nouveau lab
-    storage?.getLabTerminalState?.(next)?.then?.((labState) => {
-      if (labState) {
-        const tabs = Array.isArray(labState.tabs) && labState.tabs.length > 0 ? labState.tabs : [{ id: '1', name: 'Session 1' }];
-        const activeTab = labState.activeTabId && tabs.some((t) => t.id === labState.activeTabId) ? labState.activeTabId : tabs[0].id;
-        setTerminalTabs(tabs);
-        setActiveTerminalTabId(activeTab);
-        setTerminalHistory(Array.isArray(labState.history) ? labState.history : []);
-      } else {
-        const ui = storage?.getUiSession?.();
-        const fallbackTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
-        setTerminalTabs(fallbackTabs);
-        setActiveTerminalTabId(ui?.activeTerminalTabId && fallbackTabs.some((t) => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : fallbackTabs[0].id);
-        setTerminalHistory([]);
-      }
-    });
+    const p = storage?.getLabTerminalState?.(next);
+    if (p && typeof p.then === 'function') {
+      p.then((labState) => {
+        if (labState) {
+          const tabs = Array.isArray(labState.tabs) && labState.tabs.length > 0 ? labState.tabs : [{ id: '1', name: 'Session 1' }];
+          const activeTab = labState.activeTabId && tabs.some((t) => t.id === labState.activeTabId) ? labState.activeTabId : tabs[0].id;
+          setTerminalTabs(tabs);
+          setActiveTerminalTabId(activeTab);
+          setTerminalHistory(Array.isArray(labState.history) ? labState.history : []);
+          if (labState.pip) {
+            setTerminalPipOpen(!!labState.pip.open);
+            setPipTabs(Array.isArray(labState.pip.tabs) && labState.pip.tabs.length > 0 ? labState.pip.tabs : [{ id: '1', name: 'Session 1' }]);
+            setPipActiveTabId(labState.pip.activeTabId && labState.pip.tabs?.length ? (labState.pip.tabs.some((t) => t.id === labState.pip.activeTabId) ? labState.pip.activeTabId : labState.pip.tabs[0].id) : '1');
+            setPipMinimized(!!labState.pip.minimized);
+            if (labState.pip.pos && typeof labState.pip.pos.x === 'number' && typeof labState.pip.pos.y === 'number') setPipPos(labState.pip.pos);
+          }
+        } else {
+          const ui = storage?.getUiSession?.();
+          const fallbackTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
+          setTerminalTabs(fallbackTabs);
+          setActiveTerminalTabId(ui?.activeTerminalTabId && fallbackTabs.some((t) => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : fallbackTabs[0].id);
+          setTerminalHistory([]);
+        }
+      }).finally(() => { labSwitchInProgressRef.current = false; });
+    } else {
+      labSwitchInProgressRef.current = false;
+    }
   };
 
   useEffect(() => {
@@ -280,7 +328,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onEscape);
   }, [labPanelOpen, statsOpen, logOpen, cvePanelOpen, optionsPanelOpen]);
 
-  // Persister l'état terminal (tabs, history) par lab quand il change (après chargement initial, pas pendant switch)
+  // Persister l'état terminal + PiP + scénario par lab (après chargement initial, pas pendant switch)
   useEffect(() => {
     if (!labTerminalLoadedRef.current || labSwitchInProgressRef.current) return;
     const labId = currentLabId || 'default';
@@ -289,12 +337,33 @@ export default function App() {
         tabs: terminalTabs,
         activeTabId: activeTerminalTabId,
         history: terminalHistory,
+        scenarioId: view === 'scenario' && currentScenarioId ? currentScenarioId : undefined,
+        pip: {
+          open: terminalPipOpen,
+          tabs: pipTabs,
+          activeTabId: pipActiveTabId,
+          minimized: pipMinimized,
+          pos: pipPos,
+        },
       });
     }
-  }, [currentLabId, terminalTabs, activeTerminalTabId, terminalHistory, storage]);
+  }, [currentLabId, view, currentScenarioId, terminalTabs, activeTerminalTabId, terminalHistory, terminalPipOpen, pipTabs, pipActiveTabId, pipMinimized, pipPos, storage]);
   useEffect(() => {
     if (terminalPanelOpen) setTerminalPanelEverOpened(true);
   }, [terminalPanelOpen]);
+
+  // À l'ouverture du PiP, charger l'état PiP du lab courant
+  useEffect(() => {
+    if (!terminalPipOpen || !storage || labSwitchInProgressRef.current) return;
+    storage.getLabTerminalState?.(currentLabId || 'default')?.then?.(labState => {
+      if (labState?.pip) {
+        setPipTabs(Array.isArray(labState.pip.tabs) && labState.pip.tabs.length > 0 ? labState.pip.tabs : [{ id: '1', name: 'Session 1' }]);
+        setPipActiveTabId(labState.pip.activeTabId && labState.pip.tabs?.length ? (labState.pip.tabs.some(t => t.id === labState.pip.activeTabId) ? labState.pip.activeTabId : labState.pip.tabs[0].id) : '1');
+        setPipMinimized(!!labState.pip.minimized);
+        if (labState.pip.pos && typeof labState.pip.pos.x === 'number' && typeof labState.pip.pos.y === 'number') setPipPos(labState.pip.pos);
+      }
+    });
+  }, [terminalPipOpen, currentLabId, storage]);
 
   useEffect(() => {
     const onMessage = (e) => {
@@ -424,6 +493,7 @@ export default function App() {
           onLogToggle={() => setLogOpen(o => !o)}
           onPipToggle={() => setPipOpen(o => !o)}
           onStats={() => setStatsOpen(true)}
+          onJournalComplet={() => setJournalCompletOpen(true)}
           onOptions={onOptionsClick}
           onTerminal={() => window.open(getTerminalUrl(), '_blank', 'noopener')}
           onTerminalInPanel={openTerminalPanel}
@@ -491,12 +561,28 @@ export default function App() {
       </main>
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />
       <StatsModal open={statsOpen} onClose={() => setStatsOpen(false)} scenarios={scenarios} storage={storage} />
+      <JournalCompletModal open={journalCompletOpen} onClose={() => setJournalCompletOpen(false)} storage={storage} labs={labs} currentLabId={currentLabId} scenarios={scenarios} />
       <button type="button" class="log-fab" onClick={() => setLogOpen(true)} aria-label="Ouvrir le journal" title="Journal d'activité">📋</button>
       <button type="button" class="cve-fab" onClick={() => setCvePanelOpen(true)} aria-label="Recherche CVE" title="Rechercher un CVE">CVE</button>
       <CvePanel open={cvePanelOpen} onClose={() => setCvePanelOpen(false)} />
       {showPipButton && <PipPanel open={pipOpen} scenario={currentScenario} onClose={() => setPipOpen(false)} />}
       {view === 'scenario' && <ScenarioBottomBar scenario={currentScenario} storage={storage} collapsed={scenarioBarCollapsed} onCollapsed={setScenarioBarCollapsed} onExpand={() => window.location.hash = '#/scenario/' + (currentScenarioId || '')} />}
-      <TerminalPipPanel open={terminalPipOpen} onClose={() => setTerminalPipOpen(false)} getTerminalUrl={getTerminalUrl} />
+      <TerminalPipPanel
+        open={terminalPipOpen}
+        onClose={() => setTerminalPipOpen(false)}
+        getTerminalUrl={() => getTerminalUrl(terminalUseDefaultLab, pipActiveTabId)}
+        minimized={pipMinimized}
+        onMinimize={setPipMinimized}
+        tabs={pipTabs}
+        activeTabId={pipActiveTabId}
+        pos={pipPos}
+        onStateChange={(s) => {
+          if (s.tabs != null) setPipTabs(s.tabs);
+          if (s.activeTabId != null) setPipActiveTabId(s.activeTabId);
+          if (s.minimized != null) setPipMinimized(s.minimized);
+          if (s.pos != null) setPipPos(s.pos);
+        }}
+      />
       {terminalPanelEverOpened && (
         <div
           class={`terminal-side-panel ${terminalPanelMinimized ? 'terminal-side-panel-minimized' : ''} ${!terminalPanelOpen ? 'terminal-side-panel-hidden' : ''}`}
@@ -533,8 +619,28 @@ export default function App() {
                     key={tab.id}
                     type="button"
                     class={`terminal-tab-btn ${activeTerminalTabId === tab.id ? 'active' : ''}`}
-                    onClick={() => setActiveTerminalTabId(tab.id)}
                     title={tab.name}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (editingTerminalTabId === tab.id) return;
+                      const ref = terminalTabClickRef.current;
+                      if (ref.tabId === tab.id && ref.timeout) {
+                        clearTimeout(ref.timeout);
+                        ref.timeout = null;
+                        ref.tabId = null;
+                        setEditingTerminalTabId(tab.id);
+                        return;
+                      }
+                      ref.tabId = tab.id;
+                      ref.timeout = setTimeout(() => { setActiveTerminalTabId(tab.id); ref.timeout = null; ref.tabId = null; }, 500);
+                    }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      const ref = terminalTabClickRef.current;
+                      if (ref.timeout) { clearTimeout(ref.timeout); ref.timeout = null; }
+                      ref.tabId = null;
+                      setEditingTerminalTabId(tab.id);
+                    }}
                   >
                     {editingTerminalTabId === tab.id ? (
                       <input
@@ -550,7 +656,7 @@ export default function App() {
                         onChange={(e) => setTerminalTabs(t => t.map(x => x.id === tab.id ? { ...x, name: e.target.value } : x))}
                       />
                     ) : (
-                      <span onDoubleClick={(e) => { e.stopPropagation(); setEditingTerminalTabId(tab.id); }} title="Double-clic pour renommer">{tab.name}</span>
+                      <span title="Double-clic pour renommer">{tab.name}</span>
                     )}
                     {terminalTabs.length > 1 && (
                       <span class="terminal-tab-close" onClick={(e) => { e.stopPropagation(); const rest = terminalTabs.filter(x => x.id !== tab.id); setTerminalTabs(rest); if (activeTerminalTabId === tab.id) setActiveTerminalTabId(rest[0]?.id || ''); }} aria-label="Fermer">×</span>
@@ -575,7 +681,7 @@ export default function App() {
           <div class="terminal-journal">
             <h4 class="terminal-journal-title">Journal de session (historique enregistré)</h4>
             <p class="terminal-journal-desc">Ajoute une ligne (commande ou note) pour la garder en mémoire.</p>
-            <form class="terminal-journal-form" onSubmit={(e) => { e.preventDefault(); const t = terminalJournalInput.trim(); if (t) { setTerminalHistory(prev => [...prev, { id: String(Date.now()), ts: new Date().toISOString(), text: t }]); setTerminalJournalInput(''); } }}>
+            <form class="terminal-journal-form" onSubmit={(e) => { e.preventDefault(); const t = terminalJournalInput.trim(); if (t) { const labId = currentLabId || 'default'; const entry = { id: String(Date.now()), ts: new Date().toISOString(), text: t, sessionId: activeTerminalTabId }; setTerminalHistory(prev => [...prev, entry]); storage?.appendLabJournalEntry?.(labId, { ...entry, type: 'note', scenarioId: view === 'scenario' ? currentScenarioId : undefined }); setTerminalJournalInput(''); } }}>
               <input id="terminal-journal-input" name="terminal-journal-entry" type="text" class="terminal-journal-input" value={terminalJournalInput} onInput={e => setTerminalJournalInput(e.target.value)} placeholder="Commande ou note à enregistrer" />
               <button type="submit" class="btn btn-secondary">Ajouter</button>
             </form>

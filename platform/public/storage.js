@@ -24,7 +24,9 @@
   const KEY_TOPOLOGIES = 'topologies';
   const KEY_TERMINAL_HISTORY = 'terminalHistory';
   const KEY_LAB_TERMINAL_PREFIX = 'labTerminal_';
+  const KEY_LAB_JOURNAL_PREFIX = 'labJournal_';
   const KEY_UI_SESSION = 'uiSession';
+  const MAX_LAB_JOURNAL_ENTRIES = 1000;
   const KEY_CAPTURE_META_PREFIX = 'captureMeta_';
   const KEY_CAPTURE_BLOB_PREFIX = 'captureBlob_';
   const KEY_CAPTURE_SESSIONS_LIST_PREFIX = 'captureSessionsList_';
@@ -371,20 +373,38 @@
       var key = KEY_LAB_TERMINAL_PREFIX + labId;
       return getData(null, key).then(function (raw) {
         if (!raw || typeof raw !== 'object') return null;
+        var pip = raw.pip;
         return {
           tabs: Array.isArray(raw.tabs) && raw.tabs.length > 0 ? raw.tabs.slice() : null,
           activeTabId: raw.activeTabId != null ? String(raw.activeTabId) : null,
-          history: Array.isArray(raw.history) ? raw.history.slice() : []
+          history: Array.isArray(raw.history) ? raw.history.slice() : [],
+          scenarioId: raw.scenarioId != null ? String(raw.scenarioId) : null,
+          pip: pip && typeof pip === 'object' ? {
+            open: !!pip.open,
+            tabs: Array.isArray(pip.tabs) && pip.tabs.length > 0 ? pip.tabs.slice() : null,
+            activeTabId: pip.activeTabId != null ? String(pip.activeTabId) : null,
+            minimized: !!pip.minimized,
+            pos: pip.pos && typeof pip.pos === 'object' && typeof pip.pos.x === 'number' && typeof pip.pos.y === 'number' ? { x: pip.pos.x, y: pip.pos.y } : null
+          } : null
         };
       });
     },
     setLabTerminalState: function (labId, state) {
       if (!labId || !state || typeof state !== 'object') return;
       var key = KEY_LAB_TERMINAL_PREFIX + labId;
+      var pip = state.pip;
       var toSave = {
         tabs: Array.isArray(state.tabs) && state.tabs.length > 0 ? state.tabs.slice() : null,
         activeTabId: state.activeTabId != null ? String(state.activeTabId) : null,
-        history: Array.isArray(state.history) ? state.history.slice(-MAX_TERMINAL_HISTORY) : []
+        history: Array.isArray(state.history) ? state.history.slice(-MAX_TERMINAL_HISTORY) : [],
+        scenarioId: state.scenarioId != null ? String(state.scenarioId) : null,
+        pip: pip && typeof pip === 'object' ? {
+          open: !!pip.open,
+          tabs: Array.isArray(pip.tabs) && pip.tabs.length > 0 ? pip.tabs.slice() : null,
+          activeTabId: pip.activeTabId != null ? String(pip.activeTabId) : null,
+          minimized: !!pip.minimized,
+          pos: pip.pos && typeof pip.pos === 'object' ? { x: Number(pip.pos.x), y: Number(pip.pos.y) } : null
+        } : null
       };
       writeQueue.push(setData(STORE_DATA, key, toSave));
     },
@@ -394,10 +414,35 @@
       return getData(null, key).then(function (raw) {
         var state = raw && typeof raw === 'object' ? raw : { tabs: null, activeTabId: null, history: [] };
         var history = Array.isArray(state.history) ? state.history.slice() : [];
-        history.push({ id: String(Date.now()), ts: new Date().toISOString(), text: entry.text || '' });
+        history.push({ id: String(Date.now()), ts: new Date().toISOString(), text: entry.text || '', sessionId: entry.sessionId != null ? String(entry.sessionId) : undefined });
         if (history.length > MAX_TERMINAL_HISTORY) history = history.slice(-MAX_TERMINAL_HISTORY);
         state.history = history;
         writeQueue.push(setData(STORE_DATA, key, state));
+      });
+    },
+    getLabJournal: function (labId) {
+      if (!labId) return Promise.resolve([]);
+      return getData(null, KEY_LAB_JOURNAL_PREFIX + labId).then(function (arr) {
+        return Array.isArray(arr) ? arr.slice() : [];
+      });
+    },
+    appendLabJournalEntry: function (labId, entry) {
+      if (!labId || !entry || typeof entry !== 'object') return Promise.resolve();
+      var key = KEY_LAB_JOURNAL_PREFIX + labId;
+      return getData(null, key).then(function (arr) {
+        var list = Array.isArray(arr) ? arr.slice() : [];
+        list.push({
+          id: String(entry.id || Date.now()),
+          ts: entry.ts || new Date().toISOString(),
+          type: entry.type || 'note',
+          text: entry.text != null ? String(entry.text) : '',
+          content: entry.content != null ? entry.content : undefined,
+          scenarioId: entry.scenarioId != null ? String(entry.scenarioId) : undefined,
+          sessionId: entry.sessionId != null ? String(entry.sessionId) : undefined,
+          attachments: Array.isArray(entry.attachments) ? entry.attachments.slice() : undefined
+        });
+        if (list.length > MAX_LAB_JOURNAL_ENTRIES) list = list.slice(-MAX_LAB_JOURNAL_ENTRIES);
+        writeQueue.push(setData(STORE_DATA, key, list));
       });
     },
 

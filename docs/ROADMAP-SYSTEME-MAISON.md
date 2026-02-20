@@ -87,7 +87,7 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 
 - [x] Persister par lab : liste terminaux, historique commandes (journal), restauration à la reprise. Sorties (backend) : à venir.
 - [x] Plusieurs terminaux par lab ; chaque lab restaure ses onglets et journal. Contenu PTY (output) : à venir.
-- [ ] **Étape 3 – Journal / Notes complet + terminal flottant + contexte scénario** (à faire) :
+- [x] **Étape 3 – Journal / Notes complet + terminal flottant + contexte scénario** (implémenté) :
   - **Journal session** : par lab et par session terminal (chaque onglet = session) ; notes journal distinctes de l’historique commandes.
   - **Terminal flottant (PiP)** : persistance par lab (ouvert/fermé, session PiP) ; restauration à la reprise du lab.
   - **Journal / Notes complet** (bouton Journal & Stats, vue dédiée) :
@@ -95,8 +95,13 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
     - Transfert terminal lab → journal (exporter sortie, commande, sélection).
     - Consultation par lab et par scénario ; filtrage par lab/scénario en cours.
     - Lien optionnel avec scénario actif (un journal peut être « lié » à un scénario pour retrouver les notes dans ce contexte).
-  - **Sorties PTY** : backend lab-terminal – persister les sorties par session/lab pour restauration (Phase 2 étape 2 complément).
-  - **Contexte scénario par lab** : lab peut avoir un scénario associé (en cours) ; le journal et les outils utilisent ce contexte. Référence pour Phase 3 prédéfinitions.
+  - [x] **Sorties PTY** : backend lab-terminal – buffer des sorties par session (`?session=tabId`), replay au reconnect ; client envoie `session` dans l’URL WS. Au rechargement, l’historique affiché dans chaque onglet terminal est restauré (buffer 512 Ko/session).
+  - [x] **Contexte scénario par lab** : scenarioId sauvegardé ; entrées journal liables à un scénario. Référence Phase 3.
+
+**Reste à faire (roadmap système maison)**  
+- **Phase 3** : Attaquant riche, packs, prédéfinitions à la création du lab.  
+- **Phase 4** : Bureau fait maison.  
+- **Phase 5** : Interconnexion + reprise lab complète.
 
 ### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme)
 
@@ -156,3 +161,5 @@ Ce document sera mis à jour au fur et à mesure (phases cochées, décisions te
 - **2026-02-20** : Roadmap réécrite selon specs complètes ; vuln-network (Redis sysctl retiré du compose, note hôte) ; bWAPP en avertissements connus.
 - **2026-02-21** : PoC backend terminal **lab-terminal** (Go) : PTY + WebSocket, protocole binaire. Service dans docker-compose, route gateway `/terminal-house/`, client `?path=terminal-house`. Phase 2 partiellement cochée.
 - **2026-02-21** : Phase 2 étapes 1–2 implémentées (persistance terminal par lab : onglets, journal, restauration). Phase 2 étape 3 détaillée (journal complet, PiP par lab, contexte scénario, sorties PTY). Phase 3 : référence aux Phase 2 étapes 2–3 pour prédéfinitions.
+- **2026-02** : Phase 2 étape 3 implémentée (PiP par lab, journal complet, journal session avec sessionId/scenarioId). STATUS.md mis à jour (panneau terminal OK, exit OK ; rechargement = perte contenu tant que sorties PTY non persistées). Roadmap : bloc « Reste à faire » ajouté (sorties PTY puis Phases 3–5).
+- **2026-02-13** : **Sorties PTY** implémentées : lab-terminal lit `session` en query WS, buffer 512 Ko/session, replay au reconnect ; terminal-client.html envoie `session` dans l’URL WS. Double-clic onglet terminal pour renommer (délai 500 ms). Phase 2 terminée pour le terminal.

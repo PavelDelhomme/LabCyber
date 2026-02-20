@@ -1,6 +1,7 @@
 // lab-terminal : backend terminal maison pour Lab Cyber.
 // Protocole binaire WebSocket : 0 = output PTY, 0x30 = input, 0x31 = resize (JSON columns/rows).
 // Compatible avec le client platform/public/terminal-client.html (xterm.js).
+// Persistance : par session (?session=tabId), buffer des sorties PTY ; au reconnect, replay du buffer puis stream en direct.
 
 package main
 
@@ -21,6 +22,8 @@ const (
 	msgOutput = 0
 	msgInput  = 0x30
 	msgResize = 0x31
+
+	maxSessionBuffer = 512 * 1024 // 512 KB par session
 )
 
 var upgrader = websocket.Upgrader{
@@ -30,6 +33,39 @@ var upgrader = websocket.Upgrader{
 type resizeMsg struct {
 	Columns int `json:"columns"`
 	Rows    int `json:"rows"`
+}
+
+// sessionBuffers : sorties PTY par session (lab + tab) pour replay au rechargement page
+var sessionBuffers = struct {
+	mu sync.RWMutex
+	m  map[string][]byte
+}{m: make(map[string][]byte)}
+
+func appendSessionOutput(sessionID string, data []byte) {
+	if sessionID == "" {
+		return
+	}
+	sessionBuffers.mu.Lock()
+	defer sessionBuffers.mu.Unlock()
+	buf := sessionBuffers.m[sessionID]
+	buf = append(buf, data...)
+	if len(buf) > maxSessionBuffer {
+		buf = buf[len(buf)-maxSessionBuffer:]
+	}
+	sessionBuffers.m[sessionID] = buf
+}
+
+func getAndKeepSessionBuffer(sessionID string) []byte {
+	if sessionID == "" {
+		return nil
+	}
+	sessionBuffers.mu.RLock()
+	buf := sessionBuffers.m[sessionID]
+	if len(buf) > 0 {
+		buf = append([]byte(nil), buf...)
+	}
+	sessionBuffers.mu.RUnlock()
+	return buf
 }
 
 func main() {
@@ -51,12 +87,34 @@ func handleToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleWS(w http.ResponseWriter, r *http.Request) {
+	sessionID := r.URL.Query().Get("session")
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("upgrade: %v", err)
 		return
 	}
 	defer conn.Close()
+
+	var mu sync.Mutex
+	writeWS := func(msgType int, data []byte) error {
+		mu.Lock()
+		defer mu.Unlock()
+		buf := make([]byte, 1+len(data))
+		buf[0] = byte(msgType)
+		copy(buf[1:], data)
+		return conn.WriteMessage(websocket.BinaryMessage, buf)
+	}
+
+	// Replay du buffer existant pour cette session (rechargement page)
+	if sessionID != "" {
+		replay := getAndKeepSessionBuffer(sessionID)
+		if len(replay) > 0 {
+			if err := writeWS(msgOutput, replay); err != nil {
+				return
+			}
+		}
+	}
 
 	shell := os.Getenv("SHELL")
 	if shell == "" {
@@ -79,17 +137,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 		cmd.Process.Kill()
 	}()
 
-	var mu sync.Mutex
-	writeWS := func(msgType int, data []byte) error {
-		mu.Lock()
-		defer mu.Unlock()
-		buf := make([]byte, 1+len(data))
-		buf[0] = byte(msgType)
-		copy(buf[1:], data)
-		return conn.WriteMessage(websocket.BinaryMessage, buf)
-	}
-
-	// PTY -> WebSocket ; à la fermeture du PTY (ex. exit), on ferme la connexion pour que le client envoie postMessage
+	// PTY -> WebSocket + buffer pour replay
 	go func() {
 		buf := make([]byte, 4096)
 		for {
@@ -105,7 +153,9 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 			if n == 0 {
 				continue
 			}
-			if err := writeWS(msgOutput, buf[:n]); err != nil {
+			chunk := buf[:n]
+			appendSessionOutput(sessionID, chunk)
+			if err := writeWS(msgOutput, chunk); err != nil {
 				return
 			}
 		}

@@ -35,6 +35,7 @@
   var wsScheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   var wsBase = wsScheme + '//' + window.location.host;
   var path = (new URLSearchParams(window.location.search)).get('path') || 'terminal';
+  var session = (new URLSearchParams(window.location.search)).get('session') || '';
 
   function run() {
     fetch(base + '/' + path + '/token')
@@ -42,6 +43,7 @@
       .then(function (token) {
         token = (token || '').trim();
         var wsUrl = wsBase + '/' + path + '/ws' + (token ? '?token=' + encodeURIComponent(token) : '');
+        if (session) wsUrl += (wsUrl.indexOf('?') >= 0 ? '&' : '?') + 'session=' + encodeURIComponent(session);
         var ws = new WebSocket(wsUrl);
         ws.binaryType = 'arraybuffer';
         var term = new window.Terminal({ cursorBlink: true, theme: { background: '#0c0c0c' } });

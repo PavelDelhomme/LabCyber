@@ -1143,6 +1143,22 @@ body {
 .modal-close:hover { color: var(--text); }
 
 .modal-body { padding: 1.25rem; overflow-y: auto; }
+.modal-content-wide { max-width: 640px; }
+
+.journal-complet-body { min-height: 200px; }
+.journal-complet-filters { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; align-items: center; }
+.journal-complet-filters label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+.journal-complet-filters select { padding: 0.35rem 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); color: var(--text); }
+.journal-complet-summary { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+.journal-complet-list { list-style: none; margin: 0; padding: 0; max-height: 50vh; overflow-y: auto; }
+.journal-complet-entry { padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.journal-complet-entry:last-child { border-bottom: none; }
+.journal-complet-ts { color: var(--text-muted); margin-right: 0.5rem; font-size: 0.8rem; }
+.journal-complet-type { font-weight: 600; color: var(--accent); margin-right: 0.5rem; }
+.journal-complet-session { font-size: 0.75rem; color: var(--text-muted); margin-right: 0.35rem; }
+.journal-complet-scenario { font-size: 0.75rem; color: var(--accent); }
+.journal-complet-text { margin-top: 0.25rem; white-space: pre-wrap; word-break: break-word; }
+.journal-complet-loading, .journal-complet-empty { color: var(--text-muted); font-size: 0.9rem; }
 
 .stats-summary {
   display: grid;
