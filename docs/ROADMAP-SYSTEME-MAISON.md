@@ -106,7 +106,7 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 
 - [x] **Config packs et prédéfinitions** : `platform/data/toolPacks.json` (packs : base, network, web, bruteforce) ; `platform/data/labToolPresets.json` (byScenario, byLab) ; doc `platform/docs/04-PHASE3-OUTILS.md`.
 - [ ] Conteneur attaquant : conserver ou étendre la base type Kali (voire Black Arch, etc.) ; **outils de base** + **packs d’outils** (sélectionnables).
-- [ ] **UI** : afficher les packs recommandés pour le scénario actif (lecture des JSON).
+- [x] **UI** : dans la vue Scénario, bloc « Packs d'outils recommandés pour ce scénario » (nom + aperçu outils).
 - [ ] **Prédéfinitions à la création du lab** : à la création du lab ou au démarrage scénario, installation/activation des outils des packs listés. *S’appuie sur Phase 2 : persistance par lab (terminaux, journal, contexte scénario).*
 - [ ] Backend terminal : lancer le shell dans ce conteneur attaquant (déjà le cas ; optionnel : conteneur lab dérivé).
 

@@ -4,6 +4,8 @@ import { escapeHtml, getTerminalUrl } from '../lib/store';
 export default function ScenarioView({ scenarios, config, currentScenarioId, storage, onOpenTerminalInPanel, docSources }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
   const [taskIndex, setTaskIndex] = useState(0);
+  const [toolPacks, setToolPacks] = useState(null);
+  const [labToolPresets, setLabToolPresets] = useState(null);
 
   const status = storage?.getScenarioStatus(scenario?.id) || 'not_started';
   const tasks = scenario?.tasks || [];
@@ -15,6 +17,25 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
     if (allDone && status !== 'completed') storage.setScenarioStatus(scenario.id, 'completed');
   }, [scenario?.id, allDone, status, storage]);
 
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetch('/data/toolPacks.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/data/labToolPresets.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([packs, presets]) => {
+      if (!cancelled) {
+        setToolPacks(packs);
+        setLabToolPresets(presets);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const packIds = (scenario?.id && labToolPresets?.byScenario) ? (labToolPresets.byScenario[scenario.id] || []) : [];
+  const recommendedPacks = (toolPacks?.packs && packIds.length)
+    ? packIds.map(id => toolPacks.packs.find(p => p.id === id)).filter(Boolean)
+    : [];
+
   if (!scenario) {
     return <div class="view"><p class="section-desc">Choisis un scénario dans la barre latérale.</p></div>;
   }
@@ -25,7 +46,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
     storage?.setTaskDone(scenario.id, i, done);
     storage?.setLastScenario(scenario.id, taskIndex);
   };
-  const termUrl = getTerminalUrl(config);
+  const termUrl = getTerminalUrl();
 
   const startScenario = () => {
     storage?.setScenarioStatus(scenario.id, 'in_progress');
@@ -75,6 +96,22 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, sto
             )}
           </div>
         </header>
+        {recommendedPacks.length > 0 && (
+          <section class="room-section scenario-tool-packs" aria-label="Packs d'outils recommandés">
+            <h3>Packs d'outils recommandés pour ce scénario</h3>
+            <p class="scenario-tool-packs-desc">Le conteneur attaquant inclut ces ensembles d'outils. Utilise le terminal à côté pour les commandes.</p>
+            <div class="scenario-tool-packs-list">
+              {recommendedPacks.map(pack => (
+                <div key={pack.id} class="scenario-tool-pack-badge" title={pack.description || ''}>
+                  <span class="scenario-tool-pack-name">{escapeHtml(pack.name)}</span>
+                  {pack.tools && pack.tools.length > 0 && (
+                    <span class="scenario-tool-pack-tools">{pack.tools.slice(0, 5).join(', ')}{pack.tools.length > 5 ? '…' : ''}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         <section class="room-section machines-section">
           <h3>Déployer / Accéder aux cibles</h3>
           <div class="machine-cards">

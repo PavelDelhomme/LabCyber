@@ -24,6 +24,12 @@
       "name": "Authentification / bruteforce",
       "description": "Hydra, dictionnaires",
       "tools": ["hydra", "wordlists"]
+    },
+    {
+      "id": "osint",
+      "name": "OSINT",
+      "description": "Recherche d'infos (theHarvester, etc.)",
+      "tools": ["theharvester", "curl", "dnsutils"]
     }
   ]
 }

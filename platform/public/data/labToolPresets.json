@@ -1,9 +1,28 @@
 {
-  "description": "Prédéfinitions outils par scénario ou par lab (Phase 3). À la création du lab ou au démarrage d'un scénario, les packs listés peuvent être installés ou activés. Référence toolPacks.json.",
+  "description": "Prédéfinitions outils par scénario ou par lab (Phase 3). Les packs listés sont recommandés pour le scénario. Référence toolPacks.json.",
   "byScenario": {
     "scenario-01-scan-reseau": ["base", "network"],
     "scenario-02-sqli-dvwa": ["base", "web"],
-    "scenario-03-redis": ["base", "network"]
+    "scenario-03-acces-ssh-redis": ["base", "network"],
+    "scenario-04-api-idor-sqli": ["base", "web"],
+    "scenario-05-xss-dvwa": ["base", "web"],
+    "scenario-06-stego-flag": ["base"],
+    "scenario-07-crypto-base64-aes": ["base"],
+    "scenario-08-red-team-1h": ["base", "network", "web", "bruteforce"],
+    "scenario-09-phishing-analyse": ["base"],
+    "scenario-10-forensics-tshark": ["base", "network"],
+    "scenario-11-csrf-dvwa": ["base", "web"],
+    "scenario-12-file-upload-dvwa": ["base", "web"],
+    "scenario-13-hydra-ssh": ["base", "network", "bruteforce"],
+    "scenario-14-nikto-scan": ["base", "web"],
+    "scenario-15-theharvester-osint": ["base", "network", "osint"],
+    "scenario-16-gobuster-dir": ["base", "web"],
+    "scenario-17-command-injection": ["base", "web"],
+    "scenario-18-cookie-session": ["base", "web"],
+    "scenario-19-burp-curl": ["base", "web"],
+    "scenario-20-dns-enum": ["base", "network"],
+    "scenario-21-sniffing-trafic": ["base", "network"],
+    "scenario-22-creer-ses-labs": ["base"]
   },
   "byLab": {}
 }

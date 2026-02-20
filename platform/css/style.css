@@ -622,6 +622,16 @@ body {
 .machine-card.note-only { color: var(--text); cursor: default; }
 .machine-card.note-only:hover { background: var(--bg-hover); border-color: var(--border); }
 
+.scenario-tool-packs-desc { font-size: 0.9rem; color: var(--text-muted); margin: 0 0 0.75rem; }
+.scenario-tool-packs-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.scenario-tool-pack-badge {
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.15rem;
+  background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius);
+  padding: 0.5rem 0.75rem; font-size: 0.85rem;
+}
+.scenario-tool-pack-name { font-weight: 600; color: var(--accent); }
+.scenario-tool-pack-tools { font-size: 0.75rem; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .machine-note {
   font-size: 0.78rem;
   color: var(--text-muted);

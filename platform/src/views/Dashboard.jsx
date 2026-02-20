@@ -8,7 +8,7 @@ function byCategory(categories, categoryId) {
 export default function Dashboard({ data, scenarios, config, targets, challenges, searchQuery, filterCategory, storage, onNavigate, onOpenScenario, onOpenRoom, onOpenTerminalInNewTab, onOpenTerminalInPanel }) {
   const categories = data?.categories || [];
   const rooms = data?.rooms || [];
-  const termUrl = getTerminalUrl(config);
+  const termUrl = getTerminalUrl();
 
   const filteredScenarios = useMemo(() => {
     let list = scenarios || [];
