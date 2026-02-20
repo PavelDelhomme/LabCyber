@@ -105,7 +105,7 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 ### Phase 3 – Attaquant riche + packs + prédéfinitions à la création du lab (moyen terme) – en cours
 
 - [x] **Config packs et prédéfinitions** : `platform/data/toolPacks.json` (packs : base, network, web, bruteforce) ; `platform/data/labToolPresets.json` (byScenario, byLab) ; doc `platform/docs/04-PHASE3-OUTILS.md`.
-- [ ] Conteneur attaquant : conserver ou étendre la base type Kali (voire Black Arch, etc.) ; **outils de base** + **packs d’outils** (sélectionnables).
+- [x] **Conteneur attaquant** : image Kali pré-construite avec **outils de base** + **tous les packs** (base, network, web, bruteforce, osint) ; alignée sur `toolPacks.json` / `labToolPresets.json` ; opérationnel pour tous les scénarios (ex. scénario 1 scan avec nmap, etc.).
 - [x] **UI** : dans la vue Scénario, bloc « Packs d'outils recommandés pour ce scénario » (nom + aperçu outils).
 - [ ] **Prédéfinitions à la création du lab** : à la création du lab ou au démarrage scénario, installation/activation des outils des packs listés. *S’appuie sur Phase 2 : persistance par lab (terminaux, journal, contexte scénario).*
 - [ ] Backend terminal : lancer le shell dans ce conteneur attaquant (déjà le cas ; optionnel : conteneur lab dérivé).
@@ -175,3 +175,4 @@ Ce document sera mis à jour au fur et à mesure (phases cochées, décisions te
 - **2026-02** : **Focus terminal** : à l’ouverture du panneau ou au changement d’onglet, focus automatique sur xterm (client : term.focus(), postMessage `lab-cyber-terminal-focus`, focus on window). **Phase 3 démarrée** : toolPacks.json, labToolPresets.json, 04-PHASE3-OUTILS.md ; STATUS et roadmap mis à jour.
 - **2026-02-13** : **Phase 3 UX** : barre scénario z-index 9100 (au-dessus du panneau terminal), design unifié ; panneau terminal avec onglets verticaux à gauche ; section Cibles en chips ; marge droite sans gap superflu ; roadmap mise à jour (bloc Phase 3 – UX layout et design).
 - **2026-02-13** : **Un seul scénario en cours** : au démarrage ou reprise d’un scénario, tout autre scénario « en cours » passe automatiquement en pause.
+- **2026-02-13** (branche `feature/phase3-conteneur-attaquant`) : **Conteneur attaquant Phase 3** : Dockerfile labellisé (Phase 3 packs), `/workspace/phase3-packs.txt` ; image opérationnelle avec tous les packs (base, network, web, bruteforce, osint) pour tests scénarios.

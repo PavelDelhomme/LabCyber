@@ -1,7 +1,11 @@
 # Machine attaquant : Kali Linux (outils pentest, sniffing, spoofing, forensique)
 # Pour scénarios type TryHackMe / HackTheBox : nmap, hydra, sqlmap, tcpdump, scapy, etc.
+# Phase 3 (roadmap système maison) : image alignée sur toolPacks.json / labToolPresets.json :
+#   packs inclus = base, network, web, bruteforce, osint (tous les scénarios couverts).
 
 FROM kalilinux/kali-rolling
+
+LABEL org.labcyber.phase3.packs="base,network,web,bruteforce,osint"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -54,6 +58,10 @@ RUN arch=$(dpkg --print-architecture) && \
     fi
 
 WORKDIR /workspace
+
+# Fichier de référence Phase 3 : packs inclus dans cette image (pour vérif / scripts)
+RUN echo "base,network,web,bruteforce,osint" > /workspace/phase3-packs.txt && \
+    echo "# Packs Phase 3 inclus (toolPacks.json). Tous les scénarios labToolPresets.byScenario sont couverts." >> /workspace/phase3-packs.txt
 
 # Rappel : cibles du lab (vuln-network, vuln-api, dvwa, juice-shop, bwapp)
 RUN echo 'echo "=== Lab Cyber – Attaquant (Kali) ==="' >> /root/.bashrc && \

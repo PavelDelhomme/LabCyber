@@ -33,9 +33,12 @@ Ce document décrit la cible Phase 3 du système maison : **packs d’outils** e
 - **Config** : `toolPacks.json` (packs base, network, web, bruteforce, osint) et `labToolPresets.json` avec tous les scénarios dans `byScenario`. Fichiers dans `data/` et `public/data/`.
 - **UI** : dans la vue Scénario, bloc « Packs d'outils recommandés pour ce scénario » (nom du pack + aperçu des outils).
 
+- **Conteneur attaquant opérationnel** : l'image `attacker/` (Kali) est **pré-construite avec tous les packs** (base, network, web, bruteforce, osint). Les outils correspondants sont installés dans le Dockerfile (nmap, hydra, sqlmap, tcpdump, scapy, nikto, gobuster, theHarvester, etc.). Label Docker `org.labcyber.phase3.packs` et fichier `/workspace/phase3-packs.txt` pour référence. **Tous les scénarios** de `labToolPresets.byScenario` sont donc utilisables sans installation à la demande.
+
 ## Suite prévue
 
-1. **Installation** : au démarrage du lab ou au lancement d’un scénario, exécuter un script ou un service qui installe les paquets du pack (ex. `apt-get install -y nmap tcpdump` pour le pack `network`). À trancher : conteneur pré-construit avec tous les packs vs. installation à la demande.
+1. **Sélection de packs** (optionnel) : à la création d'un lab, permettre de choisir les packs à inclure ; aujourd'hui une seule image « tout-en-un » pour simplifier les tests.
+2. **Installation à la demande** (optionnel, long terme) : image minimale + script d'installation des packs au démarrage du scénario, si on souhaite alléger l'image.
 2. **Sélection de packs** : à la création d’un lab, permettre de choisir les packs à inclure (optionnel).
 
 ## Référence
