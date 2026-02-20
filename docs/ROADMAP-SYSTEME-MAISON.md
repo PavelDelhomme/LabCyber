@@ -115,6 +115,7 @@ Ce document décrit la vision et le plan pour le **système maison** : terminal 
 - [x] Panneau terminal : onglets verticaux à gauche (sélection de session).
 - [x] Cibles dans la barre : design cohérent (chips, Copier / Terminal).
 - [x] Marge droite : contenu et barre = largeur panneau (pas de gap superflu).
+- [x] Un seul scénario « en cours » à la fois : au démarrage ou reprise d’un scénario, les autres passent automatiquement en pause.
 - [ ] Vérification E2E : scénario + terminal + barre lisibles sans recouvrement.
 
 ### Phase 4 – Bureau fait maison (léger, vrai bureau) (moyen / long terme)
@@ -173,3 +174,4 @@ Ce document sera mis à jour au fur et à mesure (phases cochées, décisions te
 - **2026-02-13** : **Sorties PTY** implémentées : lab-terminal lit `session` en query WS, buffer 512 Ko/session, replay au reconnect ; terminal-client.html envoie `session` dans l’URL WS. Double-clic onglet terminal pour renommer (délai 500 ms). Phase 2 terminée pour le terminal.
 - **2026-02** : **Focus terminal** : à l’ouverture du panneau ou au changement d’onglet, focus automatique sur xterm (client : term.focus(), postMessage `lab-cyber-terminal-focus`, focus on window). **Phase 3 démarrée** : toolPacks.json, labToolPresets.json, 04-PHASE3-OUTILS.md ; STATUS et roadmap mis à jour.
 - **2026-02-13** : **Phase 3 UX** : barre scénario z-index 9100 (au-dessus du panneau terminal), design unifié ; panneau terminal avec onglets verticaux à gauche ; section Cibles en chips ; marge droite sans gap superflu ; roadmap mise à jour (bloc Phase 3 – UX layout et design).
+- **2026-02-13** : **Un seul scénario en cours** : au démarrage ou reprise d’un scénario, tout autre scénario « en cours » passe automatiquement en pause.

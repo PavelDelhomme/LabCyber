@@ -49,6 +49,11 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
   const termUrl = getTerminalUrl();
 
   const startScenario = () => {
+    (scenarios || []).forEach(s => {
+      if (s.id !== scenario.id && storage?.getScenarioStatus(s.id) === 'in_progress') {
+        storage.setScenarioStatus(s.id, 'paused');
+      }
+    });
     storage?.setScenarioStatus(scenario.id, 'in_progress');
     if (currentLabId && storage?.setScenarioLabId) storage.setScenarioLabId(scenario.id, currentLabId);
     onOpenTerminalInPanel?.();
@@ -57,7 +62,14 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
     onOpenTerminalInPanel?.();
   };
   const pauseScenario = () => storage?.setScenarioStatus(scenario.id, 'paused');
-  const resumeScenario = () => storage?.setScenarioStatus(scenario.id, 'in_progress');
+  const resumeScenario = () => {
+    (scenarios || []).forEach(s => {
+      if (s.id !== scenario.id && storage?.getScenarioStatus(s.id) === 'in_progress') {
+        storage.setScenarioStatus(s.id, 'paused');
+      }
+    });
+    storage?.setScenarioStatus(scenario.id, 'in_progress');
+  };
   const abandonScenario = () => storage?.setScenarioStatus(scenario.id, 'abandoned');
   const resetScenario = () => storage?.setScenarioStatus(scenario.id, 'not_started');
 
