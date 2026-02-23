@@ -30,7 +30,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Persistance par lab** : liste des onglets, onglet actif, journal de session (notes/commandes enregistrées), largeur du panneau, état PiP (ouvert/fermé, onglets PiP, position) – tout est **sauvegardé par lab** et restauré au changement de lab ou au rechargement de la page (côté app).
 - **Journal complet** : bouton Journal & Stats → « Journal complet (par lab) » : consultation par lab et par scénario ; les notes du panneau terminal sont aussi enregistrées dans ce journal (type note, sessionId, scenarioId).
 - **PiP** : persistance par lab (ouvert/fermé, onglets, position, minimisé) ; restauration à la reprise du lab. Position **absolue** (left/top), spawn bas-droite, **drag par pas de 5 px** ; z-index 99999 ; conteneur **div + object** (plus iframe) pour le rendu. Voir roadmap (2026-02-20) pour le détail.
-- **Backlog terminal** : **historique par session** – chaque onglet doit avoir son propre historique (affichage/replay) ; partage optionnel plus tard. À faire : isoler l’historique par tabId/session (actuellement nouvel onglet peut réafficher l’historique d’une autre session).
+- **Historique par session** – chaque onglet doit avoir son propre historique (affichage/replay) ; partage optionnel plus tard. À faire : isoler l’historique par tabId/session (actuellement nouvel onglet peut réafficher l’historique d’une autre session).
 
 **Ce qui est enregistré côté app**  
 - Par **lab** : onglets terminal (noms, nombre), onglet actif, journal de session (lignes ajoutées à la main), largeur panneau, état PiP (ouvert, onglets, position, minimisé), scenarioId en vue scénario. Restauré au rechargement et au changement de lab.

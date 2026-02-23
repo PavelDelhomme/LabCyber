@@ -62,8 +62,23 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
   const [dragOff, setDragOff] = useState({ x: 0, y: 0 });
   const svgRef = useRef(null);
   const initialLoad = useRef(true);
+  const prevLabIdRef = useRef(effectiveLabId);
+  const lastSimStateRef = useRef({ simulations: [], nodes: [], edges: [], currentSimId: null });
+  lastSimStateRef.current = { simulations, nodes, edges, currentSimId };
 
   useEffect(() => {
+    const prevLabId = prevLabIdRef.current;
+    if (prevLabId !== effectiveLabId && storage?.setNetworkSimulations) {
+      const { simulations: prevSims, nodes: prevNodes, edges: prevEdges, currentSimId: prevCurId } = lastSimStateRef.current;
+      if (prevCurId) {
+        const updated = prevSims.map((s) =>
+          s.id === prevCurId ? { ...s, nodes: prevNodes, edges: prevEdges, updatedAt: new Date().toISOString() } : s
+        );
+        storage.setNetworkSimulations(prevLabId, { simulations: updated, currentId: prevCurId });
+      }
+    }
+    prevLabIdRef.current = effectiveLabId;
+
     let data = storage?.getNetworkSimulations?.(effectiveLabId) || { simulations: [], currentId: null };
     const oldTopo = topologies[effectiveLabId];
     if (

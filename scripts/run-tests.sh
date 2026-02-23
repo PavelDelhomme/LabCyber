@@ -69,13 +69,37 @@ done
 echo ""
 
 # ---- 1. Validation JSON ----
-echo "[1/10] Validation JSON (rooms, scenarios, config)..."
+echo "[1/11] Validation JSON (rooms, scenarios, config, toolPacks, labToolPresets)..."
 python3 -c "
 import json
-for name, path in [('rooms.json', 'platform/data/rooms.json'), ('scenarios.json', 'platform/data/scenarios.json'), ('config.json', 'platform/data/config.json')]:
-    with open(path) as f:
-        d = json.load(f)
-    print('  OK', name)
+paths = [
+    ('rooms.json', 'platform/data/rooms.json'),
+    ('scenarios.json', 'platform/data/scenarios.json'),
+    ('config.json', 'platform/data/config.json'),
+    ('toolPacks.json', 'platform/data/toolPacks.json'),
+    ('labToolPresets.json', 'platform/data/labToolPresets.json'),
+]
+for name, path in paths:
+    try:
+        with open(path) as f:
+            d = json.load(f)
+        print('  OK', name)
+    except FileNotFoundError:
+        print('  SKIP', name, '(fichier absent)')
+    except Exception as e:
+        print('  FAIL', name, e)
+        exit(1)
+# Scénarios: structure minimale (id, title, tasks ou machines)
+with open('platform/data/scenarios.json') as f:
+    s = json.load(f)
+for sc in s.get('scenarios', []):
+    if not sc.get('id') or not sc.get('title'):
+        print('  FAIL scenarios: entrée sans id/title')
+        exit(1)
+    if sc.get('howto') and not isinstance(sc['howto'], str):
+        print('  FAIL scenarios: howto doit être une chaîne')
+        exit(1)
+print('  OK scenarios structure + howto')
 " || { echo "  FAIL JSON"; FAIL=1; }
 echo ""
 
@@ -83,21 +107,22 @@ LAB_UP=0
 if lab_running; then LAB_UP=1; fi
 
 if [ "$LAB_UP" -eq 0 ]; then
-  echo "[2/10] Conteneurs … SKIP (lab non démarré)"
-  echo "[3/10] HTTP Plateforme … SKIP"
-  echo "[4/10] HTTP Cibles … SKIP"
-  echo "[5/10] Réseau … SKIP"
-  echo "[6/10] Logs vuln-api … SKIP"
-  echo "[7/10] Logs frontend … (exécuté ci-dessous)"
-  echo "[8/10] Config hostnames … (exécuté ci-dessous)"
-  echo "[9/10] Route terminal … SKIP"
-  echo "[10/10] Fichiers statiques … SKIP"
+  echo "[2/11] Conteneurs … SKIP (lab non démarré)"
+  echo "[3/11] HTTP Plateforme … SKIP"
+  echo "[4/11] HTTP Cibles … SKIP"
+  echo "[5/11] Réseau … SKIP"
+  echo "[6/11] Logs vuln-api … SKIP"
+  echo "[7/11] Logs frontend … (exécuté ci-dessous)"
+  echo "[8/11] Config hostnames … (exécuté ci-dessous)"
+  echo "[9/11] Route terminal … SKIP"
+  echo "[10/11] Fichiers statiques … SKIP"
+  echo "[11/11] Terminal + données Phase 3 … SKIP (lab non démarré)"
   echo ""
   echo ">>> Pour tous les tests : make up   puis   make test"
   if [ "$REQUIRE_LAB" = "1" ]; then echo ">>> TEST_REQUIRE_LAB=1 : échec (lab non démarré)."; exit 1; fi
 else
   # ---- 2. Conteneurs ----
-  echo "[2/10] Conteneurs (docker compose ps)..."
+  echo "[2/11] Conteneurs (docker compose ps)..."
   docker compose ps --format json 2>/dev/null | python3 -c "
 import json, sys
 data = sys.stdin.read()
@@ -114,7 +139,7 @@ print('  OK tous running')
   echo ""
 
   # ---- 3. HTTP Plateforme ----
-  echo "[3/10] HTTP Plateforme (gateway port $GATEWAY_PORT)..."
+  echo "[3/11] HTTP Plateforme (gateway port $GATEWAY_PORT)..."
   for url in "/" "/data/rooms.json" "/data/scenarios.json" "/demo-phishing.html" "/test-logs.html"; do
     code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL$url" 2>/dev/null || echo "000")
     if [ "$code" = "200" ]; then echo "  OK $url $code"; else echo "  FAIL $url $code"; FAIL=1; fi
@@ -124,7 +149,7 @@ print('  OK tous running')
   echo ""
 
   # ---- 4. HTTP Cibles ----
-  echo "[4/10] HTTP Cibles (via gateway)..."
+  echo "[4/11] HTTP Cibles (via gateway)..."
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 -H "Host: api.lab" "$GATEWAY_URL/api/health" 2>/dev/null || echo "000")
   if [ "$code" = "200" ]; then echo "  OK api.lab $code"; else echo "  FAIL vuln-api $code"; FAIL=1; fi
   if container_running dvwa 2>/dev/null; then
@@ -142,25 +167,25 @@ print('  OK tous running')
   echo ""
 
   # ---- 5. Réseau ----
-  echo "[5/10] Réseau (attaquant -> vuln-network)..."
+  echo "[5/11] Réseau (attaquant -> vuln-network)..."
   docker compose exec -T attaquant nmap -sV -Pn -p 22 vuln-network 2>/dev/null | grep -q "22/tcp.*open.*ssh" && echo "  OK SSH détecté" || { echo "  FAIL nmap"; FAIL=1; }
   echo ""
 
   # ---- 6. Logs vuln-api ----
-  echo "[6/10] Logs vuln-api..."
+  echo "[6/11] Logs vuln-api..."
   curl -s -o /dev/null --connect-timeout 2 -H "Host: api.lab" "$GATEWAY_URL/api/health" 2>/dev/null || true
   sleep 1
   docker compose logs vuln-api 2>&1 | tail -30 | grep -qE '"action".*"request"|GET /api/health' && echo "  OK logs" || echo "  WARN aucun log requête"
   echo ""
 
   # ---- 9. Route terminal ----
-  echo "[9/10] Route terminal (Host: terminal.lab)..."
+  echo "[9/11] Route terminal (Host: terminal.lab)..."
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 -H "Host: terminal.lab" "$GATEWAY_URL/" 2>/dev/null || echo "000")
   if [ "$code" = "200" ] || [ "$code" = "101" ] || [ "$code" = "000" ]; then echo "  OK terminal.lab $code"; else echo "  WARN terminal $code"; fi
   echo ""
 
   # ---- 10. Fichiers plateforme (app Vite buildée) ----
-  echo "[10/10] Fichiers plateforme (app, data)..."
+  echo "[10/11] Fichiers plateforme (app, data)..."
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/" 2>/dev/null || echo "000")
   if [ "$code" = "200" ]; then echo "  OK / (app)"; else echo "  FAIL / $code"; FAIL=1; fi
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/data/rooms.json" 2>/dev/null || echo "000")
@@ -169,14 +194,14 @@ print('  OK tous running')
 fi
 
 # ---- 7. Logs frontend (toujours) ----
-echo "[7/10] Logs frontend (logger + intégration)..."
+echo "[7/11] Logs frontend (logger + intégration)..."
 [ -f "platform/js/logger.js" ] && grep -q "getEntries\|LabCyberLogger" platform/js/logger.js 2>/dev/null && echo "  OK logger.js" || { echo "  FAIL logger.js"; FAIL=1; }
 [ -f "platform/js/app.js" ] && grep -q "LabCyberLogger\|logEvent" platform/js/app.js 2>/dev/null && echo "  OK app.js" || { echo "  FAIL app.js"; FAIL=1; }
 [ -f "platform/index.html" ] && grep -q "log-panel\|log-entries\|logger.js" platform/index.html 2>/dev/null && echo "  OK index.html (panneau logs)" || { echo "  FAIL index.html"; FAIL=1; }
 echo ""
 
 # ---- 8. Config hostnames (toujours) ----
-echo "[8/10] Config hostnames (config.json)..."
+echo "[8/11] Config hostnames (config.json)..."
 python3 -c "
 import json
 with open('platform/data/config.json') as f:
@@ -189,6 +214,19 @@ if missing:
     exit(1)
 print('  OK hostnames:', list(h.keys()))
 " || { echo "  FAIL config hostnames"; FAIL=1; }
+echo ""
+
+# ---- 11. Fichiers terminal + data Phase 3 (toujours) ----
+echo "[11/11] Fichiers terminal + data Phase 3..."
+TERM_FAIL=0
+[ -f "platform/public/terminal-client.html" ] || { echo "  FAIL terminal-client.html absent"; TERM_FAIL=1; }
+grep -q "session\|get('session')" platform/public/terminal-client.html 2>/dev/null || { echo "  WARN terminal-client.html sans param session"; }
+# Contrat : l'URL du terminal contient toujours session= (historique par session)
+[ -f "platform/src/lib/store.js" ] && grep -q "session=" platform/src/lib/store.js 2>/dev/null && grep -q "getTerminalUrl" platform/src/lib/store.js 2>/dev/null && echo "  OK store getTerminalUrl (session dans URL)" || { echo "  WARN store getTerminalUrl/session"; }
+[ -f "platform/data/toolPacks.json" ] && echo "  OK toolPacks.json" || { echo "  WARN toolPacks.json absent"; }
+[ -f "platform/data/labToolPresets.json" ] && echo "  OK labToolPresets.json" || { echo "  WARN labToolPresets.json absent"; }
+[ -f "lab-terminal/main.go" ] && grep -q "sessionID\|session" lab-terminal/main.go 2>/dev/null && echo "  OK lab-terminal (session)" || true
+[ $TERM_FAIL -eq 1 ] && FAIL=1
 echo ""
 
 if [ $FAIL -eq 0 ]; then

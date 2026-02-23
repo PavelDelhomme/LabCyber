@@ -6,12 +6,15 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"sync"
 
 	"github.com/creack/pty"
@@ -88,6 +91,14 @@ func handleToken(w http.ResponseWriter, r *http.Request) {
 
 func handleWS(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
+	if sessionID == "" {
+		b := make([]byte, 8)
+		if _, err := rand.Read(b); err == nil {
+			sessionID = "anon-" + hex.EncodeToString(b)
+		} else {
+			sessionID = "anon-" + strconv.Itoa(os.Getpid())
+		}
+	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

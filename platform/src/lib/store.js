@@ -5,13 +5,14 @@ function getStorage() {
   return typeof window !== 'undefined' ? window.LabCyberStorage : null;
 }
 
-/** URL du terminal : client intégré (terminal-client.html) qui se connecte au backend lab-terminal (path=terminal-house) et envoie postMessage à la fermeture (exit). sessionId optionnel pour une session par onglet. reloadKey > 0 = nouvelle session (évite replay + PTY mort après rechargement). */
+/** URL du terminal : client intégré (terminal-client.html) qui se connecte au backend lab-terminal (path=terminal-house) et envoie postMessage à la fermeture (exit). sessionId = identifiant unique par onglet (évite mélange d'historique entre sessions). reloadKey > 0 = nouvelle session. */
 export function getTerminalUrl(useDefaultLab = true, sessionId = '', reloadKey = 0) {
   if (typeof window === 'undefined') return '#';
   const base = window.location.origin.replace(/\/$/, '');
   let url = `${base}/terminal-client.html?path=terminal-house`;
-  const sid = (reloadKey > 0 && sessionId) ? `${sessionId}-r${reloadKey}` : sessionId;
-  if (sid) url += '&session=' + encodeURIComponent(sid);
+  let sid = (reloadKey > 0 && sessionId) ? `${sessionId}-r${reloadKey}` : (sessionId || '');
+  if (!sid) sid = 's' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+  url += '&session=' + encodeURIComponent(sid);
   return url;
 }
 
