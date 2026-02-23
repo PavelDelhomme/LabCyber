@@ -49,17 +49,17 @@ Depuis la machine qui héberge le lab, expose les ports via SSH :
 Sur la **machine cliente** (distant) :
 
 ```bash
-ssh -L 8080:localhost:8080 -L 5000:localhost:5000 -L 4280:localhost:4280 -L 3128:localhost:3128 user@IP_MACHINE_LAB
+ssh -L 4080:localhost:4080 -L 5000:localhost:5000 -L 4280:localhost:4280 -L 3128:localhost:3128 user@IP_MACHINE_LAB
 ```
 
-Ensuite, sur le client, ouvre http://localhost:8080 pour la plateforme, etc.
+Ensuite, sur le client, ouvre http://localhost:4080 pour la plateforme, etc.
 
 ### VPN (WireGuard / OpenVPN sur l’hôte)
 
 Le lab **ne contient pas** de conteneur VPN prêt à l’emploi (WireGuard dans Docker nécessite des privilèges et une config réseau hôte). Pour un accès type VPN :
 
 1. **Installer WireGuard (ou OpenVPN) sur la machine hôte** qui exécute Docker (Linux, Windows, macOS).
-2. Les clients VPN se connectent à l’hôte ; une fois connectés, ils peuvent accéder aux services exposés (8080, 5000, etc.) via l’IP de l’hôte.
+2. Les clients VPN se connectent à l’hôte ; une fois connectés, ils peuvent accéder aux services exposés (4080, 5000, etc.) via l’IP de l’hôte.
 
 C’est une configuration système à faire en dehors du dépôt Lab Cyber. Des tutoriels existent pour [WireGuard](https://www.wireguard.com/quickstart/) et [OpenVPN](https://openvpn.net/community-resources/).
 

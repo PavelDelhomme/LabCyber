@@ -32,7 +32,7 @@
 
 ### Exercice sur la plateforme
 
-La **plateforme web** (http://localhost:8080) propose une **page de démo pédagogique** (exemple de fausse page de connexion) dans la room **Phishing**. Objectif : voir à quoi peut ressembler une page de phishing, sans jamais l’utiliser contre de vraies personnes.
+La **plateforme web** (http://localhost:4080) propose une **page de démo pédagogique** (exemple de fausse page de connexion) dans la room **Phishing**. Objectif : voir à quoi peut ressembler une page de phishing, sans jamais l’utiliser contre de vraies personnes.
 
 ## Spam et arnaques
 

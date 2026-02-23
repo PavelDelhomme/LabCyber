@@ -65,7 +65,7 @@ export default function ProxyToolsView() {
             <input
               type="url"
               class="proxy-tools-url"
-              placeholder="https://api.lab:8080/api/health ou http://vuln-api:5000/api/users/1"
+              placeholder="https://api.lab:4080/api/health ou http://vuln-api:5000/api/users/1"
               value={url}
               onInput={e => setUrl(e.target.value)}
             />

@@ -360,14 +360,14 @@
       "tasks": [
         {
           "title": "Ouvrir la page de démo",
-          "content": "Clique sur le lien « Page de démo phishing » (ou va sur http://localhost:8080/demo-phishing.html). Tu vois une page qui ressemble à une connexion. En conditions réelles, il n’y aurait pas de bannière rouge.",
+          "content": "Clique sur le lien « Page de démo phishing » (ou va sur http://localhost:4080/demo-phishing.html). Tu vois une page qui ressemble à une connexion. En conditions réelles, il n’y aurait pas de bannière rouge.",
           "command": null,
           "tip": "La bannière rouge est là pour rappeler que c’est un exercice. En vrai, la page serait identique visuellement à un vrai site.",
           "learn": "Les pages de phishing imitent des sites légitimes (banque, messagerie). La différence se voit dans l’URL et le certificat."
         },
         {
           "title": "Vérifier l’URL et le certificat",
-          "content": "Regarde la barre d’adresse : tu es sur localhost:8080. Un vrai site de banque aurait un domaine du type www.ma-banque.fr et un cadenas HTTPS valide. Clique sur le cadenas (si présent) pour voir le certificat : il doit correspondre au domaine.",
+          "content": "Regarde la barre d’adresse : tu es sur localhost:4080. Un vrai site de banque aurait un domaine du type www.ma-banque.fr et un cadenas HTTPS valide. Clique sur le cadenas (si présent) pour voir le certificat : il doit correspondre au domaine.",
           "command": null,
           "tip": "En phishing réel, l’URL peut être banque-securise.xyz ou un sous-domaine trompeur. Toujours vérifier avant de saisir un mot de passe.",
           "learn": "Ne jamais cliquer sur un lien de connexion reçu par email : aller sur le site en tapant l’URL ou via un favori."

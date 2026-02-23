@@ -43,7 +43,7 @@ Si tu as Node et Playwright sur l’hôte :
 ```bash
 make up
 npm install && npx playwright install chromium
-BASE_URL=http://127.0.0.1:8080 npx playwright test
+BASE_URL=http://127.0.0.1:4080 npx playwright test
 ```
 
 En production, utiliser **uniquement** `make test-e2e`.

@@ -12,7 +12,7 @@ export default function ProxyConfigView({ storage, currentLabId: appLabId }) {
   const labId = appLabId || storage?.getCurrentLabId?.() || 'default';
   const [proxies, setProxies] = useState([]);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: '', type: 'http', host: '', port: '8080', username: '', password: '' });
+  const [form, setForm] = useState({ name: '', type: 'http', host: '', port: '4080', username: '', password: '' });
   const [copyStatus, setCopyStatus] = useState('');
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function ProxyConfigView({ storage, currentLabId: appLabId }) {
       name: (name || '').trim() || `${type} - ${host}:${port}`,
       type: type || 'http',
       host: host.trim(),
-      port: String(port || '8080').trim(),
+      port: String(port || '4080').trim(),
       username: (username || '').trim() || undefined,
       password: (password || '').trim() ? (password || '').trim() : undefined,
     };
@@ -43,7 +43,7 @@ export default function ProxyConfigView({ storage, currentLabId: appLabId }) {
       persistProxies([...proxies, entry]);
     }
     setEditingId(null);
-    setForm({ name: '', type: 'http', host: '', port: '8080', username: '', password: '' });
+    setForm({ name: '', type: 'http', host: '', port: '4080', username: '', password: '' });
   };
 
   const startEdit = (p) => {
@@ -52,7 +52,7 @@ export default function ProxyConfigView({ storage, currentLabId: appLabId }) {
       name: p.name || '',
       type: p.type || 'http',
       host: p.host || '',
-      port: p.port || '8080',
+      port: p.port || '4080',
       username: p.username || '',
       password: p.password || '',
     });
@@ -62,7 +62,7 @@ export default function ProxyConfigView({ storage, currentLabId: appLabId }) {
     persistProxies(proxies.filter((x) => x.id !== id));
     if (editingId === id) {
       setEditingId(null);
-      setForm({ name: '', type: 'http', host: '', port: '8080', username: '', password: '' });
+      setForm({ name: '', type: 'http', host: '', port: '4080', username: '', password: '' });
     }
   };
 
@@ -97,13 +97,13 @@ export default function ProxyConfigView({ storage, currentLabId: appLabId }) {
               ))}
             </select>
             <input type="text" placeholder="Host (ex. 127.0.0.1)" value={form.host} onInput={(e) => setForm((f) => ({ ...f, host: e.target.value }))} required />
-            <input type="text" placeholder="Port (8080)" value={form.port} onInput={(e) => setForm((f) => ({ ...f, port: e.target.value }))} />
+            <input type="text" placeholder="Port (4080)" value={form.port} onInput={(e) => setForm((f) => ({ ...f, port: e.target.value }))} />
             <input type="text" placeholder="Username (optionnel)" value={form.username} onInput={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
             <input type="password" placeholder="Password (optionnel)" value={form.password} onInput={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
           </div>
           <button type="submit" class="btn btn-primary">{editingId ? 'Enregistrer' : 'Ajouter'}</button>
           {editingId && (
-            <button type="button" class="btn btn-secondary" onClick={() => { setEditingId(null); setForm({ name: '', type: 'http', host: '', port: '8080', username: '', password: '' }); }}>Annuler</button>
+            <button type="button" class="btn btn-secondary" onClick={() => { setEditingId(null); setForm({ name: '', type: 'http', host: '', port: '4080', username: '', password: '' }); }}>Annuler</button>
           )}
         </form>
 

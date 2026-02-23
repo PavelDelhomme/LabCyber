@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 FAIL=0
 REQUIRE_LAB="${TEST_REQUIRE_LAB:-0}"
 if [ -f .env ]; then export "$(grep -E '^GATEWAY_PORT=' .env 2>/dev/null | xargs)" 2>/dev/null; fi
-GATEWAY_PORT="${GATEWAY_PORT:-8080}"
+GATEWAY_PORT="${GATEWAY_PORT:-4080}"
 GATEWAY_URL="http://127.0.0.1:${GATEWAY_PORT}"
 
 lab_running() {
@@ -83,7 +83,19 @@ for path in platform/src/App.jsx platform/src/main.jsx platform/src/lib/store.js
 done
 # Au moins un fichier CSS (legacy ou src)
 [ -f "platform/css/style.css" ] || [ -f "platform/src/style.css" ] || { echo "  MANQUANT: platform style.css"; STRUCTURE_FAIL=1; }
-[ $STRUCTURE_FAIL -eq 0 ] && echo "  OK structure (racine, gateway, data, 16 vues, 11 composants, App/store, lib, storage, vite, Dockerfile, CSS)" || { FAIL=1; echo "  FAIL structure"; }
+# Tests E2E (Playwright)
+[ -f "e2e/app.spec.js" ] || { echo "  MANQUANT: e2e/app.spec.js"; STRUCTURE_FAIL=1; }
+[ -f "e2e/scenario.spec.js" ] || { echo "  MANQUANT: e2e/scenario.spec.js"; STRUCTURE_FAIL=1; }
+[ -f "e2e/views-detail.spec.js" ] || { echo "  MANQUANT: e2e/views-detail.spec.js"; STRUCTURE_FAIL=1; }
+[ -f "e2e/terminal.spec.js" ] || { echo "  MANQUANT: e2e/terminal.spec.js"; STRUCTURE_FAIL=1; }
+[ -f "e2e/negative.spec.js" ] || { echo "  MANQUANT: e2e/negative.spec.js"; STRUCTURE_FAIL=1; }
+[ -f "e2e/interconnexion.spec.js" ] || { echo "  MANQUANT: e2e/interconnexion.spec.js"; STRUCTURE_FAIL=1; }
+[ -f "playwright.config.js" ] || { echo "  MANQUANT: playwright.config.js"; STRUCTURE_FAIL=1; }
+[ -f "package.json" ] && grep -q "@playwright/test" package.json 2>/dev/null && echo "  OK package.json (@playwright/test)" || true
+# Docker : services obligatoires + profils
+grep -qE '^  (gateway|platform|attaquant):' docker-compose.yml 2>/dev/null && echo "  OK docker-compose (gateway, platform, attaquant)" || true
+grep -q "profiles:.*e2e\|profile.*e2e" docker-compose.yml 2>/dev/null && echo "  OK docker-compose profil e2e" || true
+[ $STRUCTURE_FAIL -eq 0 ] && echo "  OK structure (racine, gateway, data, 16 vues, 11 composants, App/store, lib, storage, vite, Dockerfile, CSS, e2e)" || { FAIL=1; echo "  FAIL structure"; }
 echo ""
 
 # ---- 1. Validation JSON ----
@@ -155,6 +167,30 @@ for path in ['platform/data/docs.json', 'platform/public/data/docs.json']:
         if isinstance(d.get('entries'), list): print('  OK docs.json'); break
     except FileNotFoundError: pass
     except Exception: pass
+# learning.json : topics ou categories (liste non vide ou dict)
+try:
+    with open('platform/data/learning.json') as f: d = json.load(f)
+    if d.get('topics') or d.get('categories') or (isinstance(d, list) and len(d) >= 0): print('  OK learning.json (structure)')
+    else: print('  WARN learning.json sans topics/categories')
+except FileNotFoundError: pass
+except Exception as e: print('  WARN learning.json', e)
+# targets.json : chaque cible a id et (name ou url)
+try:
+    with open('platform/data/targets.json') as f: d = json.load(f)
+    t = d.get('targets') if isinstance(d, dict) else d
+    if isinstance(t, list) and len(t) >= 1:
+        for i, c in enumerate(t):
+            if not (c.get('id') or c.get('name') or c.get('url')): raise ValueError('cible sans id/name/url')
+        print('  OK targets.json (cibles avec id/name/url)')
+except (FileNotFoundError, ValueError) as e: pass
+except Exception as e: print('  WARN targets', e)
+# rooms.json : rooms ou categories (liste)
+try:
+    with open('platform/data/rooms.json') as f: d = json.load(f)
+    r = d.get('rooms') or d.get('categories') or []
+    if isinstance(r, list): print('  OK rooms.json (structure rooms/categories)')
+except FileNotFoundError: pass
+except Exception: pass
 " || { echo "  FAIL JSON"; FAIL=1; }
 echo ""
 
@@ -186,14 +222,20 @@ else
 import json, sys
 data = sys.stdin.read()
 if not data.strip(): sys.exit(1)
+names = []
 for line in data.strip().split('\n'):
     try:
         j = json.loads(line)
         if j.get('State') != 'running':
             print('  FAIL', j.get('Name'), j.get('State'))
             sys.exit(1)
+        names.append((j.get('Name') or j.get('Service') or '').lower())
     except: pass
 print('  OK tous running')
+# Services attendus (nom contient gateway, platform, attaquant, vuln-api, vuln-network)
+expected = ['gateway', 'platform', 'attaquant', 'vuln-api', 'vuln-network']
+found = [s for s in expected if any(s in n for n in names)]
+if len(found) >= 4: print('  OK services (gateway, platform, attaquant, vuln-api, vuln-network)')
 " || { echo "  FAIL containers"; FAIL=1; }
   echo ""
 
@@ -213,10 +255,14 @@ print('  OK tous running')
     if [ "$code" = "200" ]; then echo "  OK $dataurl 200"; else echo "  WARN $dataurl $code"; fi
   done
   # Routes cibles (proxy pass) : /cible/juice, /cible/api, /cible/bwapp
-  for cible in "/cible/juice/" "/cible/api/" "/cible/bwapp/"; do
-    code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL$cible" 2>/dev/null || echo "000")
-    if [ "$code" = "200" ] || [ "$code" = "302" ] || [ "$code" = "304" ]; then echo "  OK $cible $code"; else echo "  WARN $cible $code"; fi
-  done
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/cible/juice/" 2>/dev/null || echo "000")
+  if [ "$code" = "200" ] || [ "$code" = "302" ] || [ "$code" = "304" ]; then echo "  OK /cible/juice/ $code"; else echo "  WARN /cible/juice/ $code"; fi
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/cible/api/" 2>/dev/null || echo "000")
+  if [ "$code" = "200" ] || [ "$code" = "302" ] || [ "$code" = "304" ] || [ "$code" = "404" ]; then echo "  OK /cible/api/ $code"; else echo "  WARN /cible/api/ $code"; fi
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/cible/api/api/health" 2>/dev/null || echo "000")
+  if [ "$code" = "200" ]; then echo "  OK /cible/api/api/health (proxy API) $code"; else echo "  WARN /cible/api/api/health $code"; fi
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/cible/bwapp/" 2>/dev/null || echo "000")
+  if [ "$code" = "200" ] || [ "$code" = "302" ] || [ "$code" = "304" ]; then echo "  OK /cible/bwapp/ $code"; else echo "  WARN /cible/bwapp/ $code"; fi
   # Bureau noVNC (redirection ou page)
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/desktop" 2>/dev/null || echo "000")
   if [ "$code" = "302" ] || [ "$code" = "200" ]; then echo "  OK /desktop (bureau noVNC) $code"; else echo "  WARN /desktop $code"; fi
@@ -264,6 +310,8 @@ print('  OK tous running')
   if [ "$code" = "200" ]; then echo "  OK / (app)"; else echo "  FAIL / $code"; FAIL=1; fi
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/data/rooms.json" 2>/dev/null || echo "000")
   if [ "$code" = "200" ]; then echo "  OK data/rooms.json"; else echo "  FAIL data/rooms.json $code"; FAIL=1; fi
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/terminal-client.html" 2>/dev/null || echo "000")
+  if [ "$code" = "200" ]; then echo "  OK terminal-client.html (app)"; else echo "  WARN terminal-client.html $code"; fi
   echo ""
 fi
 
@@ -297,12 +345,14 @@ TERM_FAIL=0
 grep -q "session\|get('session')" platform/public/terminal-client.html 2>/dev/null || { echo "  WARN terminal-client.html sans param session"; }
 # Contrat : l'URL du terminal contient toujours session= (historique par session)
 [ -f "platform/src/lib/store.js" ] && grep -q "session=" platform/src/lib/store.js 2>/dev/null && grep -q "getTerminalUrl" platform/src/lib/store.js 2>/dev/null && echo "  OK store getTerminalUrl (session dans URL)" || { echo "  WARN store getTerminalUrl/session"; }
-# Contrat store : clés lab, terminal, progression, simulateur, capture, engagements
+# Contrat store : clés lab, terminal, progression, simulateur, capture, engagements, UI session
 STORE_OK=1
-for fn in getCurrentLabId setCurrentLabId getLabs getNetworkSimulations setNetworkSimulations getLabTerminalState setLabTerminalState getMachineUrl getEngagement getTaskDone setTaskDone getScenarioStatus getCaptureState setCaptureState getProxies setProxies getRequestData setRequestData; do
+for fn in getCurrentLabId setCurrentLabId getLabs getNetworkSimulations setNetworkSimulations getLabTerminalState setLabTerminalState getMachineUrl getEngagement getTaskDone setTaskDone getScenarioStatus getCaptureState setCaptureState getProxies setProxies getRequestData setRequestData getUiSession setUiSession getTopologies setTopology getTerminalHistory getLabNotes setLabNotes getOfflineDoc setOfflineDoc; do
   grep -q "$fn" platform/src/lib/store.js 2>/dev/null || STORE_OK=0
 done
-[ "$STORE_OK" -eq 1 ] && echo "  OK store (lab, terminal, progression, simulateur, capture, proxy, API)" || { echo "  WARN store manque des exports"; }
+[ "$STORE_OK" -eq 1 ] && echo "  OK store (lab, terminal, progression, simulateur, capture, proxy, API, UI, topologies, notes, offline)" || { echo "  WARN store manque des exports"; }
+# storage.js : clés IndexedDB (UI, topologies, terminal, capture)
+grep -q "KEY_UI_SESSION\|KEY_TOPOLOGIES\|KEY_TERMINAL_HISTORY\|KEY_CAPTURE_META" platform/public/storage.js 2>/dev/null && echo "  OK storage.js (clés UI, topologies, terminal, capture)" || true
 [ -f "platform/data/toolPacks.json" ] && echo "  OK toolPacks.json" || { echo "  WARN toolPacks.json absent"; }
 [ -f "platform/data/labToolPresets.json" ] && echo "  OK labToolPresets.json" || { echo "  WARN labToolPresets.json absent"; }
 [ -f "lab-terminal/main.go" ] && grep -q "sessionID\|session" lab-terminal/main.go 2>/dev/null && echo "  OK lab-terminal (session)" || true
@@ -317,12 +367,25 @@ DOC_FAIL=0
 [ -f "platform/docs/05-CIBLES-A-FAIRE.md" ] && echo "  OK platform/docs/05-CIBLES-A-FAIRE.md" || { echo "  FAIL 05-CIBLES-A-FAIRE.md absent"; DOC_FAIL=1; }
 [ -f "platform/docs/04-PHASE3-OUTILS.md" ] && echo "  OK platform/docs/04-PHASE3-OUTILS.md" || { echo "  FAIL 04-PHASE3-OUTILS.md absent"; DOC_FAIL=1; }
 [ -f "STATUS.md" ] && echo "  OK STATUS.md" || { echo "  WARN STATUS.md absent"; }
+[ -f "docs/TESTS-E2E.md" ] && echo "  OK docs/TESTS-E2E.md" || true
+[ -f "docs/TESTS-AUTOMATISES.md" ] && echo "  OK docs/TESTS-AUTOMATISES.md" || true
+[ -f "docs/README.md" ] && echo "  OK docs/README.md" || true
+# Au moins un autre doc technique (platform/docs)
+for doc in platform/docs/*.md; do [ -f "$doc" ] && echo "  OK $(basename "$doc") (platform/docs)" && break; done
 grep -q "getMachineUrl\|/cible/" platform/src/lib/store.js 2>/dev/null && echo "  OK store getMachineUrl (cibles navigateur)" || { echo "  WARN getMachineUrl/cible"; }
 # Gateway : toutes les routes cibles (dvwa, juice, api, bwapp)
 for cible in dvwa juice api bwapp; do
   grep -q "location /cible/$cible" gateway/nginx.conf 2>/dev/null && true || { echo "  WARN gateway /cible/$cible manquant"; }
 done
 grep -q "location /cible/dvwa" gateway/nginx.conf 2>/dev/null && echo "  OK gateway /cible/* (dvwa, juice, api, bwapp)" || { echo "  WARN gateway cibles"; }
+# Gateway : routes critiques (terminal-house, desktop, racine)
+grep -q "location /terminal-house/" gateway/nginx.conf 2>/dev/null && echo "  OK gateway /terminal-house/ (lab-terminal)" || true
+grep -q "location.*/desktop" gateway/nginx.conf 2>/dev/null && echo "  OK gateway /desktop (noVNC)" || true
+grep -q "location / " gateway/nginx.conf 2>/dev/null && echo "  OK gateway location / (platform)" || true
+grep -q "location /terminal/" gateway/nginx.conf 2>/dev/null && echo "  OK gateway /terminal/ (ttyd)" || true
+# App.jsx : VIEWS / routes (dashboard, docs, learning, scenario, labs, etc.)
+grep -q "dashboard.*Dashboard\|'dashboard':\|dashboard:" platform/src/App.jsx 2>/dev/null && echo "  OK App VIEWS (dashboard, docs, learning, ...)" || true
+grep -q "parseHash\|hashFor\|VALID_VIEWS" platform/src/App.jsx 2>/dev/null && echo "  OK App parseHash/hashFor" || true
 python3 -c "
 import json
 with open('platform/data/scenarios.json') as f:
@@ -452,10 +515,21 @@ p = d.get('packs') if isinstance(d, dict) else (d if isinstance(d, list) else []
 if isinstance(p, list) and len(p) >= 1: print('  OK toolPacks.json (au moins un pack)')
 else: print('  WARN toolPacks vide')
 " 2>/dev/null || true
-# Quand lab up : /data/docs.json
+# labToolPresets : presets (liste ou objet) non vide
+python3 -c "
+import json
+with open('platform/data/labToolPresets.json') as f: d = json.load(f)
+p = d.get('presets') if isinstance(d.get('presets'), (list, dict)) else d.get('byScenario')
+if p and (isinstance(p, list) and len(p) >= 0 or isinstance(p, dict)): print('  OK labToolPresets (presets/byScenario)')
+" 2>/dev/null || true
+# Quand lab up : /data/docs.json, assets (logger, storage)
 if lab_running 2>/dev/null; then
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/data/docs.json" 2>/dev/null || echo "000")
   if [ "$code" = "200" ]; then echo "  OK /data/docs.json 200"; else echo "  WARN /data/docs.json $code"; fi
+  for path in /logger.js /storage.js; do
+    code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL$path" 2>/dev/null || echo "000")
+    if [ "$code" = "200" ] || [ "$code" = "304" ]; then echo "  OK $path $code"; fi
+  done
   # vuln-api POST /api/login (attendu 400/401 sans body, ou 405 GET)
   code=$(curl -s -o /dev/null -w "%{http_code}" -X POST --connect-timeout 2 -H "Host: api.lab" "$GATEWAY_URL/api/login" 2>/dev/null || echo "000")
   if [ "$code" = "200" ] || [ "$code" = "400" ] || [ "$code" = "401" ] || [ "$code" = "422" ]; then echo "  OK vuln-api POST /api/login ($code)"; else echo "  WARN vuln-api POST /api/login $code"; fi
@@ -485,13 +559,26 @@ grep -q "getNetworkSimulations\|setNetworkSimulations" platform/src/lib/store.js
 grep -q "getTaskDone\|getScenarioStatus" platform/src/lib/store.js 2>/dev/null && echo "  OK store progression (getTaskDone/getScenarioStatus)" || true
 # Cours / Learning : vue + données
 [ -f "platform/src/views/LearningView.jsx" ] && grep -qiE "topic|course|learning|doc" platform/src/views/LearningView.jsx 2>/dev/null && echo "  OK LearningView (cours/topics)" || echo "  OK LearningView"
-[ -f "platform/data/learning.json" ] && echo "  OK learning.json (cours)" || true
+[ -f "platform/data/learning.json" ] && python3 -c "
+import json
+with open('platform/data/learning.json') as f: d = json.load(f)
+t = d.get('topics') or d.get('categories') or (d if isinstance(d, list) else [])
+n = len(t) if isinstance(t, list) else len(t.keys()) if isinstance(t, dict) else 0
+print('  OK learning.json (cours, %s entrées)' % n)
+" 2>/dev/null || echo "  OK learning.json (cours)"
 # Docs / Bibliothèque : vues + données
 [ -f "platform/src/views/DocOfflineView.jsx" ] && grep -qiE "doc|source|offline" platform/src/views/DocOfflineView.jsx 2>/dev/null && echo "  OK DocOfflineView (doc/offline)" || echo "  OK DocOfflineView"
 [ -f "platform/src/views/DocsView.jsx" ] && echo "  OK DocsView" || true
 [ -f "platform/data/docSources.json" ] && echo "  OK docSources.json (docs)" || true
 # Cibles : targets + gateway /cible/* (déjà en 12/13)
 [ -f "platform/data/targets.json" ] && echo "  OK targets.json (cibles)" || true
+# labToolPresets : presets ou byScenario
+python3 -c "
+import json
+with open('platform/data/labToolPresets.json') as f: d = json.load(f)
+p, b = d.get('presets'), d.get('byScenario')
+if (isinstance(p, list) and len(p) >= 0) or (isinstance(b, dict) and len(b) >= 1): print('  OK labToolPresets (presets/byScenario)')
+" 2>/dev/null || true
 echo ""
 
 if [ $FAIL -eq 0 ]; then

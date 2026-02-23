@@ -67,7 +67,7 @@ ans.show()
 Toutes les cibles et l’attaquant sont sur le réseau bridge **lab-network**. Schéma conceptuel :
 
 ```
-[ Navigateur ]  →  gateway:8080  →  platform, /terminal/, /desktop/
+[ Navigateur ]  →  gateway:4080  →  platform, /terminal/, /desktop/
                       ↓
 [ lab-network ]
     ├── platform (interface web)

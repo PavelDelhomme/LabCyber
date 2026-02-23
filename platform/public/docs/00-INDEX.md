@@ -4,16 +4,16 @@ Ce lab couvre **toutes les catégories** de la cybersécurité : web, réseau, a
 
 ## Plateforme web (interface unique)
 
-Après `docker compose up -d`, ouvre **http://localhost:8080** pour accéder au lab :
+Après `docker compose up -d`, ouvre **http://localhost:4080** pour accéder au lab :
 
 - **Tableau de bord** : scénarios guidés et rooms par catégorie.
 - **Scénarios guidés** : parcours pas à pas (style TryHackMe / HackTheBox) avec tâches, commandes à copier, tips et « ce que tu apprends » ; cases à cocher persistées.
 - **Rooms** : objectifs, **accès direct aux machines** (liens vers DVWA, Juice Shop, vuln-api, vuln-network, etc.), tâches avec explications et tips.
 - **Défis stégano / crypto** : téléchargement des fichiers depuis les rooms concernées.
 - **Journal d’activité** : panneau latéral avec les logs (navigation, scénarios, rooms, copie de commandes, etc.) ; export JSON / TXT, effacement.
-- **Démo phishing** : http://localhost:8080/demo-phishing.html (page pédagogique).
+- **Démo phishing** : http://localhost:4080/demo-phishing.html (page pédagogique).
 - **Terminal lab** : dans la plateforme, panneau Lab → Terminal (ouvrir en panneau ou en nouvel onglet `#/terminal-full`) ; ou http://…/terminal/ en direct ; ou `make shell` en CLI. **Notes du lab** : dans le panneau Lab, zone de notes par lab (fichiers, IP, commandes). **CVE** : bouton CVE → recherche par ID ou par mot-clé (NVD), résultats et détails dans l’interface.
-- **Test du logger** : http://lab.local:8080/test-logs.html.
+- **Test du logger** : http://lab.local:4080/test-logs.html.
 
 ## Vue d’ensemble des catégories
 
@@ -33,7 +33,7 @@ Après `docker compose up -d`, ouvre **http://localhost:8080** pour accéder au 
 
 ## Parcours recommandé
 
-1. **Démarrage** : [GETTING_STARTED.md](GETTING_STARTED.md) – lancer le lab, ouvrir la plateforme (http://localhost:8080).
+1. **Démarrage** : [GETTING_STARTED.md](GETTING_STARTED.md) – lancer le lab, ouvrir la plateforme (http://localhost:4080).
 2. **Web** : [01-WEB.md](01-WEB.md) – DVWA, Juice Shop, bWAPP.
 3. **Réseau** : [02-RESEAU.md](02-RESEAU.md) – vuln-network.
 4. **API** : [03-APPLICATIONS.md](03-APPLICATIONS.md) – vuln-api.

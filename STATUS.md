@@ -52,7 +52,7 @@ Après `make test` (15 blocs verts), à faire **à la main** ou en E2E :
 | **Capture pcap** | Ouvrir la vue Capture, charger un fichier .pcap (capturé sur ton PC). Vérifier colonnes, filtre, détail. |
 | **Simulateur réseau** | Ouvrir la vue Simulateur : créer une carte, ajouter des nœuds (PC, routeur), liens. Vérifier persistance par lab (changer de lab, revenir). |
 | **Proxy** | Vue Proxy : configurer un proxy (ex. Squid du lab si `make proxy`). Vérifier que les requêtes passent par le proxy. |
-| **Bureau VNC** | Avec lab up : ouvrir http://127.0.0.1:8080/desktop/ → noVNC (bureau distant). Vérifier connexion WebSocket. |
+| **Bureau VNC** | Avec lab up : ouvrir http://127.0.0.1:4080/desktop/ → noVNC (bureau distant). Vérifier connexion WebSocket. |
 | **Cours / Learning** | Vue Doc & Cours : parcourir thèmes, ouvrir un doc/cours. Vérifier sync hors ligne si activé. |
 | **Docs / Bibliothèque** | Vue Bibliothèque doc : recherche, ouverture d’un doc. Vérifier docSources.json chargé. |
 | **Progression** | Scénario en cours : cocher une tâche comme faite. Vérifier que la progression est enregistrée (rechargement). |

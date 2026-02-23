@@ -61,7 +61,7 @@ Fichiers et dossiers requis pour que le projet soit complet et déployable :
 
 ### HTTP Plateforme (3)
 
-Toutes les URLs sont testées sur `http://127.0.0.1:${GATEWAY_PORT}` (port lu depuis `.env` ou 8080). Réponse attendue : 200.
+Toutes les URLs sont testées sur `http://127.0.0.1:${GATEWAY_PORT}` (port lu depuis `.env` ou 4080). Réponse attendue : 200.
 
 ### HTTP Cibles (4)
 
@@ -95,7 +95,7 @@ Lecture de `platform/data/config.json` et vérification que `hostnames` contient
 
 ## Test manuel du logger frontend
 
-Ouvrir **http://lab.local:8080/test-logs.html** (ou le port configuré) : la page doit afficher « LabCyberLogger OK » et les entrées retournées par `getEntries()`. Le bouton « Générer un événement (ping) » ajoute une entrée. Voir [LOGGING.md](LOGGING.md).
+Ouvrir **http://lab.local:4080/test-logs.html** (ou le port configuré) : la page doit afficher « LabCyberLogger OK » et les entrées retournées par `getEntries()`. Le bouton « Générer un événement (ping) » ajoute une entrée. Voir [LOGGING.md](LOGGING.md).
 
 ---
 

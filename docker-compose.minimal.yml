@@ -6,7 +6,7 @@ services:
   gateway:
     build: ./gateway
     container_name: lab-minimal-gateway
-    ports: ["${GATEWAY_PORT:-9080}:80"]
+    ports: ["${GATEWAY_PORT:-4090}:80"]
     networks: [lab-network]
     depends_on: [platform]
     mem_limit: 64m

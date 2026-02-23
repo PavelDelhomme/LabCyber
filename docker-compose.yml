@@ -1,5 +1,5 @@
 # Lab Cyber – Gateway (plateforme + cibles) + Terminal (ttyd) sur port dédié
-# Plateforme : GATEWAY_PORT (défaut 8080) → http://127.0.0.1:8080
+# Plateforme : GATEWAY_PORT (défaut 4080) → http://127.0.0.1:4080
 # Terminal   : 7681 → http://localhost:7681 (lancer le terminal direct)
 # /etc/hosts optionnel : 127.0.0.1 lab.local dvwa.lab juice.lab api.lab bwapp.lab terminal.lab
 
@@ -8,7 +8,7 @@ services:
   gateway:
     build: ./gateway
     container_name: lab-gateway
-    ports: ["${GATEWAY_PORT:-8080}:80"]
+    ports: ["${GATEWAY_PORT:-4080}:80"]
     networks: [lab-network]
     depends_on:
       platform: { condition: service_started }

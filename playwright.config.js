@@ -1,6 +1,6 @@
 // Playwright E2E – Lab Cyber
 // Lancés uniquement via : make test-e2e (conteneur Docker)
-// En conteneur BASE_URL=http://gateway:80 ; en local BASE_URL=http://127.0.0.1:8080
+// En conteneur BASE_URL=http://gateway:80 ; en local BASE_URL=http://127.0.0.1:4080
 const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
@@ -14,7 +14,7 @@ module.exports = defineConfig({
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
   ],
   use: {
-    baseURL: process.env.BASE_URL || 'http://127.0.0.1:8080',
+    baseURL: process.env.BASE_URL || 'http://127.0.0.1:4080',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

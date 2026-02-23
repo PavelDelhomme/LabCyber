@@ -7,17 +7,17 @@
       "name": "DVWA",
       "type": "web",
       "description": "Damn Vulnerable Web Application – OWASP Top 10 (SQLi, XSS, CSRF, upload, etc.).",
-      "url": "http://dvwa.lab:8080",
-      "urlNote": "Ajoute 127.0.0.1 dvwa.lab dans /etc/hosts. Port gateway 8080.",
+      "url": "http://dvwa.lab:4080",
+      "urlNote": "Ajoute 127.0.0.1 dvwa.lab dans /etc/hosts. Port gateway 4080.",
       "credentials": "admin / password",
-      "access": "Navigateur (lien room) ou depuis attaquant : curl http://dvwa.lab:8080"
+      "access": "Navigateur (lien room) ou depuis attaquant : curl http://dvwa.lab:4080"
     },
     {
       "id": "juice-shop",
       "name": "OWASP Juice Shop",
       "type": "web",
       "description": "Application web volontairement vulnérable – défis XSS, auth, injection, etc.",
-      "url": "http://juice.lab:8080",
+      "url": "http://juice.lab:4080",
       "urlNote": "Hostname juice.lab (voir /etc/hosts).",
       "credentials": "Divers (voir défis dans l’app)",
       "access": "Navigateur ou curl depuis attaquant"
@@ -27,7 +27,7 @@
       "name": "bWAPP",
       "type": "web",
       "description": "Buggy Web Application – vulnérabilités web classiques pour l’entraînement.",
-      "url": "http://bwapp.lab:8080",
+      "url": "http://bwapp.lab:4080",
       "credentials": "bee / bug",
       "access": "Navigateur"
     },
@@ -36,11 +36,11 @@
       "name": "vuln-api",
       "type": "api",
       "description": "API REST volontairement vulnérable : auth faible, IDOR, SQLi (paramètre q sur /api/products). Pour apprendre l’OWASP API Security.",
-      "url": "http://api.lab:8080",
+      "url": "http://api.lab:4080",
       "internal": "http://vuln-api:5000",
       "credentials": "admin / admin123  ou  user / user123",
       "endpoints": ["/api/login", "/api/users/<id>", "/api/products?q=", "/api/health"],
-      "access": "Navigateur (api.lab:8080) ou depuis attaquant : curl http://vuln-api:5000"
+      "access": "Navigateur (api.lab:4080) ou depuis attaquant : curl http://vuln-api:5000"
     },
     {
       "id": "vuln-network",
@@ -58,7 +58,7 @@
       "name": "Bureau noVNC (XFCE)",
       "type": "desktop",
       "description": "Bureau graphique à distance pour utiliser des outils en GUI (optionnel).",
-      "url": "http://127.0.0.1:8080/desktop/",
+      "url": "http://127.0.0.1:4080/desktop/",
       "credentials": "VNC : labcyber",
       "access": "Navigateur uniquement"
     },
@@ -67,7 +67,7 @@
       "name": "Machine attaquant (Kali)",
       "type": "attaquant",
       "description": "Terminal avec outils pentest (nmap, hydra, sqlmap, tcpdump, scapy, etc.). Point de départ pour scanner et exploiter les cibles.",
-      "url": "http://127.0.0.1:8080/terminal-client.html",
+      "url": "http://127.0.0.1:4080/terminal-client.html",
       "access": "Terminal web (lien plateforme) ou make shell"
     }
   ]

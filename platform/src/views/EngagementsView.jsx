@@ -286,7 +286,7 @@ export default function EngagementsView({ storage, targets, onNavigate }) {
             rows={5}
             value={bulkPaste}
             onInput={e => setBulkPaste(e.target.value)}
-            placeholder="Colle ici les proxies (un par ligne)&#10;Ex: 192.168.1.1:8080&#10;10.0.0.2:3128"
+            placeholder="Colle ici les proxies (un par ligne)&#10;Ex: 192.168.1.1:4080&#10;10.0.0.2:3128"
           />
           <button type="button" class="topbar-btn" onClick={addBulkProxies} style="margin-top:0.5rem">Ajouter ces proxies à la liste</button>
         </div>

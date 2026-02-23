@@ -60,13 +60,13 @@ export const EMBEDDED_LEARNING = {
 };
 
 export const EMBEDDED_TARGETS = [
-  { id: 'dvwa', name: 'DVWA', type: 'web', description: 'Damn Vulnerable Web Application – OWASP Top 10 (SQLi, XSS, CSRF, etc.).', url: 'http://dvwa.lab:8080', credentials: 'admin / password', access: 'Navigateur ou curl depuis attaquant' },
-  { id: 'juice-shop', name: 'OWASP Juice Shop', type: 'web', description: 'Application web volontairement vulnérable – défis XSS, auth, injection.', url: 'http://juice.lab:8080', credentials: 'Divers (voir défis)', access: 'Navigateur ou curl' },
-  { id: 'bwapp', name: 'bWAPP', type: 'web', description: 'Buggy Web Application – vulnérabilités web classiques.', url: 'http://bwapp.lab:8080', credentials: 'bee / bug', access: 'Navigateur' },
-  { id: 'vuln-api', name: 'vuln-api', type: 'api', description: 'API REST volontairement vulnérable : auth faible, IDOR, SQLi. OWASP API Security.', url: 'http://api.lab:8080', credentials: 'admin / admin123 ou user / user123', access: 'Navigateur ou curl' },
+  { id: 'dvwa', name: 'DVWA', type: 'web', description: 'Damn Vulnerable Web Application – OWASP Top 10 (SQLi, XSS, CSRF, etc.).', url: 'http://dvwa.lab:4080', credentials: 'admin / password', access: 'Navigateur ou curl depuis attaquant' },
+  { id: 'juice-shop', name: 'OWASP Juice Shop', type: 'web', description: 'Application web volontairement vulnérable – défis XSS, auth, injection.', url: 'http://juice.lab:4080', credentials: 'Divers (voir défis)', access: 'Navigateur ou curl' },
+  { id: 'bwapp', name: 'bWAPP', type: 'web', description: 'Buggy Web Application – vulnérabilités web classiques.', url: 'http://bwapp.lab:4080', credentials: 'bee / bug', access: 'Navigateur' },
+  { id: 'vuln-api', name: 'vuln-api', type: 'api', description: 'API REST volontairement vulnérable : auth faible, IDOR, SQLi. OWASP API Security.', url: 'http://api.lab:4080', credentials: 'admin / admin123 ou user / user123', access: 'Navigateur ou curl' },
   { id: 'vuln-network', name: 'vuln-network', type: 'network', description: 'Cible réseau : SSH (mot de passe faible) et Redis (sans auth). Pentest, brute force, Redis.', url: null, hostname: 'vuln-network', ports: '22 (SSH), 6379 (Redis)', credentials: 'SSH : root / labpassword. Redis : pas de mot de passe.', access: 'Depuis attaquant : ssh root@vuln-network, redis-cli -h vuln-network' },
-  { id: 'desktop', name: 'Bureau noVNC (XFCE)', type: 'desktop', description: 'Bureau graphique à distance pour outils GUI.', url: 'http://127.0.0.1:8080/desktop/', credentials: 'VNC : labcyber', access: 'Navigateur' },
-  { id: 'attaquant', name: 'Machine attaquant (Kali)', type: 'attaquant', description: 'Terminal avec nmap, hydra, sqlmap, tcpdump, scapy, etc.', url: 'http://127.0.0.1:8080/terminal-client.html', access: 'Terminal web (lien plateforme)' },
+  { id: 'desktop', name: 'Bureau noVNC (XFCE)', type: 'desktop', description: 'Bureau graphique à distance pour outils GUI.', url: 'http://127.0.0.1:4080/desktop/', credentials: 'VNC : labcyber', access: 'Navigateur' },
+  { id: 'attaquant', name: 'Machine attaquant (Kali)', type: 'attaquant', description: 'Terminal avec nmap, hydra, sqlmap, tcpdump, scapy, etc.', url: 'http://127.0.0.1:4080/terminal-client.html', access: 'Terminal web (lien plateforme)' },
 ];
 
 /** Catalogue minimal pour la Bibliothèque doc (hors ligne) si docSources.json est absent. */

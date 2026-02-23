@@ -6,18 +6,18 @@ Ce document décrit **toutes les cibles** exposées dans le lab : à quoi elles 
 
 | Cible | Type | Accès | Usage |
 |-------|------|--------|--------|
-| **DVWA** | Web | http://dvwa.lab:8080 | OWASP Top 10 (SQLi, XSS, CSRF, upload) |
-| **Juice Shop** | Web | http://juice.lab:8080 | Défis web, auth, XSS |
-| **bWAPP** | Web | http://bwapp.lab:8080 | Vulnérabilités web classiques |
-| **vuln-api** | API | http://api.lab:8080 | Auth faible, IDOR, SQLi |
+| **DVWA** | Web | http://dvwa.lab:4080 | OWASP Top 10 (SQLi, XSS, CSRF, upload) |
+| **Juice Shop** | Web | http://juice.lab:4080 | Défis web, auth, XSS |
+| **bWAPP** | Web | http://bwapp.lab:4080 | Vulnérabilités web classiques |
+| **vuln-api** | API | http://api.lab:4080 | Auth faible, IDOR, SQLi |
 | **vuln-network** | Réseau | Depuis attaquant uniquement | SSH (root/labpassword), Redis (sans auth) |
-| **Bureau noVNC** | Desktop | http://127.0.0.1:8080/desktop/ | GUI optionnelle (VNC: labcyber) |
-| **Machine attaquant** | Terminal | http://127.0.0.1:8080/terminal/ ou `make shell` | Kali – nmap, hydra, scapy, tcpdump, etc. |
+| **Bureau noVNC** | Desktop | http://127.0.0.1:4080/desktop/ | GUI optionnelle (VNC: labcyber) |
+| **Machine attaquant** | Terminal | http://127.0.0.1:4080/terminal/ ou `make shell` | Kali – nmap, hydra, scapy, tcpdump, etc. |
 
 ## vuln-api (API vulnérable)
 
 - **Rôle** : API REST pour s’entraîner à l’OWASP API Security (auth, IDOR, injection).
-- **URL** : http://api.lab:8080 (depuis le navigateur) ou http://vuln-api:5000 (depuis le conteneur attaquant).
+- **URL** : http://api.lab:4080 (depuis le navigateur) ou http://vuln-api:5000 (depuis le conteneur attaquant).
 - **Comptes** : `admin` / `admin123`, `user` / `user123`.
 - **Endpoints** :
   - `POST /api/login` – authentification (vulnérable SQLi en concaténation).
@@ -42,7 +42,7 @@ Ce document décrit **toutes les cibles** exposées dans le lab : à quoi elles 
 ## Machine attaquant (Kali)
 
 - **Rôle** : Point de départ pour tous les scénarios. Contient les outils (nmap, hydra, sqlmap, tcpdump, tshark, scapy, etc.).
-- **Accès** : Terminal web http://127.0.0.1:8080/terminal/ ou en CLI : `make shell` (ou `docker compose exec attaquant bash`).
+- **Accès** : Terminal web http://127.0.0.1:4080/terminal/ ou en CLI : `make shell` (ou `docker compose exec attaquant bash`).
 - **Cibles joignables** : vuln-network, vuln-api, dvwa, juice-shop, bwapp (par hostname ou IP du réseau Docker).
 
 ## Créer ses propres cibles / labs

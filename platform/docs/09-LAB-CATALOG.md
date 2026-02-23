@@ -2,7 +2,7 @@
 
 Liste centralisée des **labs et exercices** que vous pouvez faire dans ce projet, avec la catégorie et la doc associée.
 
-**Depuis la plateforme** (http://localhost:8080) : les **scénarios guidés** (style TryHackMe / HackTheBox) proposent des parcours pas à pas avec tâches et commandes ; les **rooms** par catégorie donnent objectifs, accès aux machines et défis. Voir [GETTING_STARTED.md](GETTING_STARTED.md) et [00-INDEX.md](00-INDEX.md).
+**Depuis la plateforme** (http://localhost:4080) : les **scénarios guidés** (style TryHackMe / HackTheBox) proposent des parcours pas à pas avec tâches et commandes ; les **rooms** par catégorie donnent objectifs, accès aux machines et défis. Voir [GETTING_STARTED.md](GETTING_STARTED.md) et [00-INDEX.md](00-INDEX.md).
 
 ---
 

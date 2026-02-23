@@ -1,6 +1,6 @@
 # Lab Cyber – Plateforme d’apprentissage (type TryHackMe)
 
-Environnement **isolé** pour s’entraîner à la cybersécurité, avec **interface web** unique : **plateforme** (http://localhost:8080) pour suivre les **scénarios guidés** (style TryHackMe / HackTheBox), les rooms, accéder aux machines, télécharger les défis et consulter le **journal d’activité (logs)**. Couvre **Web, Réseau, App, Red/Blue Team, Forensique, OSINT, Stéganographie, Cryptographie, Phishing / Spam / Social Engineering**.
+Environnement **isolé** pour s’entraîner à la cybersécurité, avec **interface web** unique : **plateforme** (http://localhost:4080) pour suivre les **scénarios guidés** (style TryHackMe / HackTheBox), les rooms, accéder aux machines, télécharger les défis et consulter le **journal d’activité (logs)**. Couvre **Web, Réseau, App, Red/Blue Team, Forensique, OSINT, Stéganographie, Cryptographie, Phishing / Spam / Social Engineering**.
 
 ## Prérequis
 
@@ -25,10 +25,10 @@ git push -u origin main
 
 | Port | Rôle |
 |------|------|
-| **8080** | Interface web : **http://127.0.0.1:8080** (plateforme, terminal, bureau noVNC) |
+| **4080** | Interface web : **http://127.0.0.1:4080** (plateforme, terminal, bureau noVNC) |
 | 7681 | Terminal ttyd direct (optionnel) |
 
-Si un port est pris : copie `.env.example` en `.env`, change `GATEWAY_PORT` ou `TTYD_PORT`, puis `make up`. `make ports` affiche qui utilise 8080/7681.
+Si un port est pris : copie `.env.example` en `.env`, change `GATEWAY_PORT` ou `TTYD_PORT`, puis `make up`. `make ports` affiche qui utilise 4080/7681.
 
 ## Démarrage rapide
 
@@ -38,17 +38,17 @@ Si un port est pris : copie `.env.example` en `.env`, change `GATEWAY_PORT` ou `
    ```text
    127.0.0.1   lab.local dvwa.lab juice.lab api.lab bwapp.lab terminal.lab
    ```
-2. **Port** (optionnel) : si 8080 est pris, crée `.env` avec `GATEWAY_PORT=8081` (ou autre port libre).
+2. **Port** (optionnel) : si 4080 est pris, crée `.env` avec `GATEWAY_PORT=4081` (ou autre port libre).
 3. **Démarrer** :
    ```bash
    git clone <url-du-repo> && cd LabCyber
    make up
    ```
-4. Ouvre **http://127.0.0.1:8080** dans le navigateur : c’est l’**interface web du lab** (plateforme, scénarios, terminal intégré). Le terminal est aussi à **http://127.0.0.1:8080/terminal/**.
+4. Ouvre **http://127.0.0.1:4080** dans le navigateur : c’est l’**interface web du lab** (plateforme, scénarios, terminal intégré). Le terminal est aussi à **http://127.0.0.1:4080/terminal/**.
 
-**Terminal en CLI** : `make shell`. (Le port 5000 ne sert pas à l’interface ; c’est l’API vuln, accessible via api.lab:8080.)
+**Terminal en CLI** : `make shell`. (Le port 5000 ne sert pas à l’interface ; c’est l’API vuln, accessible via api.lab:4080.)
 
-**Bureau noVNC** : **http://127.0.0.1:8080/desktop/** (mot de passe VNC : `labcyber`). Le conteneur bureau met ~30 s à démarrer ; la gateway attend qu’il réponde avant d’accepter les requêtes.
+**Bureau noVNC** : **http://127.0.0.1:4080/desktop/** (mot de passe VNC : `labcyber`). Le conteneur bureau met ~30 s à démarrer ; la gateway attend qu’il réponde avant d’accepter les requêtes.
 
 **Documentation** : [docs/USAGE.md](docs/USAGE.md) · [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) · [docs/00-INDEX.md](docs/00-INDEX.md) · [docs/TESTS.md](docs/TESTS.md) · [docs/LOGGING.md](docs/LOGGING.md). **Roadmap système maison** (terminal + env lab dédié, sans ttyd/VNC) : [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md).
 
@@ -77,9 +77,9 @@ Si un port est pris : copie `.env.example` en `.env`, change `GATEWAY_PORT` ou `
 
 | Composant | Rôle |
 |-----------|------|
-| **gateway** | Port **8080** (défaut). Plateforme + cibles (lab.local, dvwa.lab, etc. si /etc/hosts). **http://127.0.0.1:8080** = plateforme. |
-| **attaquant** | **Kali Linux** – terminal web (ttyd) sur **http://127.0.0.1:8080/terminal/** ou port 7681. Outils : nmap, hydra, sqlmap, tcpdump, tshark, scapy. CLI : `make shell` |
-| **platform** | Interface web – scénarios, rooms, défis (accès via gateway:8080) |
+| **gateway** | Port **4080** (défaut). Plateforme + cibles (lab.local, dvwa.lab, etc. si /etc/hosts). **http://127.0.0.1:4080** = plateforme. |
+| **attaquant** | **Kali Linux** – terminal web (ttyd) sur **http://127.0.0.1:4080/terminal/** ou port 7681. Outils : nmap, hydra, sqlmap, tcpdump, tshark, scapy. CLI : `make shell` |
+| **platform** | Interface web – scénarios, rooms, défis (accès via gateway:4080) |
 | **dvwa, juice-shop, bwapp, vuln-api** | Cibles web/API (accès via gateway, aucun port exposé) |
 | **vuln-network** | SSH, Redis – pentest (accès uniquement depuis le lab, ex. attaquant) |
 | **blue-suricata** | IDS (profil `blue`) |
@@ -108,7 +108,7 @@ Sans Makefile : `docker compose up -d`, `docker compose exec attaquant bash`, `.
 ```
 LabCyber/
 ├── docker-compose.yml      # Un seul port exposé (gateway) ; tout le reste en interne
-├── .env.example            # Exemple : GATEWAY_PORT=8080 (copier en .env pour changer le port)
+├── .env.example            # Exemple : GATEWAY_PORT=4080 (copier en .env pour changer le port)
 ├── gateway/                # Nginx : route par hostname (lab.local, dvwa.lab, …)
 │   ├── Dockerfile
 │   └── nginx.conf
@@ -120,7 +120,7 @@ LabCyber/
 ├── vuln-network/, vuln-api/  # Cibles
 ├── proxy/                  # Squid (profil proxy)
 ├── docs/                   # Copie de la doc (source réelle : platform/docs/, servie sous /docs/ par la plateforme)
-├── platform/docs/          # Source des fichiers servis à http://127.0.0.1:8080/docs/ et dans « Doc. projet »
+├── platform/docs/          # Source des fichiers servis à http://127.0.0.1:4080/docs/ et dans « Doc. projet »
 ├── scripts/run-tests.sh    # Tests (gateway, JSON, logs, …)
 ├── Makefile                # make up, down, test, shell, lab, up-minimal, …
 ├── docker-compose.minimal.yml  # Profil minimal (faible consommation)

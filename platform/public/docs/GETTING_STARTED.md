@@ -1,10 +1,10 @@
 # Démarrer le lab – Guide pas à pas
 
-**Tout le lab = un seul port** (gateway, par défaut 8080). Pour savoir exactement quoi faire dans l’ordre : **[USAGE.md](USAGE.md)**.
+**Tout le lab = un seul port** (gateway, par défaut 4080). Pour savoir exactement quoi faire dans l’ordre : **[USAGE.md](USAGE.md)**.
 
 ## 0. Plateforme web (interface du lab)
 
-Une fois le lab démarré, ouvre **http://lab.local:8080** (ou http://localhost:8080) dans ton navigateur. **Prérequis** : avoir ajouté dans `/etc/hosts` la ligne :
+Une fois le lab démarré, ouvre **http://lab.local:4080** (ou http://localhost:4080) dans ton navigateur. **Prérequis** : avoir ajouté dans `/etc/hosts` la ligne :
 ```text
 127.0.0.1   lab.local dvwa.lab juice.lab api.lab bwapp.lab terminal.lab
 ```
@@ -14,9 +14,9 @@ Une fois le lab démarré, ouvre **http://lab.local:8080** (ou http://localhost:
 - **Rooms** : objectifs, **accès direct aux machines** (DVWA, Juice Shop, vuln-api, vuln-network, etc.), tâches avec explications et tips.
 - **Défis stégano / crypto** : téléchargement des fichiers depuis les rooms concernées.
 - **Journal d’activité** : panneau latéral droit avec les logs (navigation, ouverture de scénario/room, copie de commande, etc.) ; boutons Export JSON, Export TXT, Effacer. Voir [LOGGING.md](LOGGING.md).
-- **Terminal lab** : lien « Terminal lab » ou carte « Terminal web » → **http://terminal.lab:8080** (terminal dans le navigateur = conteneur attaquant). En CLI : `make shell`.
-- **Démo phishing** : http://lab.local:8080/demo-phishing.html (page pédagogique).
-- **Test du logger** : http://lab.local:8080/test-logs.html.
+- **Terminal lab** : lien « Terminal lab » ou carte « Terminal web » → **http://terminal.lab:4080** (terminal dans le navigateur = conteneur attaquant). En CLI : `make shell`.
+- **Démo phishing** : http://lab.local:4080/demo-phishing.html (page pédagogique).
+- **Test du logger** : http://lab.local:4080/test-logs.html.
 
 Tout le lab est pilotable depuis cette interface.
 
@@ -43,15 +43,15 @@ Vérifier que les services sont « running » : `make status` ou `docker compose
 
 ## 2. Accès aux cibles (un seul port, même port que la plateforme)
 
-Toutes les URLs ci-dessous utilisent le **même port** (8080 ou celui défini dans `.env`). Les hostnames doivent être dans `/etc/hosts` (voir [USAGE.md](USAGE.md)).
+Toutes les URLs ci-dessous utilisent le **même port** (4080 ou celui défini dans `.env`). Les hostnames doivent être dans `/etc/hosts` (voir [USAGE.md](USAGE.md)).
 
 ### Web
 
 | Cible | URL | Identifiants / remarques |
 |-------|-----|---------------------------|
-| **DVWA** | http://dvwa.lab:8080 | `admin` / `password`. Puis **Create / Reset Database** en bas de page. |
-| **Juice Shop** | http://juice.lab:8080 | Inscription libre, défis dans le scoreboard. |
-| **bWAPP** | http://bwapp.lab:8080 | Une fois : …/install.php puis `bee` / `bug`. |
+| **DVWA** | http://dvwa.lab:4080 | `admin` / `password`. Puis **Create / Reset Database** en bas de page. |
+| **Juice Shop** | http://juice.lab:4080 | Inscription libre, défis dans le scoreboard. |
+| **bWAPP** | http://bwapp.lab:4080 | Une fois : …/install.php puis `bee` / `bug`. |
 
 ### Réseau (pentest)
 
@@ -63,7 +63,7 @@ Toutes les URLs ci-dessous utilisent le **même port** (8080 ou celui défini da
 
 | Cible | URL | Identifiants |
 |-------|-----|---------------|
-| **vuln-api** | http://api.lab:8080 | `admin` / `admin123` — `user` / `user123`. Endpoints : `/api/login`, `/api/users/<id>`, `/api/products?q=`. |
+| **vuln-api** | http://api.lab:4080 | `admin` / `admin123` — `user` / `user123`. Endpoints : `/api/login`, `/api/users/<id>`, `/api/products?q=`. |
 
 ## 3. Utiliser le conteneur attaquant
 
@@ -132,7 +132,7 @@ ou `docker compose down`. Pour tout supprimer (conteneurs + volumes) : `make cle
 ## 6b. Proxy et accès distant (VPN / tunnel)
 
 - **Proxy Squid** : `make proxy` démarre le lab avec un proxy HTTP sur **localhost:3128**. Depuis le conteneur attaquant ou ta machine, tu peux utiliser `http://proxy:3128` (depuis le lab) ou `http://127.0.0.1:3128` (depuis l’hôte) pour des exercices de pivot ou d’analyse de trafic proxy.
-- **Accès distant type VPN** : le lab n’inclut pas de serveur VPN intégré. Pour accéder au lab depuis une autre machine, tu peux utiliser un **tunnel SSH** (ex. `ssh -L 8080:localhost:8080 -L 5000:localhost:5000 user@machine-lab`), ou déployer un VPN (WireGuard, OpenVPN) sur l’hôte qui héberge Docker. Voir [docs/PROXY-VPN.md](PROXY-VPN.md) pour plus de détails.
+- **Accès distant type VPN** : le lab n’inclut pas de serveur VPN intégré. Pour accéder au lab depuis une autre machine, tu peux utiliser un **tunnel SSH** (ex. `ssh -L 4080:localhost:4080 -L 5000:localhost:5000 user@machine-lab`), ou déployer un VPN (WireGuard, OpenVPN) sur l’hôte qui héberge Docker. Voir [docs/PROXY-VPN.md](PROXY-VPN.md) pour plus de détails.
 
 ## 7. Dépannage
 

@@ -11,7 +11,7 @@ help:
 	@echo "Lab Cyber – Cibles Make"
 	@echo "================================"
 	@echo ""
-	@echo "  Interface web : http://127.0.0.1:8080   |   Terminal : http://127.0.0.1:8080/terminal/"
+	@echo "  Interface web : http://127.0.0.1:4080   |   Terminal : http://127.0.0.1:4080/terminal/"
 	@echo ""
 	@echo "  Démarrer / arrêter"
 	@echo "  ------------------"
@@ -44,15 +44,15 @@ help:
 	@echo "  make test-report     Tests → test-results.txt  |  make test-full-report  → test-full-results.txt"
 	@echo "  make tests           TOUT : up + test-report + test-full-report + test-e2e (rapports complets)"
 	@echo "  make up-minimal     Mode minimal  |  make proxy  Lab + Squid  |  make blue  Blue Team"
-	@echo "  make ports          Voir qui utilise 8080/7681"
+	@echo "  make ports          Voir qui utilise 4080/7681"
 	@echo ""
 
 # Démarrer sans rebuild (rapide si les images sont déjà à jour)
 up:
 	cd $(ROOT) && docker compose up -d
 	@echo ""
-	@echo "  Interface web (lab) : http://127.0.0.1:8080"
-	@echo "  Terminal (navigateur) : http://127.0.0.1:8080/terminal/  |  CLI : make shell"
+	@echo "  Interface web (lab) : http://127.0.0.1:4080"
+	@echo "  Terminal (navigateur) : http://127.0.0.1:4080/terminal/  |  CLI : make shell"
 	@echo ""
 
 # Rebuild complet : down, rebuild plateforme (--no-cache), dev, puis status
@@ -61,7 +61,7 @@ start: down
 	cd $(ROOT) && docker compose up -d --build
 	$(MAKE) status
 	@echo ""
-	@echo "  Interface : http://127.0.0.1:8080   |   Terminal (panel / PiP / nouvel onglet) : lab-terminal"
+	@echo "  Interface : http://127.0.0.1:4080   |   Terminal (panel / PiP / nouvel onglet) : lab-terminal"
 	@echo ""
 
 # Tout arrêter (lab + lab-minimal), libérer les ports
@@ -74,14 +74,14 @@ down:
 restart: down
 	cd $(ROOT) && docker compose up -d
 	@echo ""
-	@echo "  Interface web : http://127.0.0.1:8080   |   Terminal : http://127.0.0.1:8080/terminal/"
+	@echo "  Interface web : http://127.0.0.1:4080   |   Terminal : http://127.0.0.1:4080/terminal/"
 	@echo ""
 
 # Arrêter + clean (rebuild plateforme sans supprimer les volumes) + démarrer
 restart-clean: clean
 	cd $(ROOT) && docker compose up -d
 	@echo ""
-	@echo "  restart-clean terminé. Interface : http://127.0.0.1:8080   |   make shell"
+	@echo "  restart-clean terminé. Interface : http://127.0.0.1:4080   |   make shell"
 	@echo ""
 
 # Arrêter + supprimer volumes + rebuild plateforme + démarrer
@@ -89,7 +89,7 @@ restart-clean-all: clean-all
 	cd $(ROOT) && docker compose build --no-cache platform
 	cd $(ROOT) && docker compose up -d
 	@echo ""
-	@echo "  restart-clean-all terminé (volumes supprimés). Interface : http://127.0.0.1:8080"
+	@echo "  restart-clean-all terminé (volumes supprimés). Interface : http://127.0.0.1:4080"
 	@echo ""
 
 # Tout arrêter + reconstruire les images + redémarrer (pour tester les modifs plateforme, etc.)
@@ -97,17 +97,17 @@ rebuild: down
 	cd $(ROOT) && docker compose build
 	cd $(ROOT) && docker compose up -d
 	@echo ""
-	@echo "  Rebuild terminé. Interface web (lab) : http://127.0.0.1:8080"
-	@echo "  Terminal : http://127.0.0.1:8080/terminal/  |  make shell"
+	@echo "  Rebuild terminé. Interface web (lab) : http://127.0.0.1:4080"
+	@echo "  Terminal : http://127.0.0.1:4080/terminal/  |  make shell"
 	@echo ""
 
 # Reconstruire les images si besoin + démarrer (tout faire fonctionner, ex. gateway/nginx.conf)
 dev:
 	cd $(ROOT) && docker compose up -d --build
 	@echo ""
-	@echo "  Interface web (lab) : http://127.0.0.1:8080"
-	@echo "  Terminal (navigateur) : http://127.0.0.1:8080/terminal/  |  CLI : make shell"
-	@echo "  (Tout le lab passe par le port 8080 ; le port 5000 est l'API vuln interne, pas l'interface.)"
+	@echo "  Interface web (lab) : http://127.0.0.1:4080"
+	@echo "  Terminal (navigateur) : http://127.0.0.1:4080/terminal/  |  CLI : make shell"
+	@echo "  (Tout le lab passe par le port 4080 ; le port 5000 est l'API vuln interne, pas l'interface.)"
 	@echo ""
 
 build:
@@ -188,7 +188,7 @@ logs-%:
 
 # Verifier que l'injection exit est dans la page /terminal/ (resultat affiche ici, pas de fichier a ouvrir)
 terminal-html:
-	@port=$${GATEWAY_PORT:-8080}; \
+	@port=$${GATEWAY_PORT:-4080}; \
 	echo "  Verification http://127.0.0.1:$$port/terminal/ ..."; \
 	body=$$(curl -sS "http://127.0.0.1:$$port/terminal/" 2>/dev/null); \
 	if [ -z "$$body" ]; then echo "  Erreur : pas de reponse. Lab demarre ? (make up)"; exit 1; fi; \
@@ -212,7 +212,7 @@ down-proxy:
 # Bureau noVNC (démarre avec make dev ; cible pour rappel)
 desktop:
 	cd $(ROOT) && docker compose up -d
-	@echo "Bureau noVNC : http://127.0.0.1:8080/desktop/  (mot de passe VNC : alpine)"
+	@echo "Bureau noVNC : http://127.0.0.1:4080/desktop/  (mot de passe VNC : alpine)"
 
 # Blue Team (Suricata)
 blue:
@@ -228,7 +228,7 @@ down-blue:
 # Lab minimal (peu de ressources : gateway, platform, attaquant, vuln-network, vuln-api uniquement)
 up-minimal:
 	cd $(ROOT) && docker compose -f docker-compose.minimal.yml up -d
-	@echo "Lab minimal démarré. Plateforme : http://lab.local:$${GATEWAY_PORT:-8080}"
+	@echo "Lab minimal démarré. Plateforme : http://lab.local:$${GATEWAY_PORT:-4090}"
 
 # Binaire C unique (pilote tout : ./lab up | down | test | minimal | shell)
 lab:
@@ -237,8 +237,8 @@ lab:
 
 # Voir quel processus utilise les ports du lab (en cas d'erreur "port already allocated")
 ports:
-	@echo "Qui utilise les ports du lab (8080, 7681) ?"
-	@ss -tlnp 2>/dev/null | grep -E ':8080|:7681' || true
+	@echo "Qui utilise les ports du lab (4080, 7681) ?"
+	@ss -tlnp 2>/dev/null | grep -E ':4080|:7681' || true
 	@echo "Pour libérer : make down. Pour changer : .env (GATEWAY_PORT, TTYD_PORT) puis make up."
 
 # Nettoyage : arrêter les conteneurs, reconstruire la plateforme (--no-cache). Ne supprime PAS les volumes.

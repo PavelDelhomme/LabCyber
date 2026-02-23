@@ -1,6 +1,6 @@
 # Comment utiliser le lab – Pas à pas
 
-Tout le lab est accessible via **un seul port** (par défaut 8080). Tu peux tout faire depuis l’**interface web** ou en **ligne de commande**.
+Tout le lab est accessible via **un seul port** (par défaut 4080). Tu peux tout faire depuis l’**interface web** ou en **ligne de commande**.
 
 ---
 
@@ -8,14 +8,14 @@ Tout le lab est accessible via **un seul port** (par défaut 8080). Tu peux tout
 
 ### 1.1 Port (éviter les conflits)
 
-Si le port 8080 est déjà pris sur ta machine, crée un fichier `.env` à la racine du projet :
+Si le port 4080 est déjà pris sur ta machine, crée un fichier `.env` à la racine du projet :
 
 ```bash
 cd /chemin/vers/LabCyber
-echo "GATEWAY_PORT=8081" > .env
+echo "GATEWAY_PORT=4081" > .env
 ```
 
-Tu peux utiliser n’importe quel port libre (ex. 8081, 9090). **Tout le lab** (plateforme, cibles, terminal web) passera par ce port.
+Tu peux utiliser n’importe quel port libre (ex. 4081, 9090). **Tout le lab** (plateforme, cibles, terminal web) passera par ce port.
 
 ### 1.2 Hostnames (obligatoire pour la gateway)
 
@@ -24,7 +24,7 @@ Pour que les cibles (DVWA, Juice Shop, API, etc.) et le terminal fonctionnent, a
 - **Linux / macOS** : `sudo nano /etc/hosts`
 - **Windows** : `C:\Windows\System32\drivers\etc\hosts` (en admin)
 
-Ajoute (en remplaçant `8080` par ton port si tu as changé) :
+Ajoute (en remplaçant `4080` par ton port si tu as changé) :
 
 ```
 127.0.0.1   lab.local dvwa.lab juice.lab api.lab bwapp.lab terminal.lab
@@ -61,22 +61,22 @@ Cela ouvre **http://lab.local:PORT** dans ton navigateur (sous Linux/macOS/Windo
 
 ### 3.2 Interface web (tout-en-un)
 
-Ouvre dans ton navigateur (en utilisant le **même port** que dans `.env` ou 8080) :
+Ouvre dans ton navigateur (en utilisant le **même port** que dans `.env` ou 4080) :
 
 - **Plateforme (accueil, scénarios, rooms)** :  
-  **http://lab.local:8080**  
-  (ou http://localhost:8080)
+  **http://lab.local:4080**  
+  (ou http://localhost:4080)
 
 Depuis la plateforme tu as :
 
 - **Accueil** : scénarios guidés, rooms, section « Mon poste ».
-- **Terminal lab** : ouvre **http://localhost:7681** pour lancer le terminal dans le navigateur (ttyd, pas besoin de /etc/hosts). Ou via la plateforme : lien « Terminal lab » → terminal.lab:8080 si tu as configuré /etc/hosts.
+- **Terminal lab** : ouvre **http://localhost:7681** pour lancer le terminal dans le navigateur (ttyd, pas besoin de /etc/hosts). Ou via la plateforme : lien « Terminal lab » → terminal.lab:4080 si tu as configuré /etc/hosts.
 - **Cibles** : en ouvrant une room (DVWA, Juice Shop, vuln-api, etc.), les liens « machines » pointent vers :
-  - **http://dvwa.lab:8080** (DVWA)
-  - **http://juice.lab:8080** (Juice Shop)
-  - **http://api.lab:8080** (vuln-api)
-  - **http://bwapp.lab:8080** (bWAPP)  
-  Toujours le **même port** (8080 ou celui défini dans `.env`).
+  - **http://dvwa.lab:4080** (DVWA)
+  - **http://juice.lab:4080** (Juice Shop)
+  - **http://api.lab:4080** (vuln-api)
+  - **http://bwapp.lab:4080** (bWAPP)  
+  Toujours le **même port** (4080 ou celui défini dans `.env`).
 
 ### 3.2 Ligne de commande (sans navigateur)
 
@@ -94,15 +94,15 @@ Depuis ce shell tu peux lancer nmap, nikto, ssh vers vuln-network, redis-cli, cu
 
 ## 4. Résumé des URLs (un seul port)
 
-| Rôle              | URL (ex. port 8080)     | Remarque                    |
+| Rôle              | URL (ex. port 4080)     | Remarque                    |
 |-------------------|--------------------------|-----------------------------|
-| Plateforme        | http://lab.local:8080    | Accueil, scénarios, rooms   |
-| Terminal web      | http://terminal.lab:8080 | Terminal = conteneur attaquant (attaques depuis le navigateur) |
+| Plateforme        | http://lab.local:4080    | Accueil, scénarios, rooms   |
+| Terminal web      | http://terminal.lab:4080 | Terminal = conteneur attaquant (attaques depuis le navigateur) |
 | Documentation     | Menu « Documentation » sur la plateforme | Index, usage, tests, catégories (Web, Réseau, API, etc.) |
-| DVWA              | http://dvwa.lab:8080     | Créer la base en bas de page |
-| Juice Shop        | http://juice.lab:8080    | Inscription libre           |
-| vuln-api          | http://api.lab:8080      | /api/login, /api/users/1…   |
-| bWAPP             | http://bwapp.lab:8080    | install.php une fois        |
+| DVWA              | http://dvwa.lab:4080     | Créer la base en bas de page |
+| Juice Shop        | http://juice.lab:4080    | Inscription libre           |
+| vuln-api          | http://api.lab:4080      | /api/login, /api/users/1…   |
+| bWAPP             | http://bwapp.lab:4080    | install.php une fois        |
 
 Tout passe par la **gateway** sur le port configuré ; aucun autre port n’est exposé (sauf proxy Squid en option avec `make proxy`).
 
@@ -120,7 +120,7 @@ Tout passe par la **gateway** sur le port configuré ; aucun autre port n’est 
 ## 6. Dépannage
 
 - **« Impossible d’accéder au site »**  
-  Vérifier que le lab est démarré (`make status`) et que tu utilises le bon port (8080 ou `GATEWAY_PORT` dans `.env`). Vérifier que `lab.local` et les autres hostnames sont bien dans `/etc/hosts`.
+  Vérifier que le lab est démarré (`make status`) et que tu utilises le bon port (4080 ou `GATEWAY_PORT` dans `.env`). Vérifier que `lab.local` et les autres hostnames sont bien dans `/etc/hosts`.
 
 - **Les liens DVWA / Juice / API ne marchent pas**  
   Ils pointent vers dvwa.lab, juice.lab, api.lab. Si ces noms ne sont pas dans `/etc/hosts` (127.0.0.1), le navigateur ne trouvera pas l’hôte.
@@ -129,6 +129,6 @@ Tout passe par la **gateway** sur le port configuré ; aucun autre port n’est 
   Vérifier que `terminal.lab` est dans `/etc/hosts`. Si l’image attaquant n’a pas ttyd, utiliser en attendant : `make shell` en ligne de commande.
 
 - **Port déjà utilisé**  
-  Mettre dans `.env` un autre `GATEWAY_PORT` (ex. 8081) et redémarrer : `make down && make up`.
+  Mettre dans `.env` un autre `GATEWAY_PORT` (ex. 4081) et redémarrer : `make down && make up`.
 
 Voir aussi : [GETTING_STARTED.md](GETTING_STARTED.md), [00-INDEX.md](00-INDEX.md).

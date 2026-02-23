@@ -4,11 +4,11 @@ Ce guide décrit comment te connecter au lab et utiliser les outils depuis ta ma
 
 ## Accès au lab
 
-- **Plateforme web** : ouvre `http://127.0.0.1:8080` (ou l’URL de la gateway) pour la vue scénarios, progression, simulateur réseau, proxy, requêtes API, capture pcap.
+- **Plateforme web** : ouvre `http://127.0.0.1:4080` (ou l’URL de la gateway) pour la vue scénarios, progression, simulateur réseau, proxy, requêtes API, capture pcap.
 - **Terminal attaquant (Kali)** :  
-  - Dans le navigateur : `http://127.0.0.1:8080/terminal/` ou depuis la plateforme : panneau Lab → « Ouvrir dans un nouvel onglet » (ouvre `#/terminal-full` dans l’app) ou « Ouvrir dans la page (panneau) ».  
+  - Dans le navigateur : `http://127.0.0.1:4080/terminal/` ou depuis la plateforme : panneau Lab → « Ouvrir dans un nouvel onglet » (ouvre `#/terminal-full` dans l’app) ou « Ouvrir dans la page (panneau) ».  
   - En CLI sur ton PC : `make shell` ou `docker compose exec attaquant bash` (depuis la racine du projet LabCyber).
-- **Bureau noVNC** : `http://127.0.0.1:8080/desktop/` (bureau graphique dans le navigateur).
+- **Bureau noVNC** : `http://127.0.0.1:4080/desktop/` (bureau graphique dans le navigateur).
 
 **Terminal vs bureau** : ce sont **deux environnements distincts**. Le **terminal web** est le conteneur **attaquant** (Kali avec outils : nmap, hydra, tcpdump, etc.). Le **bureau noVNC** est un conteneur **desktop** (environnement graphique type XFCE). Si tu veux les mêmes outils que dans le terminal, utilise le terminal ; le bureau sert à une interface graphique (navigateur, bureautique, etc.) dans le lab.
 
@@ -41,7 +41,7 @@ Le message « Cibles: vuln-network (SSH/Redis), vuln-api (API), dvwa, juice-shop
 
 | Besoin | Où |
 |--------|-----|
-| Scénarios, progression, simulateur, capture | Plateforme web (8080) |
+| Scénarios, progression, simulateur, capture | Plateforme web (4080) |
 | Lancer nmap, hydra, tcpdump, curl dans le lab | Terminal web ou `docker compose exec attaquant bash` |
 | Configurer des proxies pour le lab | Plateforme → Proxy (config) → exporter pour terminal |
 | Envoyer des requêtes HTTP (type Postman) | Plateforme → Requêtes API, ou terminal du lab (curl) |
