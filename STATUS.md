@@ -4,6 +4,73 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ---
 
+## Ce que vous devez faire précisément
+
+- **Tests** : lancer `make test` (14 blocs). Avec lab : `make up` puis `make test`. Rapport : `TEST_REPORT=test-results.txt make test` ou `make test-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md).
+- **Targets** : les cibles (DVWA, Juice, vuln-api, vuln-network, etc.) sont enregistrées dans **`platform/data/targets.json`** et **`platform/public/data/targets.json`** (catalogue JSON, clé `targets`). Ce n’est pas un dossier « targets » mais des **fichiers de catalogue** utilisés par Engagements et Dashboard.
+- **vuln-network / vuln-api** : opérationnels quand le lab est up. vuln-api est testé (api.lab, `/api/health`, `/api/products`, `/api/users/1`) ; vuln-network est testé via attaquant → SSH. Améliorations possibles : plus de routes API, plus de services dans vuln-network, selon les scénarios.
+- **Packs d’outils** : les packs sont des **métadonnées** (`toolPacks.json`, `labToolPresets.json`, `labToolPresets.byScenario`). Les **outils sont déjà dans l’image attaquant** (Kali). Le terminal ouvert dans le lab = shell du lab actif (conteneur attaquant) ; les packs recommandés par scénario sont appliqués à la création du lab (lab dédié au scénario).
+- **Interconnexions** : en place — terminal lab, lab du scénario, barre scénario, cibles via `/cible/*`, gateway → attaquant. À renforcer : simulateur ↔ lab, capture ↔ lab, requêtes API ↔ lab, progression via scénario (tâches/validation), proxy ↔ lab.
+
+---
+
+## Couverture des tests (make test)
+
+La suite `make test` vise la **couverture la plus totale possible sans E2E** (sans navigateur). Elle vérifie :
+
+- **[0]** Structure complète : racine, gateway, scripts TUI, attacker/vuln-network/vuln-api/lab-terminal, **16 vues**, **11 composants**, App.jsx, main.jsx, store.js, **defaultData.js, storage.js (public), vite.config.js, platform/Dockerfile, style.css**, index/html/app/logger, data (rooms, scenarios, config), terminal-client.html.
+- **[1]** JSON : rooms, scenarios, config, toolPacks, labToolPresets (structure + byScenario), **docSources** (sources), **challenges**, **docs.json** (entries).
+- **[2]** Conteneurs tous running.
+- **[3]** HTTP plateforme : /, /data/* (rooms, scenarios, config, **learning, targets, docSources, challenges**), /cible/dvwa/.
+- **[4]** HTTP cibles (api.lab, dvwa.lab, juice.lab, bwapp.lab).
+- **[5]** Réseau attaquant → vuln-network (SSH).
+- **[6]** Logs vuln-api.
+- **[7]** Logs frontend (logger.js, app.js, index.html).
+- **[8]** Config hostnames (platform, dvwa, juice, api, bwapp, terminal).
+- **[9]** Route terminal (Host: terminal.lab).
+- **[10]** Fichiers plateforme (/, data/rooms.json).
+- **[11]** Terminal Phase 3 : getTerminalUrl (session), **store (lab, terminal, progression, simulateur, capture, proxy, API)**, toolPacks, labToolPresets, lab-terminal, gateway → attaquant.
+- **[12]** Docs (ROADMAP, CIBLES, Phase3, STATUS), getMachineUrl, **gateway /cible/* (dvwa, juice, api, bwapp)**, scénarios urlKey, attaquant build, abandon scénario, vues clés.
+- **[13]** Plateforme complète : targets, learning, docSources, challenges, toutes les vues et composants, App routes, main.jsx, vuln-api /api/health, /api/products, /api/users/1.
+- **[14]** **Couverture absolue** : storage.js (getLabs, getCurrentLabId, clés IndexedDB), defaultData.js (données embarquées), docker-compose (gateway, platform, attaquant, vuln-api, vuln-network), gateway (terminal-house, server_name api.lab, terminal.lab), rooms.json (structure rooms/categories), toolPacks (au moins un pack), **HTTP /data/docs.json**, **vuln-api POST /api/login**.
+
+**Ce que les tests ne font pas (E2E / manuel)** : comportement UI (clics, panneaux, PiP, navigation), flux métier complets (scénario → lab → terminal → cible, progression, engagements, CVE), envoi réel de requêtes depuis ApiClientView, chargement/analyse .pcap, création de cartes dans le simulateur, config proxy, recherche/sync Doc & Learning, vérification des outils dans le shell du lab. Pour cela : tests manuels et/ou E2E (Playwright/Cypress).
+
+---
+
+## Reste à faire pour continuer le projet
+
+Liste **actionnable** pour avancer après les tests :
+
+1. **Priorité immédiate** (voir section PRIORITÉ ci-dessous)  
+   - Simulateur réseau : persistance carte/lab, design, types d’appareils, carte par défaut avec Kali.  
+   - Panneaux : Capture / Simulateur / Proxy / API en panneau depuis le lab actif.  
+   - CVE : enregistrement par lab, affichage par ID.  
+   - Panneau scénario : affichage avancement tâches (fait / en cours).
+
+2. **Interconnexions**  
+   - Lier explicitement simulateur ↔ lab (carte = lab actuel).  
+   - Lier capture ↔ lab (capture dans le lab actuel).  
+   - Lier requêtes API ↔ lab (base URL selon lab/cible).  
+   - Progression : mise à jour automatique quand une tâche est validée.
+
+3. **Doc & Learning**  
+   - Panneau Doc/Cours en panneau droit (sans quitter la page).  
+   - PDF dans la Bibliothèque doc.  
+   - Sync doc et données learning à jour.
+
+4. **Qualité & robustesse**  
+   - Tester à la main : terminal (onglets, PiP, rechargement), barre scénario, abandon scénario, cibles navigateur.  
+   - Optionnel : ajouter des tests E2E (Playwright/Cypress) pour les parcours critiques.
+
+5. **Contenu**  
+   - Compléter scénarios (howto, tasks, urlKey), ajouter scénarios SIP/téléphonie si besoin.  
+   - Vuln-api / vuln-network : ajouter routes ou services selon les scénarios.
+
+Ensuite : Phase 4 (bureau fait maison), Phase 5 (interconnexion complète, reprise lab), voir [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md).
+
+---
+
 ## 🚨 PRIORITÉ (à traiter en priorité)
 
 *Uniquement ce qui reste à faire. Les points déjà corrigés sont listés en bas dans « Réalisé ».*
@@ -30,7 +97,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Persistance par lab** : liste des onglets, onglet actif, journal de session (notes/commandes enregistrées), largeur du panneau, état PiP (ouvert/fermé, onglets PiP, position) – tout est **sauvegardé par lab** et restauré au changement de lab ou au rechargement de la page (côté app).
 - **Journal complet** : bouton Journal & Stats → « Journal complet (par lab) » : consultation par lab et par scénario ; les notes du panneau terminal sont aussi enregistrées dans ce journal (type note, sessionId, scenarioId).
 - **PiP** : persistance par lab (ouvert/fermé, onglets, position, minimisé) ; restauration à la reprise du lab. Position **absolue** (left/top), spawn bas-droite, **drag par pas de 5 px** ; z-index 99999 ; conteneur **div + object** (plus iframe) pour le rendu. Voir roadmap (2026-02-20) pour le détail.
-- **Historique par session** – chaque onglet doit avoir son propre historique (affichage/replay) ; partage optionnel plus tard. À faire : isoler l’historique par tabId/session (actuellement nouvel onglet peut réafficher l’historique d’une autre session).
+- **Historique par session** : fait – chaque onglet a son propre buffer (sessionID) ; frontend envoie toujours session dans l’URL ; test 11 vérifie.
 
 **Ce qui est enregistré côté app**  
 - Par **lab** : onglets terminal (noms, nombre), onglet actif, journal de session (lignes ajoutées à la main), largeur panneau, état PiP (ouvert, onglets, position, minimisé), scenarioId en vue scénario. Restauré au rechargement et au changement de lab.
@@ -48,7 +115,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ### Simulateur réseau (à faire correctement – beaucoup manquant)
 
-- **Persistance des cartes** (super important) : quand on crée une nouvelle carte puis on revient sur l’ancienne, **on perd le contenu** de l’ancienne carte. Persister la carte courante avant de changer d’onglet et charger correctement au retour.
+- **Persistance des cartes** : carte courante persistée avant changement de carte (select) et avant changement de lab (état du lab quitté sauvegardé). Reste : design, types d'appareils.
 - **Nouvelle carte** : pouvoir personnaliser (nom, contexte) dès la création.
 - **Design** : le **titre/nom** de l’appareil (ex. « PC ») est **décalé** par rapport au centre du bloc ; ajouter des **éléments visuels minimal** pour distinguer routeur, PC, switch, serveur (icônes ou formes spécifiques).
 - **Types d’appareils** : pas seulement PC, Routeur, Switch, Serveur — ajouter **téléphone**, **tablette**, **firewall**, **AP WiFi**, **cloud**, etc. pour un ensemble complet type Packet Tracer.
@@ -166,7 +233,12 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 - **Capture pcap** : colonnes type Wireshark, filtre, détail ; notice « analyse machine client » (charger .pcap capturé sur son PC).
 - Notes par lab, CVE (recherche NVD en app), terminal-full, doc `platform/docs/`, nmap (cap_add), iframe terminal, notes structurées, menu Ouvrir, Lab dropdown, actions flottantes, Options en page, Make help / restart-clean.
 - **Scénario 2 (SQLi DVWA)** : ordre des étapes clarifié (1–3 dans le navigateur DVWA, 4 dans le terminal attaquant) ; encadré « Comment faire » (champ `howto`) ; lien « Ouvrir DVWA (navigateur) » ; ouverture fiable du panneau terminal depuis le scénario. Principes UX détaillés dans [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md) (historique 2026-02-20) pour les appliquer aux autres scénarios.
+- **Replay terminal après rechargement** : l’URL du terminal garde le même `session` (plus de `-rN`) pour que le backend rejoue le buffer ; paramètre `_r` force uniquement le rechargement de l’iframe.
+- **Démarrer un scénario** : si lab par défaut, création automatique d’un lab dédié (« Lab – [titre scénario] ») avec packs recommandés ; une session terminal fraîche pour ce lab ; changement de lab sans état sauvegardé affiche une session fraîche (plus les anciennes sessions).
+- **Ouvrir DVWA / cibles dans le navigateur** : URLs en même origine (`/cible/dvwa/`, `/cible/juice/`, etc.) ; routes ajoutées dans la gateway ; plus besoin de /etc/hosts pour tester.
+- **Popup détail lab** : z-index 10000 (modal et lab-panel-overlay) pour rester au-dessus de la barre scénario et du panneau terminal (accueil, scénario, gérer les labs, proxy, capture visibles).
+- **make test** : **14 blocs**, couverture maximale sans E2E (structure : defaultData, storage.js, vite, Dockerfile, CSS ; tous les JSON ; store, gateway, docker-compose ; HTTP /data/docs.json ; vuln-api POST /api/login). Bloc [14/14] couverture absolue (storage, defaultData, compose, gateway, rooms/toolPacks, docs.json, API login). Rapport : `TEST_REPORT=test-results.txt make test` ou `make test-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md).
 
 ---
 
-*Dernière mise à jour : février 2026.*
+*Dernière mise à jour : 20 février 2026.*

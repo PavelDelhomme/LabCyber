@@ -116,6 +116,10 @@ status:
 test:
 	cd $(ROOT) && ./scripts/run-tests.sh
 
+# Tests avec rapport écrit dans test-results.txt (TEST_REPORT=test-results.txt make test)
+test-report:
+	cd $(ROOT) && TEST_REPORT=test-results.txt ./scripts/run-tests.sh; echo "Rapport: $(ROOT)test-results.txt"
+
 # Exiger que le lab soit démarré pour les tests
 test-full: test-require-lab
 
