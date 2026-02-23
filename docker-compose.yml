@@ -24,21 +24,16 @@ services:
     networks: [lab-network]
     expose: ["80"]
 
-  # ========== Backend terminal maison (Go, PTY + WebSocket) – optionnel ==========
-  lab-terminal:
-    build: ./lab-terminal
-    container_name: lab-terminal
-    networks: [lab-network]
-    expose: ["7682"]
-    # Pour utiliser ce backend au lieu de ttyd : dans gateway, faire proxy /terminal/ vers lab-terminal:7682
-
-  # ========== Terminal web : http://localhost:TTYD_PORT (ttyd) ==========
+  # ========== Terminal web (ttyd 7681) + backend terminal maison (lab-terminal 7682) dans le même conteneur ==========
+  # lab-terminal tourne dans attaquant pour que le shell ait nmap, tcpdump, sqlmap (Kali)
   attaquant:
-    build: ./attacker
+    build:
+      context: .
+      dockerfile: attacker/Dockerfile
     container_name: lab-attaquant
     networks: [lab-network]
     ports: ["${TTYD_PORT:-7681}:7681"]
-    expose: ["7681"]
+    expose: ["7681", "7682"]
     stdin_open: true
     tty: true
     volumes: [attaquant-bash-history:/root/.lab_bash_history]

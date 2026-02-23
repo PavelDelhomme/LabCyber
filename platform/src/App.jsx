@@ -178,29 +178,53 @@ export default function App() {
     if (storage?.setUiSession) storage.setUiSession({ ...uiSessionRef.current, ...patch });
   };
 
-  // Démarrage d'un scénario : pause les autres, lie le lab, ouvre et affiche le panneau terminal. Si le lab (non défaut) n'a pas de packs, applique les packs recommandés du scénario (prédéfinitions Phase 3).
+  // Démarrage d'un scénario : pause les autres ; si lab par défaut, crée un lab dédié au scénario ; lie le lab, applique les packs, ouvre le panneau terminal (session fraîche pour ce lab).
   const handleStartScenario = (scenarioId) => {
     if (!storage || !scenarioId) return;
+    const scenario = (scenarios || []).find(s => s.id === scenarioId);
     (scenarios || []).forEach(s => {
       if (s.id !== scenarioId && storage.getScenarioStatus(s.id) === 'in_progress') {
         storage.setScenarioStatus(s.id, 'paused');
       }
     });
     storage.setScenarioStatus(scenarioId, 'in_progress');
-    if (currentLabId && storage.setScenarioLabId) storage.setScenarioLabId(scenarioId, currentLabId);
-    if (currentLabId && currentLabId !== 'default' && storage.getLabs && storage.setLabs) {
+
+    let labIdToUse = currentLabId || 'default';
+    if (labIdToUse === 'default' && storage.getLabs && storage.setLabs && storage.setCurrentLabId && scenario) {
+      const scenarioTitle = scenario.title || scenarioId;
+      const newId = 'lab-scenario-' + Date.now();
+      const newLab = { id: newId, name: 'Lab – ' + scenarioTitle, description: 'Lab créé pour le scénario', createdAt: new Date().toISOString() };
+      fetch('/data/labToolPresets.json').then(r => r.ok ? r.json() : null).catch(() => null).then((presets) => {
+        const packIds = presets?.byScenario?.[scenarioId];
+        if (Array.isArray(packIds) && packIds.length > 0) newLab.packIds = [...packIds];
+        const labs = storage.getLabs() || [];
+        storage.setLabs([...labs, newLab]);
+        storage.setCurrentLabId(newId);
+        onLabChange(newId);
+        labIdToUse = newId;
+        if (storage.setScenarioLabId) storage.setScenarioLabId(scenarioId, newId);
+        openTerminalPanel(labIdToUse);
+        setTerminalPanelMinimized(false);
+        persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
+        setScenarioStatusRevision((r) => r + 1);
+      });
+      return;
+    }
+
+    if (labIdToUse && storage.setScenarioLabId) storage.setScenarioLabId(scenarioId, labIdToUse);
+    if (labIdToUse && labIdToUse !== 'default' && storage.getLabs && storage.setLabs) {
       fetch('/data/labToolPresets.json').then(r => r.ok ? r.json() : null).catch(() => null).then((presets) => {
         const packIds = presets?.byScenario?.[scenarioId];
         if (Array.isArray(packIds) && packIds.length > 0) {
           const labs = storage.getLabs() || [];
-          const lab = labs.find((l) => l.id === currentLabId);
+          const lab = labs.find((l) => l.id === labIdToUse);
           if (lab && (!lab.packIds || lab.packIds.length === 0)) {
-            storage.setLabs(labs.map((l) => (l.id === currentLabId ? { ...l, packIds: [...packIds] } : l)));
+            storage.setLabs(labs.map((l) => (l.id === labIdToUse ? { ...l, packIds: [...packIds] } : l)));
           }
         }
       });
     }
-    openTerminalPanel();
+    openTerminalPanel(labIdToUse);
     setTerminalPanelMinimized(false);
     persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
     setScenarioStatusRevision((r) => r + 1);
@@ -236,8 +260,8 @@ export default function App() {
     setScenarioStatusRevision((r) => r + 1);
   };
 
-  const openTerminalPanel = () => {
-    const labId = currentLabId || 'default';
+  const openTerminalPanel = (forLabId) => {
+    const labId = forLabId != null ? forLabId : (currentLabId || 'default');
     setLabPanelOpen(false);
     setTerminalPanelOpen(true);
     setTerminalPanelEverOpened(true);
@@ -249,18 +273,13 @@ export default function App() {
         setActiveTerminalTabId(active);
         setTerminalHistory(Array.isArray(labState.history) ? labState.history : []);
       } else {
-        const ui = storage?.getUiSession?.();
-        const fallbackTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
-        const fallbackActive = ui?.activeTerminalTabId && fallbackTabs.some((t) => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : fallbackTabs[0].id;
-        setTerminalTabs(fallbackTabs);
-        setActiveTerminalTabId(fallbackActive);
-        setTerminalHistory(storage?.getTerminalHistory?.() || []);
+        setTerminalTabs([{ id: String(Date.now()), name: 'Session 1' }]);
+        setActiveTerminalTabId(String(Date.now()));
+        setTerminalHistory([]);
       }
     }).catch?.(() => {
-      const ui = storage?.getUiSession?.();
-      const fallbackTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
-      setTerminalTabs(fallbackTabs);
-      setActiveTerminalTabId(fallbackTabs[0].id);
+      setTerminalTabs([{ id: String(Date.now()), name: 'Session 1' }]);
+      setActiveTerminalTabId(String(Date.now()));
       setTerminalHistory([]);
     });
     uiSessionRef.current = { ...uiSessionRef.current, terminalPanelOpen: true, labPanelOpen: false };
@@ -325,15 +344,23 @@ export default function App() {
     setLabReportState(storage?.getLabReport?.(currentLabId) || '');
   }, [currentLabId, storage]);
 
-  // Quand on affiche un scénario, utiliser le lab mémorisé pour ce scénario (1 lab = 1 scénario en cours)
-  const prevScenarioIdRef = useRef(null);
+  // Scénario « en cours » (un seul à la fois) : d’après le stockage, pas la page affichée
+  const activeScenarioId = useMemo(() => {
+    if (!storage || !scenarios?.length) return null;
+    const found = scenarios.find(s => storage.getScenarioStatus(s.id) === 'in_progress');
+    return found ? found.id : null;
+  }, [scenarios, storage, scenarioStatusRevision]);
+  const activeScenario = useMemo(
+    () => (activeScenarioId ? (scenarios || []).find(s => s.id === activeScenarioId) : null),
+    [activeScenarioId, scenarios]
+  );
+
+  // Quand un scénario est en cours, afficher son lab. Quand on abandonne / termine / met en pause, on ne touche pas au lab affiché (on ne repasse pas au lab par défaut).
   useEffect(() => {
-    if (view !== 'scenario' || !currentScenarioId || !storage?.getScenarioLabId) return;
-    if (prevScenarioIdRef.current === currentScenarioId) return;
-    prevScenarioIdRef.current = currentScenarioId;
-    const labId = storage.getScenarioLabId(currentScenarioId);
+    if (!activeScenarioId || !storage?.getScenarioLabId) return;
+    const labId = storage.getScenarioLabId(activeScenarioId);
     if (labId && labId !== currentLabId) setCurrentLabId(labId);
-  }, [view, currentScenarioId, storage, currentLabId]);
+  }, [activeScenarioId, storage, scenarioStatusRevision]);
 
   const onLabChange = (id) => {
     const next = id || 'default';
@@ -345,7 +372,7 @@ export default function App() {
         tabs: terminalTabs,
         activeTabId: activeTerminalTabId,
         history: terminalHistory,
-        scenarioId: view === 'scenario' ? currentScenarioId : undefined,
+        scenarioId: activeScenarioId || (view === 'scenario' ? currentScenarioId : undefined),
         pip: {
           open: terminalPipOpen,
           tabs: pipTabs,
@@ -374,10 +401,9 @@ export default function App() {
             if (labState.pip.pos && typeof labState.pip.pos.x === 'number' && typeof labState.pip.pos.y === 'number') setPipPos(labState.pip.pos);
           }
         } else {
-          const ui = storage?.getUiSession?.();
-          const fallbackTabs = Array.isArray(ui?.terminalTabs) && ui.terminalTabs.length > 0 ? ui.terminalTabs : [{ id: '1', name: 'Session 1' }];
-          setTerminalTabs(fallbackTabs);
-          setActiveTerminalTabId(ui?.activeTerminalTabId && fallbackTabs.some((t) => t.id === ui.activeTerminalTabId) ? ui.activeTerminalTabId : fallbackTabs[0].id);
+          const freshId = String(Date.now());
+          setTerminalTabs([{ id: freshId, name: 'Session 1' }]);
+          setActiveTerminalTabId(freshId);
           setTerminalHistory([]);
         }
       }).finally(() => { labSwitchInProgressRef.current = false; });
@@ -426,7 +452,7 @@ export default function App() {
         tabs: terminalTabs,
         activeTabId: activeTerminalTabId,
         history: terminalHistory,
-        scenarioId: view === 'scenario' && currentScenarioId ? currentScenarioId : undefined,
+        scenarioId: activeScenarioId || (view === 'scenario' && currentScenarioId ? currentScenarioId : undefined),
         pip: {
           open: terminalPipOpen,
           tabs: pipTabs,
@@ -561,7 +587,7 @@ export default function App() {
   };
 
   const currentScenario = currentScenarioId ? scenarios.find(s => s.id === currentScenarioId) : null;
-  const showPipButton = view === 'scenario';
+  const showPipButton = !!activeScenarioId;
   const getViewUrl = (v) => `${typeof window !== 'undefined' ? window.location.origin + (window.location.pathname || '/') : ''}#/${v}`;
 
   const ViewComponent = VIEWS[view] || Dashboard;
@@ -572,6 +598,7 @@ export default function App() {
       <Sidebar
         view={view}
         currentScenarioId={currentScenarioId}
+        activeScenarioId={activeScenarioId}
         currentRoomId={currentRoomId}
         scenarios={scenarios}
         data={data}
@@ -580,7 +607,7 @@ export default function App() {
         onOpenScenario={onOpenScenario}
         onOpenRoom={onOpenRoom}
       />
-      <main class={`main ${view === 'scenario' ? 'has-scenario-bar' + (scenarioBarCollapsed ? ' scenario-bar-collapsed' : '') : ''}`} style={{ marginRight: terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : (capturePanelOpen && capturePanelPosition === 'right' ? 360 : 0) }}>
+      <main class={`main ${activeScenarioId ? 'has-scenario-bar' + (scenarioBarCollapsed ? ' scenario-bar-collapsed' : '') : ''}`} style={{ marginRight: terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : (capturePanelOpen && capturePanelPosition === 'right' ? 360 : 0) }}>
         <Topbar
           view={view}
           sidebarCollapsed={sidebarCollapsed}
@@ -616,7 +643,9 @@ export default function App() {
           onLabReportChange={(text) => { setLabReportState(text); storage?.setLabReport?.(currentLabId, text); }}
         />
         <div id="topbar-context" class="topbar-context" aria-live="polite">
-          {view === 'scenario' && currentScenario
+          {activeScenario
+            ? `Scénario en cours : ${activeScenario.title}`
+            : view === 'scenario' && currentScenario
             ? `Scénario : ${currentScenario.title}`
             : view === 'room' && currentRoomId
               ? (data?.rooms?.find(r => r.id === currentRoomId)?.title || 'Room')
@@ -674,30 +703,32 @@ export default function App() {
       <button type="button" class="log-fab" onClick={() => setLogOpen(true)} aria-label="Ouvrir le journal" title="Journal d'activité">📋</button>
       <button type="button" class="cve-fab" onClick={() => setCvePanelOpen(true)} aria-label="Recherche CVE" title="Rechercher un CVE">CVE</button>
       <CvePanel open={cvePanelOpen} onClose={() => setCvePanelOpen(false)} />
-      {showPipButton && <PipPanel open={pipOpen} scenario={currentScenario} onClose={() => setPipOpen(false)} />}
-      {view === 'scenario' && (
+      {showPipButton && <PipPanel open={pipOpen} scenario={activeScenario || currentScenario} onClose={() => setPipOpen(false)} />}
+      {activeScenarioId && activeScenario && (
           <ScenarioBottomBar
-            scenario={currentScenario}
+            scenario={activeScenario}
             storage={storage}
             collapsed={scenarioBarCollapsed}
             onCollapsed={setScenarioBarCollapsed}
             onExpand={() => {
-              const id = currentScenarioId || '';
-              window.location.hash = '#/scenario/' + id;
+              const id = activeScenarioId || '';
+              window.location.hash = '#/scenario/' + encodeURIComponent(id);
+              setViewState('scenario');
+              setCurrentScenarioId(id);
               requestAnimationFrame(() => {
                 const el = document.querySelector('#view-scenario .scenario-content-column');
                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
               });
             }}
             terminalStripWidth={terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : 0}
-            onOpenTerminal={openTerminalPanel}
+            onOpenTerminal={() => openTerminalPanel(currentLabId || undefined)}
             onOpenPipRecap={() => setPipOpen(true)}
-            onPause={currentScenario ? () => { storage?.setScenarioStatus(currentScenario.id, 'paused'); setScenarioStatusRevision((r) => r + 1); } : undefined}
-            onResume={currentScenario ? () => handleResumeScenario(currentScenario.id) : undefined}
-            status={currentScenario ? (storage?.getScenarioStatus?.(currentScenario.id) || 'not_started') : 'not_started'}
+            onPause={() => { storage?.setScenarioStatus(activeScenario.id, 'paused'); setScenarioStatusRevision((r) => r + 1); }}
+            onResume={() => handleResumeScenario(activeScenario.id)}
+            status={storage?.getScenarioStatus?.(activeScenario.id) || 'not_started'}
             getTerminalUrl={() => getTerminalUrl(terminalUseDefaultLab, activeTerminalTabId)}
           />
-        )}
+      )}
       <TerminalPipPanel
         open={terminalPipOpen}
         onClose={() => setTerminalPipOpen(false)}
@@ -736,8 +767,8 @@ export default function App() {
             }}
           />
           <header class="terminal-side-panel-header">
-            <h3>{terminalPanelMinimized ? '⌨' : 'Terminal web (attaquant)'}</h3>
-            {!terminalPanelMinimized && currentLabId !== 'default' && (
+            <h3>{terminalPanelMinimized ? '⌨' : 'Terminal web (attaquant)'}{!terminalPanelMinimized && currentLab?.name && currentLab.id !== 'default' ? ` – ${currentLab.name}` : ''}</h3>
+            {!terminalPanelMinimized && currentLabId !== 'default' && !activeScenarioId && (
               <div class="terminal-lab-choice">
                 <button type="button" class={`terminal-lab-choice-btn ${terminalUseDefaultLab ? 'active' : ''}`} onClick={() => { setTerminalUseDefaultLab(true); persistUiSession({ terminalUseDefaultLab: true }); }} title="Terminal du lab par défaut">Lab défaut</button>
                 <button type="button" class={`terminal-lab-choice-btn ${!terminalUseDefaultLab ? 'active' : ''}`} onClick={() => { setTerminalUseDefaultLab(false); persistUiSession({ terminalUseDefaultLab: false }); }} title="Terminal du lab actif">Lab actif</button>
@@ -817,7 +848,7 @@ export default function App() {
           <div class="terminal-journal">
             <h4 class="terminal-journal-title">Journal de session (historique enregistré)</h4>
             <p class="terminal-journal-desc">Ajoute une ligne (commande ou note) pour la garder en mémoire.</p>
-            <form class="terminal-journal-form" onSubmit={(e) => { e.preventDefault(); const t = terminalJournalInput.trim(); if (t) { const labId = currentLabId || 'default'; const entry = { id: String(Date.now()), ts: new Date().toISOString(), text: t, sessionId: activeTerminalTabId }; setTerminalHistory(prev => [...prev, entry]); storage?.appendLabJournalEntry?.(labId, { ...entry, type: 'note', scenarioId: view === 'scenario' ? currentScenarioId : undefined }); setTerminalJournalInput(''); } }}>
+            <form class="terminal-journal-form" onSubmit={(e) => { e.preventDefault(); const t = terminalJournalInput.trim(); if (t) { const labId = currentLabId || 'default'; const entry = { id: String(Date.now()), ts: new Date().toISOString(), text: t, sessionId: activeTerminalTabId }; setTerminalHistory(prev => [...prev, entry]); storage?.appendLabJournalEntry?.(labId, { ...entry, type: 'note', scenarioId: activeScenarioId || (view === 'scenario' ? currentScenarioId : undefined) }); setTerminalJournalInput(''); } }}>
               <input id="terminal-journal-input" name="terminal-journal-entry" type="text" class="terminal-journal-input" value={terminalJournalInput} onInput={e => setTerminalJournalInput(e.target.value)} placeholder="Commande ou note à enregistrer" />
               <button type="submit" class="btn btn-secondary">Ajouter</button>
             </form>

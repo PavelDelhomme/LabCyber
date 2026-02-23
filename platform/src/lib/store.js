@@ -5,14 +5,15 @@ function getStorage() {
   return typeof window !== 'undefined' ? window.LabCyberStorage : null;
 }
 
-/** URL du terminal : client intégré (terminal-client.html) qui se connecte au backend lab-terminal (path=terminal-house) et envoie postMessage à la fermeture (exit). sessionId = identifiant unique par onglet (évite mélange d'historique entre sessions). reloadKey > 0 = nouvelle session. */
+/** URL du terminal. sessionId = identifiant par onglet (historique séparé). reloadKey > 0 force le rechargement de l’iframe mais on garde le même session pour que le backend rejoue le buffer (replay des sorties). */
 export function getTerminalUrl(useDefaultLab = true, sessionId = '', reloadKey = 0) {
   if (typeof window === 'undefined') return '#';
   const base = window.location.origin.replace(/\/$/, '');
   let url = `${base}/terminal-client.html?path=terminal-house`;
-  let sid = (reloadKey > 0 && sessionId) ? `${sessionId}-r${reloadKey}` : (sessionId || '');
+  let sid = sessionId || '';
   if (!sid) sid = 's' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
   url += '&session=' + encodeURIComponent(sid);
+  if (reloadKey > 0) url += '&_r=' + reloadKey;
   return url;
 }
 
@@ -27,12 +28,11 @@ export function getDesktopUrl() {
 export function getMachineUrl(urlKey) {
   if (typeof window === 'undefined') return { url: '#', label: '' };
   const base = window.location.origin.replace(/\/$/, '');
-  const port = window.location.port || '80';
-  if (urlKey === 'terminal') return { url: `${base}/terminal-client.html?path=terminal-house`, label: `Terminal (${base}/terminal-client.html)` };
-  if (urlKey === 'desktop') return { url: `${base}/desktop/`, label: `Bureau (${base}/desktop/)` };
-  const hostnames = { dvwa: 'dvwa.lab', juice: 'juice.lab', api: 'api.lab', bwapp: 'bwapp.lab' };
-  const host = hostnames[urlKey] || urlKey + '.lab';
-  return { url: `${window.location.protocol}//${host}:${port}`, label: `${host}:${port} (ajoute 127.0.0.1 ${host} dans /etc/hosts)` };
+  if (urlKey === 'terminal') return { url: `${base}/terminal-client.html?path=terminal-house`, label: 'Terminal attaquant' };
+  if (urlKey === 'desktop') return { url: `${base}/desktop/`, label: 'Bureau' };
+  const paths = { dvwa: '/cible/dvwa/', juice: '/cible/juice/', api: '/cible/api/', bwapp: '/cible/bwapp/' };
+  const path = paths[urlKey] || '/cible/' + urlKey + '/';
+  return { url: base + path, label: 'Ouvrir dans le navigateur' };
 }
 
 export function useStore() {

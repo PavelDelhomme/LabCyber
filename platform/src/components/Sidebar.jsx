@@ -10,6 +10,7 @@ function byCategory(categories, categoryId) {
 export default function Sidebar({
   view,
   currentScenarioId,
+  activeScenarioId,
   currentRoomId,
   scenarios,
   data,
@@ -145,11 +146,12 @@ export default function Sidebar({
               {filteredScenarios.map(s => (
                 <button
                   key={s.id}
-                  class={`nav-item nav-item-sub ${view === 'scenario' && currentScenarioId === s.id ? 'active' : ''}`}
+                  class={`nav-item nav-item-sub ${view === 'scenario' && currentScenarioId === s.id ? 'active' : ''} ${activeScenarioId === s.id ? 'scenario-in-progress' : ''}`}
                   onClick={() => onOpenScenario(s.id)}
                 >
                   <span class="nav-icon" style="color:var(--accent)">◆</span>
                   <span>{escapeHtml(s.title)}</span>
+                  {activeScenarioId === s.id && <span class="sidebar-scenario-badge" title="Scénario en cours">●</span>}
                 </button>
               ))}
             </div>

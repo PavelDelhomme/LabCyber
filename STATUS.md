@@ -6,7 +6,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ## Ce que vous devez faire précisément
 
-- **Tests** : lancer `make test` (14 blocs). Avec lab : `make up` puis `make test`. Rapport : `TEST_REPORT=test-results.txt make test` ou `make test-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md).
+- **Tests** : lancer `make test` (**15 blocs**). Avec lab : `make up` puis `make test`. Rapport : `TEST_REPORT=test-results.txt make test` ou `make test-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md).
 - **Targets** : les cibles (DVWA, Juice, vuln-api, vuln-network, etc.) sont enregistrées dans **`platform/data/targets.json`** et **`platform/public/data/targets.json`** (catalogue JSON, clé `targets`). Ce n’est pas un dossier « targets » mais des **fichiers de catalogue** utilisés par Engagements et Dashboard.
 - **vuln-network / vuln-api** : opérationnels quand le lab est up. vuln-api est testé (api.lab, `/api/health`, `/api/products`, `/api/users/1`) ; vuln-network est testé via attaquant → SSH. Améliorations possibles : plus de routes API, plus de services dans vuln-network, selon les scénarios.
 - **Packs d’outils** : les packs sont des **métadonnées** (`toolPacks.json`, `labToolPresets.json`, `labToolPresets.byScenario`). Les **outils sont déjà dans l’image attaquant** (Kali). Le terminal ouvert dans le lab = shell du lab actif (conteneur attaquant) ; les packs recommandés par scénario sont appliqués à la création du lab (lab dédié au scénario).
@@ -32,9 +32,34 @@ La suite `make test` vise la **couverture la plus totale possible sans E2E** (sa
 - **[11]** Terminal Phase 3 : getTerminalUrl (session), **store (lab, terminal, progression, simulateur, capture, proxy, API)**, toolPacks, labToolPresets, lab-terminal, gateway → attaquant.
 - **[12]** Docs (ROADMAP, CIBLES, Phase3, STATUS), getMachineUrl, **gateway /cible/* (dvwa, juice, api, bwapp)**, scénarios urlKey, attaquant build, abandon scénario, vues clés.
 - **[13]** Plateforme complète : targets, learning, docSources, challenges, toutes les vues et composants, App routes, main.jsx, vuln-api /api/health, /api/products, /api/users/1.
-- **[14]** **Couverture absolue** : storage.js (getLabs, getCurrentLabId, clés IndexedDB), defaultData.js (données embarquées), docker-compose (gateway, platform, attaquant, vuln-api, vuln-network), gateway (terminal-house, server_name api.lab, terminal.lab), rooms.json (structure rooms/categories), toolPacks (au moins un pack), **HTTP /data/docs.json**, **vuln-api POST /api/login**.
+- **[14]** **Couverture absolue** : storage.js, defaultData.js, docker-compose (5 services), gateway (terminal-house, api.lab, terminal.lab), rooms/toolPacks, HTTP /data/docs.json, vuln-api POST /api/login.
+- **[15]** **Système lab complet** : **bureau VNC** (gateway /desktop, docker-compose desktop, HTTP /desktop) ; **proxy** (docker-compose proxy, store getProxies/setProxies) ; **capture pcap** (CaptureView pcap/capture/upload, store getCaptureState/setCaptureState) ; **simulateur réseau** (NetworkSimulatorView carte/simulation/topology, store get/setNetworkSimulations) ; **progression** (ProgressionView tâches, store getTaskDone/getScenarioStatus) ; **cours/Learning** (LearningView, learning.json) ; **docs** (DocOfflineView, DocsView, docSources.json) ; **cibles** (targets.json).
 
 **Ce que les tests ne font pas (E2E / manuel)** : comportement UI (clics, panneaux, PiP, navigation), flux métier complets (scénario → lab → terminal → cible, progression, engagements, CVE), envoi réel de requêtes depuis ApiClientView, chargement/analyse .pcap, création de cartes dans le simulateur, config proxy, recherche/sync Doc & Learning, vérification des outils dans le shell du lab. Pour cela : tests manuels et/ou E2E (Playwright/Cypress).
+
+---
+
+## À faire maintenant : analyser / tester quoi
+
+Après `make test` (15 blocs verts), à faire **à la main** ou en E2E :
+
+| À analyser / tester | Où / comment |
+|--------------------|-------------|
+| **Terminal** | Ouvrir le panneau terminal, plusieurs onglets, PiP, exit, rechargement (replay des sorties). Vérifier que le lab actif = shell attaquant (Kali). |
+| **Barre scénario** | Démarrer un scénario → barre en bas visible, avancement des tâches (fait / en cours). Abandon scénario → lab non réinitialisé. |
+| **Cibles navigateur** | Depuis un scénario ou Engagements : ouvrir DVWA, Juice, bWAPP via /cible/* (même origine). Vérifier que les pages se chargent. |
+| **Requêtes API (Postman-like)** | Vue Requêtes API : envoyer GET /api/health, /api/products vers api.lab (Host). Vérifier réponses. |
+| **Capture pcap** | Ouvrir la vue Capture, charger un fichier .pcap (capturé sur ton PC). Vérifier colonnes, filtre, détail. |
+| **Simulateur réseau** | Ouvrir la vue Simulateur : créer une carte, ajouter des nœuds (PC, routeur), liens. Vérifier persistance par lab (changer de lab, revenir). |
+| **Proxy** | Vue Proxy : configurer un proxy (ex. Squid du lab si `make proxy`). Vérifier que les requêtes passent par le proxy. |
+| **Bureau VNC** | Avec lab up : ouvrir http://127.0.0.1:8080/desktop/ → noVNC (bureau distant). Vérifier connexion WebSocket. |
+| **Cours / Learning** | Vue Doc & Cours : parcourir thèmes, ouvrir un doc/cours. Vérifier sync hors ligne si activé. |
+| **Docs / Bibliothèque** | Vue Bibliothèque doc : recherche, ouverture d’un doc. Vérifier docSources.json chargé. |
+| **Progression** | Scénario en cours : cocher une tâche comme faite. Vérifier que la progression est enregistrée (rechargement). |
+| **CVE** | Recherche CVE (NVD), afficher un résultat dans le panneau. (À améliorer : enregistrement par lab.) |
+| **Packs outils** | Créer un lab avec un scénario qui a des packs recommandés. Ouvrir le terminal du lab : vérifier que les outils (nmap, sqlmap, etc.) sont disponibles. |
+
+**Résumé** : les tests automatisés couvrent **fichiers, JSON, HTTP, store, gateway, vues présentes**. Tout ce qui est **interaction utilisateur** (clics, navigation, panneaux, chargement de fichier, connexion VNC) doit être **testé à la main** ou avec des tests E2E (Playwright/Cypress) si tu en ajoutes.
 
 ---
 
@@ -237,7 +262,7 @@ Ensuite : Phase 4 (bureau fait maison), Phase 5 (interconnexion complète, repri
 - **Démarrer un scénario** : si lab par défaut, création automatique d’un lab dédié (« Lab – [titre scénario] ») avec packs recommandés ; une session terminal fraîche pour ce lab ; changement de lab sans état sauvegardé affiche une session fraîche (plus les anciennes sessions).
 - **Ouvrir DVWA / cibles dans le navigateur** : URLs en même origine (`/cible/dvwa/`, `/cible/juice/`, etc.) ; routes ajoutées dans la gateway ; plus besoin de /etc/hosts pour tester.
 - **Popup détail lab** : z-index 10000 (modal et lab-panel-overlay) pour rester au-dessus de la barre scénario et du panneau terminal (accueil, scénario, gérer les labs, proxy, capture visibles).
-- **make test** : **14 blocs**, couverture maximale sans E2E (structure : defaultData, storage.js, vite, Dockerfile, CSS ; tous les JSON ; store, gateway, docker-compose ; HTTP /data/docs.json ; vuln-api POST /api/login). Bloc [14/14] couverture absolue (storage, defaultData, compose, gateway, rooms/toolPacks, docs.json, API login). Rapport : `TEST_REPORT=test-results.txt make test` ou `make test-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md).
+- **make test** : **15 blocs**, couverture maximale sans E2E. Bloc [15/15] **système lab complet** : bureau VNC (/desktop), proxy (compose + store), capture pcap (vue + store), simulateur réseau (vue + store), progression (vue + store), cours/Learning, docs, cibles. Rapport : `TEST_REPORT=test-results.txt make test` ou `make test-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md).
 
 ---
 

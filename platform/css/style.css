@@ -249,6 +249,8 @@ body {
   border-radius: var(--radius);
 }
 .nav-item-sub:hover { background: var(--bg-hover); }
+.nav-item-sub.scenario-in-progress { border-left: 2px solid var(--accent); }
+.sidebar-scenario-badge { margin-left: 0.35rem; color: var(--accent); font-size: 0.65rem; }
 .sidebar-empty {
   display: block;
   padding: 0.5rem 0.6rem;
@@ -1124,7 +1126,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 10000;
   padding: 1rem;
 }
 
@@ -2083,7 +2085,7 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 1000;
+  z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;

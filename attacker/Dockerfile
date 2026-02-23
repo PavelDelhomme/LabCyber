@@ -1,15 +1,21 @@
-# Machine attaquant : Kali Linux (outils pentest, sniffing, spoofing, forensique)
-# Pour scénarios type TryHackMe / HackTheBox : nmap, hydra, sqlmap, tcpdump, scapy, etc.
-# Phase 3 (roadmap système maison) : image alignée sur toolPacks.json / labToolPresets.json :
-#   packs inclus = base, network, web, bruteforce, osint (tous les scénarios couverts).
+# Machine attaquant : Kali Linux (outils pentest) + backend terminal maison (lab-terminal) dans le même conteneur.
+# Le panneau terminal (terminal-house) utilise lab-terminal → shell = Kali (nmap, tcpdump, sqlmap, etc.).
+# Build depuis la racine du repo : docker build -f attacker/Dockerfile .
 
+# Stage 1 : compiler lab-terminal (Go)
+FROM golang:1.21-alpine AS lab-terminal-builder
+WORKDIR /build
+RUN apk add --no-cache gcc musl-dev
+COPY lab-terminal/ .
+RUN go mod download 2>/dev/null || true && CGO_ENABLED=1 go build -o /lab-terminal .
+
+# Stage 2 : Kali + ttyd + lab-terminal
 FROM kalilinux/kali-rolling
 
 LABEL org.labcyber.phase3.packs="base,network,web,bruteforce,osint"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Mise à jour et outils essentiels (éviter kali-linux-headless = très lourd)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nmap \
     netcat-openbsd \
@@ -41,14 +47,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     && rm -rf /var/lib/apt/lists/*
 
-# Outils Python : recon, requêtes, construction de paquets (sniffing / spoofing)
 RUN pip3 install --no-cache-dir --break-system-packages \
     requests \
     theharvester \
     scapy \
     2>/dev/null || true
 
-# Terminal web (ttyd) – binaires directs
+# ttyd (terminal web alternatif)
 ARG TTYD_VERSION=1.7.4
 RUN arch=$(dpkg --print-architecture) && \
     case "$arch" in amd64) suf="x86_64";; arm64) suf="aarch64";; *) suf="";; esac && \
@@ -57,23 +62,23 @@ RUN arch=$(dpkg --print-architecture) && \
       chmod +x /usr/local/bin/ttyd && [ -x /usr/local/bin/ttyd ] || (echo "ttyd install failed for $arch" && exit 1); \
     fi
 
+# Backend terminal maison (PTY + WebSocket) : même conteneur = shell Kali
+COPY --from=lab-terminal-builder /lab-terminal /usr/local/bin/lab-terminal
+
 WORKDIR /workspace
+RUN echo "base,network,web,bruteforce,osint" > /workspace/phase3-packs.txt
 
-# Fichier de référence Phase 3 : packs inclus dans cette image (pour vérif / scripts)
-RUN echo "base,network,web,bruteforce,osint" > /workspace/phase3-packs.txt && \
-    echo "# Packs Phase 3 inclus (toolPacks.json). Tous les scénarios labToolPresets.byScenario sont couverts." >> /workspace/phase3-packs.txt
-
-# Rappel : cibles du lab (vuln-network, vuln-api, dvwa, juice-shop, bwapp)
 RUN echo 'echo "=== Lab Cyber – Attaquant (Kali) ==="' >> /root/.bashrc && \
-    echo 'echo "Cibles: vuln-network (SSH/Redis), vuln-api (API), dvwa, juice-shop, bwapp"' >> /root/.bashrc && \
-    echo 'echo "Ex: nmap -sV vuln-network | tcpdump -i any -w cap.pcap | scapy"' >> /root/.bashrc
+    echo 'echo "Cibles: vuln-network, vuln-api, dvwa, juice-shop, bwapp"' >> /root/.bashrc && \
+    echo 'echo "nmap, tcpdump, sqlmap, etc. disponibles."' >> /root/.bashrc
 
-# Persistance de l'historique bash : commandes conservées entre rechargements et nouvelles sessions
 RUN mkdir -p /root/.lab_bash_history && \
     echo 'export HISTFILE="/root/.lab_bash_history/history"' >> /root/.bashrc && \
     echo 'export HISTSIZE=5000' >> /root/.bashrc && \
     echo 'export HISTFILESIZE=10000' >> /root/.bashrc && \
     echo 'export PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }history -a"' >> /root/.bashrc
 
-EXPOSE 7681
-CMD ["/bin/sh", "-c", "if [ -x /usr/local/bin/ttyd ]; then exec ttyd -p 7681 -i 0.0.0.0 -W bash; else sleep infinity; fi"]
+EXPOSE 7681 7682
+ENV PORT=7682
+# lab-terminal sur 7682 (panneau terminal-house), ttyd sur 7681 (fallback)
+CMD ["/bin/sh", "-c", "lab-terminal & exec ttyd -p 7681 -i 0.0.0.0 -W bash"]

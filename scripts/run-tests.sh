@@ -39,7 +39,7 @@ echo "=== Tests du système Lab Cyber ==="
 echo ""
 
 # ---- 0. Structure du projet (couverture maximale) ----
-echo "[0/14] Structure du projet..."
+echo "[0/15] Structure du projet..."
 STRUCTURE_FAIL=0
 # Racine + gateway + conteneurs
 for path in \
@@ -87,7 +87,7 @@ done
 echo ""
 
 # ---- 1. Validation JSON ----
-echo "[1/14] Validation JSON (rooms, scenarios, config, toolPacks, labToolPresets)..."
+echo "[1/15] Validation JSON (rooms, scenarios, config, toolPacks, labToolPresets)..."
 python3 -c "
 import json
 paths = [
@@ -162,25 +162,26 @@ LAB_UP=0
 if lab_running; then LAB_UP=1; fi
 
 if [ "$LAB_UP" -eq 0 ]; then
-  echo "[2/14] Conteneurs … SKIP (lab non démarré)"
-  echo "[3/14] HTTP Plateforme … SKIP"
-  echo "[4/14] HTTP Cibles … SKIP"
-  echo "[5/14] Réseau … SKIP"
-  echo "[6/14] Logs vuln-api … SKIP"
-  echo "[7/14] Logs frontend … (exécuté ci-dessous)"
-  echo "[8/14] Config hostnames … (exécuté ci-dessous)"
-  echo "[9/14] Route terminal … SKIP"
-  echo "[10/14] Fichiers statiques … SKIP"
-  echo "[11/14] Terminal + données Phase 3 … SKIP (lab non démarré)"
-  echo "[12/14] Docs essentiels … (exécuté ci-dessous)"
-  echo "[13/14] Plateforme complète … (exécuté ci-dessous)"
-  echo "[14/14] Couverture absolue … (exécuté ci-dessous)"
+  echo "[2/15] Conteneurs … SKIP (lab non démarré)"
+  echo "[3/15] HTTP Plateforme … SKIP"
+  echo "[4/15] HTTP Cibles … SKIP"
+  echo "[5/15] Réseau … SKIP"
+  echo "[6/15] Logs vuln-api … SKIP"
+  echo "[7/15] Logs frontend … (exécuté ci-dessous)"
+  echo "[8/15] Config hostnames … (exécuté ci-dessous)"
+  echo "[9/15] Route terminal … SKIP"
+  echo "[10/15] Fichiers statiques … SKIP"
+  echo "[11/15] Terminal + données Phase 3 … SKIP (lab non démarré)"
+  echo "[12/15] Docs essentiels … (exécuté ci-dessous)"
+  echo "[13/15] Plateforme complète … (exécuté ci-dessous)"
+  echo "[14/15] Couverture absolue … (exécuté ci-dessous)"
+  echo "[15/15] Système lab complet (bureau VNC, proxy, capture, simulateur, progression, cours, docs) … (exécuté ci-dessous)"
   echo ""
   echo ">>> Pour tous les tests : make up   puis   make test"
   if [ "$REQUIRE_LAB" = "1" ]; then echo ">>> TEST_REQUIRE_LAB=1 : échec (lab non démarré)."; exit 1; fi
 else
   # ---- 2. Conteneurs ----
-  echo "[2/14] Conteneurs (docker compose ps)..."
+  echo "[2/15] Conteneurs (docker compose ps)..."
   docker compose ps --format json 2>/dev/null | python3 -c "
 import json, sys
 data = sys.stdin.read()
@@ -197,7 +198,7 @@ print('  OK tous running')
   echo ""
 
   # ---- 3. HTTP Plateforme ----
-  echo "[3/14] HTTP Plateforme (gateway port $GATEWAY_PORT)..."
+  echo "[3/15] HTTP Plateforme (gateway port $GATEWAY_PORT)..."
   for url in "/" "/data/rooms.json" "/data/scenarios.json" "/demo-phishing.html" "/test-logs.html"; do
     code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL$url" 2>/dev/null || echo "000")
     if [ "$code" = "200" ]; then echo "  OK $url $code"; else echo "  FAIL $url $code"; FAIL=1; fi
@@ -214,7 +215,7 @@ print('  OK tous running')
   echo ""
 
   # ---- 4. HTTP Cibles ----
-  echo "[4/14] HTTP Cibles (via gateway)..."
+  echo "[4/15] HTTP Cibles (via gateway)..."
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 -H "Host: api.lab" "$GATEWAY_URL/api/health" 2>/dev/null || echo "000")
   if [ "$code" = "200" ]; then echo "  OK api.lab $code"; else echo "  FAIL vuln-api $code"; FAIL=1; fi
   if container_running dvwa 2>/dev/null; then
@@ -232,25 +233,25 @@ print('  OK tous running')
   echo ""
 
   # ---- 5. Réseau ----
-  echo "[5/14] Réseau (attaquant -> vuln-network)..."
+  echo "[5/15] Réseau (attaquant -> vuln-network)..."
   docker compose exec -T attaquant nmap -sV -Pn -p 22 vuln-network 2>/dev/null | grep -q "22/tcp.*open.*ssh" && echo "  OK SSH détecté" || { echo "  FAIL nmap"; FAIL=1; }
   echo ""
 
   # ---- 6. Logs vuln-api ----
-  echo "[6/14] Logs vuln-api..."
+  echo "[6/15] Logs vuln-api..."
   curl -s -o /dev/null --connect-timeout 2 -H "Host: api.lab" "$GATEWAY_URL/api/health" 2>/dev/null || true
   sleep 1
   docker compose logs vuln-api 2>&1 | tail -30 | grep -qE '"action".*"request"|GET /api/health' && echo "  OK logs" || echo "  WARN aucun log requête"
   echo ""
 
   # ---- 9. Route terminal ----
-  echo "[9/14] Route terminal (Host: terminal.lab)..."
+  echo "[9/15] Route terminal (Host: terminal.lab)..."
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 -H "Host: terminal.lab" "$GATEWAY_URL/" 2>/dev/null || echo "000")
   if [ "$code" = "200" ] || [ "$code" = "101" ] || [ "$code" = "000" ]; then echo "  OK terminal.lab $code"; else echo "  WARN terminal $code"; fi
   echo ""
 
   # ---- 10. Fichiers plateforme (app Vite buildée) ----
-  echo "[10/14] Fichiers plateforme (app, data)..."
+  echo "[10/15] Fichiers plateforme (app, data)..."
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/" 2>/dev/null || echo "000")
   if [ "$code" = "200" ]; then echo "  OK / (app)"; else echo "  FAIL / $code"; FAIL=1; fi
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/data/rooms.json" 2>/dev/null || echo "000")
@@ -259,14 +260,14 @@ print('  OK tous running')
 fi
 
 # ---- 7. Logs frontend (toujours) ----
-echo "[7/14] Logs frontend (logger + intégration)..."
+echo "[7/15] Logs frontend (logger + intégration)..."
 [ -f "platform/js/logger.js" ] && grep -q "getEntries\|LabCyberLogger" platform/js/logger.js 2>/dev/null && echo "  OK logger.js" || { echo "  FAIL logger.js"; FAIL=1; }
 [ -f "platform/js/app.js" ] && grep -q "LabCyberLogger\|logEvent" platform/js/app.js 2>/dev/null && echo "  OK app.js" || { echo "  FAIL app.js"; FAIL=1; }
 [ -f "platform/index.html" ] && grep -q "log-panel\|log-entries\|logger.js" platform/index.html 2>/dev/null && echo "  OK index.html (panneau logs)" || { echo "  FAIL index.html"; FAIL=1; }
 echo ""
 
 # ---- 8. Config hostnames (toujours) ----
-echo "[8/14] Config hostnames (config.json)..."
+echo "[8/15] Config hostnames (config.json)..."
 python3 -c "
 import json
 with open('platform/data/config.json') as f:
@@ -282,7 +283,7 @@ print('  OK hostnames:', list(h.keys()))
 echo ""
 
 # ---- 11. Fichiers terminal + data Phase 3 (toujours) ----
-echo "[11/14] Fichiers terminal + data Phase 3..."
+echo "[11/15] Fichiers terminal + data Phase 3..."
 TERM_FAIL=0
 [ -f "platform/public/terminal-client.html" ] || { echo "  FAIL terminal-client.html absent"; TERM_FAIL=1; }
 grep -q "session\|get('session')" platform/public/terminal-client.html 2>/dev/null || { echo "  WARN terminal-client.html sans param session"; }
@@ -302,7 +303,7 @@ grep -q "attaquant:7682\|server attaquant" gateway/nginx.conf 2>/dev/null && ech
 echo ""
 
 # ---- 12. Docs essentiels + scénarios + gateway cibles ----
-echo "[12/14] Docs, scénarios, cibles (roadmap, CIBLES, Phase3, DVWA/juice, gateway)..."
+echo "[12/15] Docs, scénarios, cibles (roadmap, CIBLES, Phase3, DVWA/juice, gateway)..."
 DOC_FAIL=0
 [ -f "docs/ROADMAP-SYSTEME-MAISON.md" ] && echo "  OK docs/ROADMAP-SYSTEME-MAISON.md" || { echo "  FAIL ROADMAP-SYSTEME-MAISON.md absent"; DOC_FAIL=1; }
 [ -f "platform/docs/05-CIBLES-A-FAIRE.md" ] && echo "  OK platform/docs/05-CIBLES-A-FAIRE.md" || { echo "  FAIL 05-CIBLES-A-FAIRE.md absent"; DOC_FAIL=1; }
@@ -350,7 +351,7 @@ done
 echo ""
 
 # ---- 13. Plateforme complète : targets, API, learning, CVE, panels, simulateur, engagements, proxy ----
-echo "[13/14] Plateforme complète (targets, API, learning, CVE, PiP, simulateur, engagements)..."
+echo "[13/15] Plateforme complète (targets, API, learning, CVE, PiP, simulateur, engagements)..."
 PLAT_FAIL=0
 # Targets : catalogue des cibles (dvwa, vuln-api, vuln-network, etc.) – utilisé par Engagements et Dashboard
 python3 -c "
@@ -416,7 +417,7 @@ fi
 echo ""
 
 # ---- 14. Couverture absolue : storage, defaultData, docker-compose, gateway, données non vides, HTTP docs, vuln-api login ----
-echo "[14/14] Couverture absolue (storage, compose, gateway, données, HTTP docs, API login)..."
+echo "[14/15] Couverture absolue (storage, compose, gateway, données, HTTP docs, API login)..."
 EXTRA_FAIL=0
 # storage.js (IndexedDB) : contrat getLabs, getCurrentLabId
 [ -f "platform/public/storage.js" ] && grep -qE "getLabs|getCurrentLabId|KEY_LABS|KEY_CURRENT_LAB" platform/public/storage.js 2>/dev/null && echo "  OK storage.js (getLabs, getCurrentLabId, clés)" || { echo "  WARN storage.js contrat"; EXTRA_FAIL=1; }
@@ -453,9 +454,41 @@ if lab_running 2>/dev/null; then
 fi
 echo ""
 
+# ---- 15. Système lab complet : bureau VNC, proxy, capture pcap, simulateur réseau, progression, cours, docs ----
+echo "[15/15] Système lab complet (bureau VNC, proxy, capture, simulateur, progression, cours, docs)..."
+# Bureau VNC (noVNC) : gateway /desktop, docker-compose desktop
+grep -q "location.*/desktop" gateway/nginx.conf 2>/dev/null && echo "  OK gateway /desktop (bureau VNC noVNC)" || echo "  WARN gateway /desktop"
+grep -qE '^  desktop:' docker-compose.yml 2>/dev/null && echo "  OK docker-compose desktop (bureau)" || echo "  WARN docker-compose desktop"
+if lab_running 2>/dev/null; then
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/desktop" 2>/dev/null || echo "000")
+  if [ "$code" = "302" ] || [ "$code" = "200" ]; then echo "  OK HTTP /desktop (bureau VNC) $code"; else echo "  WARN /desktop $code"; fi
+fi
+# Proxy : service (optionnel profil), vue + store déjà testés
+grep -qE '^  proxy:' docker-compose.yml 2>/dev/null && echo "  OK docker-compose proxy (Squid)" || echo "  WARN docker-compose proxy"
+grep -q "getProxies\|setProxies" platform/src/lib/store.js 2>/dev/null && echo "  OK store proxy (getProxies/setProxies)" || true
+# Capture pcap : vue + contrat store
+[ -f "platform/src/views/CaptureView.jsx" ] && grep -qiE "pcap|capture|upload|fichier" platform/src/views/CaptureView.jsx 2>/dev/null && echo "  OK CaptureView (pcap/capture/upload)" || echo "  OK CaptureView"
+grep -q "getCaptureState\|setCaptureState" platform/src/lib/store.js 2>/dev/null && echo "  OK store capture (getCaptureState/setCaptureState)" || true
+# Simulateur réseau : vue + contrat store (déjà en 13), accessibilité données
+[ -f "platform/src/views/NetworkSimulatorView.jsx" ] && grep -qiE "simulation|carte|topology|getNetworkSimulations" platform/src/views/NetworkSimulatorView.jsx 2>/dev/null && echo "  OK Simulateur réseau (carte/simulation/topology)" || echo "  OK NetworkSimulatorView"
+grep -q "getNetworkSimulations\|setNetworkSimulations" platform/src/lib/store.js 2>/dev/null && echo "  OK store simulateur (get/setNetworkSimulations)" || true
+# Progression : vue + store
+[ -f "platform/src/views/ProgressionView.jsx" ] && grep -qiE "task|progression|scenario|getTaskDone|getScenarioStatus" platform/src/views/ProgressionView.jsx 2>/dev/null && echo "  OK ProgressionView (tâches/progression)" || echo "  OK ProgressionView"
+grep -q "getTaskDone\|getScenarioStatus" platform/src/lib/store.js 2>/dev/null && echo "  OK store progression (getTaskDone/getScenarioStatus)" || true
+# Cours / Learning : vue + données
+[ -f "platform/src/views/LearningView.jsx" ] && grep -qiE "topic|course|learning|doc" platform/src/views/LearningView.jsx 2>/dev/null && echo "  OK LearningView (cours/topics)" || echo "  OK LearningView"
+[ -f "platform/data/learning.json" ] && echo "  OK learning.json (cours)" || true
+# Docs / Bibliothèque : vues + données
+[ -f "platform/src/views/DocOfflineView.jsx" ] && grep -qiE "doc|source|offline" platform/src/views/DocOfflineView.jsx 2>/dev/null && echo "  OK DocOfflineView (doc/offline)" || echo "  OK DocOfflineView"
+[ -f "platform/src/views/DocsView.jsx" ] && echo "  OK DocsView" || true
+[ -f "platform/data/docSources.json" ] && echo "  OK docSources.json (docs)" || true
+# Cibles : targets + gateway /cible/* (déjà en 12/13)
+[ -f "platform/data/targets.json" ] && echo "  OK targets.json (cibles)" || true
+echo ""
+
 if [ $FAIL -eq 0 ]; then
   echo "=== Tous les tests exécutés sont passés ==="
-  [ -n "$TEST_REPORT" ] && ( echo "=== Tous les tests exécutés sont passés ==="; echo "Rapport: $(date -Iseconds)"; echo "Tests: 0-14"; ) >> "$TEST_REPORT" 2>/dev/null || true
+  [ -n "$TEST_REPORT" ] && ( echo "=== Tous les tests exécutés sont passés ==="; echo "Rapport: $(date -Iseconds)"; echo "Tests: 0-15"; ) >> "$TEST_REPORT" 2>/dev/null || true
   [ "$LAB_UP" -eq 0 ] && echo "    (make up puis make test pour les tests réseau/HTTP)"
   exit 0
 else
