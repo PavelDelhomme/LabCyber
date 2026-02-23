@@ -50,3 +50,8 @@ terminal-page.html
 node_modules/
 platform/node_modules/
 platform/dist/
+
+# Playwright E2E
+playwright-report/
+test-results/
+e2e/test-results/
