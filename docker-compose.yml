@@ -152,6 +152,22 @@ services:
     volumes: ["./proxy/squid.conf:/etc/squid/squid.conf:ro"]
     profiles: [proxy]
 
+  # ========== Tests E2E (Playwright) – lancer avec : make test-e2e ==========
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.58.2-noble
+    profiles: [e2e]
+    container_name: lab-e2e
+    working_dir: /app
+    volumes: [.:/app]
+    environment:
+      BASE_URL: http://gateway:80
+    command: sh -c "npm install && npx playwright test"
+    depends_on:
+      gateway: { condition: service_started }
+    networks: [lab-network]
+    ipc: host
+    init: true
+
 volumes:
   dvwa-db-data:
   vuln-api-data:

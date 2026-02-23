@@ -6,7 +6,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ## Ce que vous devez faire précisément
 
-- **Tests** : lancer `make test` (**15 blocs**). Avec lab : `make up` puis `make test`. Rapport : `TEST_REPORT=test-results.txt make test` ou `make test-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md).
+- **Tests** : **`make tests`** lance tout (lab up + tests automatisés + tests complets + E2E) et génère les rapports (test-results.txt, test-full-results.txt, E2E dans playwright-report/). Sinon : `make test` (15 blocs), `make test-full` (lab requis), `make test-e2e` (Playwright). Rapport seul : `make test-report` ou `make test-full-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md) et [docs/TESTS-E2E.md](docs/TESTS-E2E.md).
 - **Targets** : les cibles (DVWA, Juice, vuln-api, vuln-network, etc.) sont enregistrées dans **`platform/data/targets.json`** et **`platform/public/data/targets.json`** (catalogue JSON, clé `targets`). Ce n’est pas un dossier « targets » mais des **fichiers de catalogue** utilisés par Engagements et Dashboard.
 - **vuln-network / vuln-api** : opérationnels quand le lab est up. vuln-api est testé (api.lab, `/api/health`, `/api/products`, `/api/users/1`) ; vuln-network est testé via attaquant → SSH. Améliorations possibles : plus de routes API, plus de services dans vuln-network, selon les scénarios.
 - **Packs d’outils** : les packs sont des **métadonnées** (`toolPacks.json`, `labToolPresets.json`, `labToolPresets.byScenario`). Les **outils sont déjà dans l’image attaquant** (Kali). Le terminal ouvert dans le lab = shell du lab actif (conteneur attaquant) ; les packs recommandés par scénario sont appliqués à la création du lab (lab dédié au scénario).
@@ -45,8 +45,8 @@ Après `make test` (15 blocs verts), à faire **à la main** ou en E2E :
 
 | À analyser / tester | Où / comment |
 |--------------------|-------------|
-| **Terminal** | Ouvrir le panneau terminal, plusieurs onglets, PiP, exit, rechargement (replay des sorties). Vérifier que le lab actif = shell attaquant (Kali). |
-| **Barre scénario** | Démarrer un scénario → barre en bas visible, avancement des tâches (fait / en cours). Abandon scénario → lab non réinitialisé. |
+| **Terminal** | Ouvrir le panneau terminal, plusieurs onglets, PiP, exit, rechargement (replay des sorties). Vérifier que le lab actif = shell attaquant (Kali). Au **démarrage** d’un scénario le terminal passe en « Lab actif » (scénario) ; à l’**abandon** on revient au lab par défaut. |
+| **Barre scénario** | Démarrer un scénario → barre en bas visible, avancement des tâches (fait / en cours). **Abandon scénario** → lab actif repasse au **lab par défaut** (plus le lab du scénario). Désactiver le lab (choisir lab par défaut) → terminal affiche le lab par défaut. |
 | **Cibles navigateur** | Depuis un scénario ou Engagements : ouvrir DVWA, Juice, bWAPP via /cible/* (même origine). Vérifier que les pages se chargent. |
 | **Requêtes API (Postman-like)** | Vue Requêtes API : envoyer GET /api/health, /api/products vers api.lab (Host). Vérifier réponses. |
 | **Capture pcap** | Ouvrir la vue Capture, charger un fichier .pcap (capturé sur ton PC). Vérifier colonnes, filtre, détail. |
@@ -59,7 +59,7 @@ Après `make test` (15 blocs verts), à faire **à la main** ou en E2E :
 | **CVE** | Recherche CVE (NVD), afficher un résultat dans le panneau. (À améliorer : enregistrement par lab.) |
 | **Packs outils** | Créer un lab avec un scénario qui a des packs recommandés. Ouvrir le terminal du lab : vérifier que les outils (nmap, sqlmap, etc.) sont disponibles. |
 
-**Résumé** : les tests automatisés couvrent **fichiers, JSON, HTTP, store, gateway, vues présentes**. Tout ce qui est **interaction utilisateur** (clics, navigation, panneaux, chargement de fichier, connexion VNC) doit être **testé à la main** ou avec des tests E2E (Playwright/Cypress) si tu en ajoutes.
+**Résumé** : les tests automatisés couvrent **fichiers, JSON, HTTP, store, gateway, vues présentes**. L’**interaction utilisateur** est couverte par les **tests E2E** (**`make test-e2e`**) : Navigation, Terminal (panneau), **toutes les vues** (Learning, Docs, Engagements, Progression, Labs, Capture, Simulateur, Proxy, API, Options, CVE), **barre scénario**, **cibles** (/cible/dvwa/), **bureau VNC**. Suite complète en une commande : **`make tests`**. Voir [docs/TESTS-E2E.md](docs/TESTS-E2E.md).
 
 ---
 

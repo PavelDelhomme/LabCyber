@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { escapeHtml, getTerminalUrl, getMachineUrl } from '../lib/store';
 
-export default function ScenarioView({ scenarios, config, currentScenarioId, currentLabId, storage, onOpenTerminalInPanel, onOpenTerminalPip, onStartScenario, onResumeScenario, onScenarioStatusChange, docSources }) {
+export default function ScenarioView({ scenarios, config, currentScenarioId, currentLabId, storage, onOpenTerminalInPanel, onOpenTerminalPip, onStartScenario, onResumeScenario, onScenarioStatusChange, onAbandonScenario, docSources }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
   const [taskIndex, setTaskIndex] = useState(0);
   const [toolPacks, setToolPacks] = useState(null);
@@ -81,7 +81,11 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
       storage?.setScenarioStatus(scenario.id, 'in_progress');
     }
   };
-  const abandonScenario = () => { storage?.setScenarioStatus(scenario.id, 'abandoned'); onScenarioStatusChange?.(); };
+  const abandonScenario = () => {
+    storage?.setScenarioStatus(scenario.id, 'abandoned');
+    onScenarioStatusChange?.();
+    onAbandonScenario?.(scenario.id);
+  };
   const resetScenario = () => { storage?.setScenarioStatus(scenario.id, 'not_started'); onScenarioStatusChange?.(); };
 
   const statusLabel = { not_started: 'Non commencé', in_progress: 'En cours', completed: 'Terminé', abandoned: 'Abandonné', paused: 'En pause' }[status] || status;

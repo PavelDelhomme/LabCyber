@@ -203,6 +203,8 @@ export default function App() {
         onLabChange(newId);
         labIdToUse = newId;
         if (storage.setScenarioLabId) storage.setScenarioLabId(scenarioId, newId);
+        setTerminalUseDefaultLab(false);
+        persistUiSession({ terminalUseDefaultLab: false });
         openTerminalPanel(labIdToUse);
         setTerminalPanelMinimized(false);
         persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
@@ -224,10 +226,21 @@ export default function App() {
         }
       });
     }
+    setTerminalUseDefaultLab(false);
+    persistUiSession({ terminalUseDefaultLab: false });
     openTerminalPanel(labIdToUse);
     setTerminalPanelMinimized(false);
     persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
     setScenarioStatusRevision((r) => r + 1);
+  };
+
+  // Abandon du scénario : revenir au lab par défaut pour ne plus afficher le lab du scénario comme actif
+  const handleAbandonScenario = (scenarioId) => {
+    if (currentLabId && currentLabId !== 'default' && storage?.getScenarioLabId?.(scenarioId) === currentLabId) {
+      onLabChange('default');
+    }
+    setTerminalUseDefaultLab(true);
+    persistUiSession({ terminalUseDefaultLab: true });
   };
 
   // Reprise complète d'un scénario (pause les autres, restaure le lab lié, applique packs recommandés si besoin, ouvre terminal)
@@ -253,6 +266,8 @@ export default function App() {
         }
       });
     }
+    setTerminalUseDefaultLab(false);
+    persistUiSession({ terminalUseDefaultLab: false });
     setLabPanelOpen(false);
     setTerminalPanelOpen(true);
     setTerminalPanelMinimized(false);
@@ -366,6 +381,10 @@ export default function App() {
     const next = id || 'default';
     const prevLabId = currentLabId;
     labSwitchInProgressRef.current = true;
+    if (next === 'default') {
+      setTerminalUseDefaultLab(true);
+      persistUiSession({ terminalUseDefaultLab: true });
+    }
     // Sauver l'état terminal + PiP du lab actuel avant de changer
     if (prevLabId && storage?.setLabTerminalState) {
       storage.setLabTerminalState(prevLabId, {
@@ -690,6 +709,7 @@ export default function App() {
               onStartScenario={handleStartScenario}
               onResumeScenario={handleResumeScenario}
               onScenarioStatusChange={() => setScenarioStatusRevision((r) => r + 1)}
+              onAbandonScenario={handleAbandonScenario}
               optionsInLeftPanel={optionsInLeftPanel}
               onOptionsInLeftPanelChange={(v) => { setOptionsInLeftPanel(v); persistUiSession({ optionsInLeftPanel: v }); }}
             />

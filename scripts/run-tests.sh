@@ -208,10 +208,18 @@ print('  OK tous running')
   code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/cible/dvwa/" 2>/dev/null || echo "000")
   if [ "$code" = "200" ] || [ "$code" = "302" ]; then echo "  OK /cible/dvwa/ (même origine) $code"; else echo "  WARN /cible/dvwa/ $code"; fi
   # Données plateforme (servies par la gateway)
-  for dataurl in "/data/learning.json" "/data/targets.json" "/data/docSources.json" "/data/challenges.json"; do
+  for dataurl in "/data/learning.json" "/data/targets.json" "/data/docSources.json" "/data/challenges.json" "/data/toolPacks.json" "/data/labToolPresets.json"; do
     code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL$dataurl" 2>/dev/null || echo "000")
     if [ "$code" = "200" ]; then echo "  OK $dataurl 200"; else echo "  WARN $dataurl $code"; fi
   done
+  # Routes cibles (proxy pass) : /cible/juice, /cible/api, /cible/bwapp
+  for cible in "/cible/juice/" "/cible/api/" "/cible/bwapp/"; do
+    code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL$cible" 2>/dev/null || echo "000")
+    if [ "$code" = "200" ] || [ "$code" = "302" ] || [ "$code" = "304" ]; then echo "  OK $cible $code"; else echo "  WARN $cible $code"; fi
+  done
+  # Bureau noVNC (redirection ou page)
+  code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 2 "$GATEWAY_URL/desktop" 2>/dev/null || echo "000")
+  if [ "$code" = "302" ] || [ "$code" = "200" ]; then echo "  OK /desktop (bureau noVNC) $code"; else echo "  WARN /desktop $code"; fi
   echo ""
 
   # ---- 4. HTTP Cibles ----

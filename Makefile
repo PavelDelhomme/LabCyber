@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build rebuild test test-full test-require-lab logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start
+.PHONY: help up down build rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -38,7 +38,11 @@ help:
 	@echo "  make logs-SVC       Logs d'un service (ex: make logs-gateway)"
 	@echo "  make terminal-html  Verifier que l'injection exit est OK (page /terminal/)"
 	@echo "  make shell          Shell dans le conteneur attaquant"
-	@echo "  make test            Lancer les tests  |  make test-full  avec lab requis"
+	@echo "  make test            Tests automatisés (15 blocs : structure, JSON, HTTP, store, etc.)"
+	@echo "  make test-full       Tests complets (nécessite lab up)"
+	@echo "  make test-e2e        Tests E2E navigateur (Playwright dans Docker) — lance make up si besoin"
+	@echo "  make test-report     Tests → test-results.txt  |  make test-full-report  → test-full-results.txt"
+	@echo "  make tests           TOUT : up + test-report + test-full-report + test-e2e (rapports complets)"
 	@echo "  make up-minimal     Mode minimal  |  make proxy  Lab + Squid  |  make blue  Blue Team"
 	@echo "  make ports          Voir qui utilise 8080/7681"
 	@echo ""
@@ -116,9 +120,42 @@ status:
 test:
 	cd $(ROOT) && ./scripts/run-tests.sh
 
-# Tests avec rapport écrit dans test-results.txt (TEST_REPORT=test-results.txt make test)
+# Tests avec rapport écrit dans test-results.txt
 test-report:
-	cd $(ROOT) && TEST_REPORT=test-results.txt ./scripts/run-tests.sh; echo "Rapport: $(ROOT)test-results.txt"
+	cd $(ROOT) && TEST_REPORT=test-results.txt ./scripts/run-tests.sh
+	@echo "  Rapport tests : $(ROOT)test-results.txt"
+
+# Tests complets (lab requis) avec rapport test-full-results.txt
+test-full-report:
+	cd $(ROOT) && TEST_REQUIRE_LAB=1 TEST_REPORT=test-full-results.txt ./scripts/run-tests.sh
+	@echo "  Rapport test-full : $(ROOT)test-full-results.txt"
+
+# Suite complète : lab up, puis test-report + test-full-report + test-e2e. Tous les rapports sont générés.
+tests:
+	@echo "  [tests] Démarrage du lab..."
+	cd $(ROOT) && docker compose up -d
+	@echo "  [tests] Attente des services (8 s)..."
+	@sleep 8
+	@echo "  [tests] 1/3 — Tests automatisés (rapport test-results.txt)"
+	@$(MAKE) -C $(ROOT) test-report
+	@echo "  [tests] 2/3 — Tests complets avec lab (rapport test-full-results.txt)"
+	@$(MAKE) -C $(ROOT) test-full-report
+	@echo "  [tests] 3/3 — Tests E2E (Playwright)"
+	cd $(ROOT) && docker compose --profile e2e run --rm e2e
+	@echo ""
+	@echo "  === Tous les tests terminés ==="
+	@echo "  Rapports : test-results.txt, test-full-results.txt, e2e/test-results/ et playwright-report/ (si généré)"
+
+# Tests E2E (Playwright) : exécutés dans un conteneur Docker, uniquement via Makefile.
+# Image : mcr.microsoft.com/playwright:v1.58.2-noble. Suites : Navigation + Terminal (e2e/app.spec.js).
+# Démarre gateway (et dépendances) si besoin, puis lance le conteneur e2e.
+test-e2e:
+	@echo "  [test-e2e] Démarrage des services si besoin..."
+	cd $(ROOT) && docker compose up -d gateway
+	@echo "  [test-e2e] Attente gateway (5 s)..."
+	@sleep 5
+	@echo "  [test-e2e] Lancement des tests E2E (Navigation, Terminal, Vues, Barre scénario, Cibles, Bureau)..."
+	cd $(ROOT) && docker compose --profile e2e run --rm e2e
 
 # Exiger que le lab soit démarré pour les tests
 test-full: test-require-lab

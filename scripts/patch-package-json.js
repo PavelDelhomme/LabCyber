@@ -1,0 +1,10 @@
+const fs = require('fs');
+const path = require('path');
+const p = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+p.scripts = p.scripts || {};
+p.scripts['test:e2e'] = 'playwright test';
+p.scripts['test:e2e:ui'] = 'playwright test --ui';
+p.devDependencies = p.devDependencies || {};
+p.devDependencies['@playwright/test'] = '^1.40.0';
+fs.writeFileSync(path.join(__dirname, '..', 'package.json'), JSON.stringify(p, null, 2));
+console.log('package.json updated');
