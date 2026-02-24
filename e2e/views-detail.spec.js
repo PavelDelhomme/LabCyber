@@ -87,6 +87,22 @@ test.describe('Engagements (Cibles & Proxy) – éléments', () => {
   });
 });
 
+test.describe('Progression – éléments', () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/#/progression'); });
+
+  test('contenu progression ou scénarios visible', async ({ page }) => {
+    await page.waitForTimeout(800);
+    const content = await page.locator('main').textContent();
+    expect(content).toMatch(/progression|scénario|tâche|statut/i);
+  });
+
+  test('liste scénarios ou cartes ou section visible', async ({ page }) => {
+    await page.waitForTimeout(800);
+    const list = page.locator('.card, .scenario-card, .room-section, [class*="progression"]').first();
+    await expect(list).toBeVisible({ timeout: 10000 });
+  });
+});
+
 test.describe('Labs – éléments', () => {
   test.beforeEach(async ({ page }) => { await page.goto('/#/labs'); });
 
@@ -112,6 +128,16 @@ test.describe('Capture pcap – éléments', () => {
   test('zone upload ou fichier pcap', async ({ page }) => {
     const zone = page.locator('input[type="file"], .capture-upload, [class*="pcap"]').first();
     await expect(zone).toBeVisible({ timeout: 8000 });
+  });
+
+  test('champ filtre ou texte Wireshark-like présent', async ({ page }) => {
+    const body = await page.locator('main').textContent();
+    expect(body).toMatch(/filtre|paquet|pcap|wireshark|charger/i);
+  });
+
+  test('section liste paquets ou détail visible après chargement (ou message explicatif)', async ({ page }) => {
+    const section = page.locator('.capture-upload, .room-section, [class*="capture"]').first();
+    await expect(section).toBeVisible({ timeout: 8000 });
   });
 });
 
@@ -144,6 +170,27 @@ test.describe('API client (Postman) – éléments', () => {
   test('champ URL ou méthode visible', async ({ page }) => {
     const methodOrUrl = page.locator('select, input[placeholder*="URL"], input[name*="url"]').first();
     await expect(methodOrUrl).toBeVisible({ timeout: 8000 });
+  });
+
+  test('bouton Envoyer visible', async ({ page }) => {
+    const sendBtn = page.getByRole('button', { name: /envoyer|send/i }).first();
+    await expect(sendBtn).toBeVisible({ timeout: 8000 });
+  });
+});
+
+test.describe('Bibliothèque doc (doc-offline) – éléments', () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/#/doc-offline'); });
+
+  test('vue Bibliothèque charge', async ({ page }) => {
+    await page.waitForTimeout(800);
+    const main = page.locator('main').first();
+    await expect(main).toBeVisible({ timeout: 10000 });
+  });
+
+  test('contenu doc ou bibliothèque ou source présent', async ({ page }) => {
+    await page.waitForTimeout(800);
+    const body = await page.locator('body').textContent();
+    expect(body).toMatch(/doc|bibliothèque|source|offline/i);
   });
 });
 

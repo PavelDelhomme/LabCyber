@@ -2,6 +2,8 @@
 
 Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et en fin la liste des éléments déjà réalisés.
 
+**Phase actuelle** : **Phase 3** (conteneur attaquant, packs/prédéfinitions, terminal par lab, barre scénario, cibles /cible/*). Prochaine : Phase 4 (bureau fait maison), Phase 5 (interconnexion complète, reprise lab). Voir [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md).
+
 ---
 
 ## Ce que vous devez faire précisément
@@ -59,7 +61,7 @@ Après `make test` (15 blocs verts), à faire **à la main** ou en E2E :
 | **CVE** | Recherche CVE (NVD), afficher un résultat dans le panneau. (À améliorer : enregistrement par lab.) |
 | **Packs outils** | Créer un lab avec un scénario qui a des packs recommandés. Ouvrir le terminal du lab : vérifier que les outils (nmap, sqlmap, etc.) sont disponibles. |
 
-**Résumé** : les tests automatisés couvrent **fichiers, JSON, HTTP, store, gateway, vues présentes**. L’**interaction utilisateur** est couverte par les **tests E2E** (**`make test-e2e`**) : Navigation, Terminal (panneau), **toutes les vues** (Learning, Docs, Engagements, Progression, Labs, Capture, Simulateur, Proxy, API, Options, CVE), **barre scénario**, **cibles** (/cible/dvwa/), **bureau VNC**. Suite complète en une commande : **`make tests`**. Voir [docs/TESTS-E2E.md](docs/TESTS-E2E.md).
+**Résumé** : les tests automatisés couvrent **fichiers, JSON, HTTP, store, gateway, vues présentes**. L’**interaction utilisateur** est couverte par les **tests E2E** (**`make test-e2e`**) : Navigation, Terminal (panneau), **toutes les vues** (Learning, Docs, Engagements, Progression, Labs, Capture, Simulateur, Proxy, API, Options, CVE), **barre scénario**, **cibles** (/cible/dvwa/), **bureau VNC**, **Bibliothèque doc** (#/doc-offline), **Progression** (liste scénarios/tâches), **Capture** (filtre type Wireshark, zone upload), **API client** (bouton Envoyer). Suite complète : **`make tests`**. Voir [docs/TESTS-E2E.md](docs/TESTS-E2E.md).
 
 ---
 
@@ -262,8 +264,9 @@ Ensuite : Phase 4 (bureau fait maison), Phase 5 (interconnexion complète, repri
 - **Démarrer un scénario** : si lab par défaut, création automatique d’un lab dédié (« Lab – [titre scénario] ») avec packs recommandés ; une session terminal fraîche pour ce lab ; changement de lab sans état sauvegardé affiche une session fraîche (plus les anciennes sessions).
 - **Ouvrir DVWA / cibles dans le navigateur** : URLs en même origine (`/cible/dvwa/`, `/cible/juice/`, etc.) ; routes ajoutées dans la gateway ; plus besoin de /etc/hosts pour tester.
 - **Popup détail lab** : z-index 10000 (modal et lab-panel-overlay) pour rester au-dessus de la barre scénario et du panneau terminal (accueil, scénario, gérer les labs, proxy, capture visibles).
-- **make test** : **15 blocs**, couverture maximale sans E2E. Bloc [15/15] **système lab complet** : bureau VNC (/desktop), proxy (compose + store), capture pcap (vue + store), simulateur réseau (vue + store), progression (vue + store), cours/Learning, docs, cibles. Rapport : `TEST_REPORT=test-results.txt make test` ou `make test-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md).
+- **make test** : **15 blocs**, couverture maximale sans E2E. Bloc [0] : **6 specs E2E** (app, scenario, views-detail, terminal, negative, interconnexion), package.json @playwright/test, docker-compose (gateway, platform, attaquant, profil e2e). Bloc [1] : **learning.json** (structure), **targets.json** (id/name/url), **rooms.json** (structure). Bloc [2] : services attendus (gateway, platform, attaquant, vuln-api, vuln-network). Bloc [11] : store (getUiSession, setUiSession, topologies, notes, offline), **storage.js** (clés KEY_UI_SESSION, KEY_TOPOLOGIES, KEY_TERMINAL_HISTORY, KEY_CAPTURE_META). Bloc [12] : gateway /terminal-house/, /desktop, location /, /terminal/, App VIEWS et parseHash, docs/README.md, platform/docs. Bloc [14] : labToolPresets (presets/byScenario), HTTP /logger.js, /storage.js. Bloc [15] : learning.json (nombre d’entrées), labToolPresets. Rapport : `make test-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md).
+- **Tests E2E (février 2026)** : **views-detail.spec.js** étendu : **Progression** (contenu scénarios/tâches, liste .room-section/.progression-scenarios), **Capture** (champ filtre / texte Wireshark-like, section liste paquets), **API client** (bouton Envoyer), **Bibliothèque doc** (#/doc-offline, vue + contenu doc/source). **interconnexion.spec.js** : sélecteurs et timeouts corrigés pour l’ouverture du panneau terminal (depuis Accueil et depuis barre scénario : bouton .scenario-bar-section-terminal, attente header 15 s).
 
 ---
 
-*Dernière mise à jour : 20 février 2026.*
+*Dernière mise à jour : 21 février 2026.*

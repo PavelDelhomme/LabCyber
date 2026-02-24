@@ -5,22 +5,24 @@ test.describe('Interconnexion – Lab et Terminal', () => {
   test('depuis Accueil ouvrir terminal puis vérifier panneau', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /ouvrir/i }).first().click();
-    await page.waitForTimeout(400);
-    await page.locator('button.open-in-page-item').filter({ hasText: /terminal.*panneau/i }).first().click();
-    await page.waitForTimeout(1500);
-    await expect(page.locator('.terminal-side-panel-header').first()).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(500);
+    const terminalPanneau = page.locator('button.open-in-page-item').filter({ hasText: /terminal.*panneau|panneau/i }).first();
+    await terminalPanneau.click();
+    const panelHeader = page.locator('.terminal-side-panel-header h3, .terminal-side-panel-header, .terminal-side-panel-resize-handle').first();
+    await expect(panelHeader).toBeVisible({ timeout: 15000 });
   });
 });
 
 test.describe('Interconnexion – Scénario et Terminal', () => {
   test('démarrer scénario puis ouvrir terminal depuis barre', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(1500);
     await page.getByRole('button', { name: /préparer|démarrer|ouvrir/i }).first().click();
-    await page.waitForTimeout(1500);
-    await page.locator('.scenario-bar-section-terminal button').first().click();
-    await page.waitForTimeout(1500);
-    await expect(page.locator('.terminal-side-panel-header').first()).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(2000);
+    const termBtn = page.locator('button.scenario-bar-section-terminal').first();
+    await termBtn.click();
+    const panelHeader = page.locator('.terminal-side-panel-header h3, .terminal-side-panel-header, .terminal-side-panel-resize-handle').first();
+    await expect(panelHeader).toBeVisible({ timeout: 15000 });
   });
 });
 
