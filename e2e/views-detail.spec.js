@@ -252,3 +252,88 @@ test.describe('Topbar – boutons', () => {
     await expect(page.getByRole('button', { name: /journal/i }).first()).toBeVisible({ timeout: 6000 });
   });
 });
+
+// --- Parcours fonctionnels : Doc/Cours, Capture, Simulateur, API, Proxy ---
+test.describe('Parcours – Doc & Cours (Learning)', () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/#/learning'); });
+
+  test('liste thèmes ou catégories cliquable', async ({ page }) => {
+    await page.waitForTimeout(1000);
+    const link = page.locator('a, button').filter({ hasText: /thème|topic|OWASP|système/i }).first();
+    await expect(link).toBeVisible({ timeout: 8000 });
+  });
+
+  test('contenu Doc ou Cours présent', async ({ page }) => {
+    await page.waitForTimeout(800);
+    const body = await page.locator('main').textContent();
+    expect(body).toMatch(/cours|doc|learning|thème|topic/i);
+  });
+});
+
+test.describe('Parcours – Documentation projet (Docs)', () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/#/docs'); });
+
+  test('contenu documentation ou liens présents', async ({ page }) => {
+    await page.waitForTimeout(800);
+    const body = await page.locator('main').textContent();
+    expect(body).toMatch(/documentation|doc|projet|roadmap/i);
+  });
+});
+
+test.describe('Parcours – Capture pcap (Wireshark-like)', () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/#/capture'); });
+
+  test('zone ou bouton choisir fichier .pcap présente', async ({ page }) => {
+    const input = page.locator('input[type="file"][accept*="pcap"], input[type="file"][accept*="cap"]').first();
+    await expect(input).toBeVisible({ timeout: 6000 });
+  });
+
+  test('texte explicatif capture machine client présent', async ({ page }) => {
+    const body = await page.locator('main').textContent();
+    expect(body).toMatch(/wireshark|tcpdump|pcap|charger|machine/i);
+  });
+});
+
+test.describe('Parcours – Simulateur réseau', () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/#/network-sim'); });
+
+  test('zone carte ou canvas visible', async ({ page }) => {
+    const canvas = page.locator('.network-sim-canvas, .network-sim-canvas-wrap, canvas, svg').first();
+    await expect(canvas).toBeVisible({ timeout: 8000 });
+  });
+
+  test('toolbar ou boutons (nouvelle carte, nœud) présents', async ({ page }) => {
+    const toolbar = page.locator('.network-sim-toolbar, [class*="toolbar"], button').first();
+    await expect(toolbar).toBeVisible({ timeout: 8000 });
+  });
+});
+
+test.describe('Parcours – Requêtes API (Postman-like)', () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/#/api-client'); });
+
+  test('sélecteur méthode GET visible', async ({ page }) => {
+    const method = page.locator('select').first();
+    await expect(method).toBeVisible({ timeout: 6000 });
+  });
+
+  test('champ URL et bouton Envoyer permettent une requête', async ({ page }) => {
+    const urlInput = page.locator('input[placeholder*="URL"], input[name*="url"]').first();
+    const sendBtn = page.getByRole('button', { name: /envoyer/i }).first();
+    await expect(urlInput).toBeVisible({ timeout: 6000 });
+    await expect(sendBtn).toBeVisible({ timeout: 6000 });
+  });
+});
+
+test.describe('Parcours – Config Proxy', () => {
+  test.beforeEach(async ({ page }) => { await page.goto('/#/proxy-config'); });
+
+  test('champ proxy ou URL config visible', async ({ page }) => {
+    const input = page.locator('input[type="url"], input[name*="proxy"], input[placeholder*="proxy"]').first();
+    await expect(input).toBeVisible({ timeout: 8000 });
+  });
+
+  test('contenu proxy ou squid présent', async ({ page }) => {
+    const body = await page.locator('main').textContent();
+    expect(body.toLowerCase()).toMatch(/proxy|squid|config/i);
+  });
+});

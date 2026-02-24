@@ -26,7 +26,7 @@ test.describe('Scénarios – navigation par hash', () => {
 });
 
 test.describe('Scénarios – bouton Démarrer / Préparer', () => {
-  for (const id of SCENARIO_IDS.slice(0, 5)) {
+  for (const id of SCENARIO_IDS) {
     test(`${id} : bouton Démarrer ou Ouvrir terminal visible`, async ({ page }) => {
       await page.goto(`/#/scenario/${id}`);
       await page.waitForTimeout(1200);
@@ -36,57 +36,58 @@ test.describe('Scénarios – bouton Démarrer / Préparer', () => {
   }
 });
 
+// Helper : démarrer le scénario (clic "Démarrer le scénario") pour afficher la barre (status in_progress)
+async function startScenarioBar(page) {
+  const demarrerBtn = page.getByRole('button', { name: /démarrer le scénario/i }).first();
+  await demarrerBtn.click();
+  await page.waitForTimeout(2000);
+  const bar = page.locator('.scenario-bottom-bar').first();
+  await expect(bar).toBeVisible({ timeout: 15000 });
+}
+
 test.describe('Scénarios – barre inférieure après démarrage', () => {
-  test('barre scénario visible après clic Préparer (scenario-02)', async ({ page }) => {
+  test('barre scénario visible après clic Démarrer (scenario-02)', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1500);
-    await page.getByRole('button', { name: /démarrer|ouvrir le terminal|préparer/i }).first().click();
-    await page.waitForTimeout(1500);
-    await expect(page.locator('.scenario-bottom-bar').first()).toBeVisible({ timeout: 8000 });
+    await startScenarioBar(page);
   });
 
   test('barre contient le titre du scénario', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1200);
-    await page.getByRole('button', { name: /démarrer|ouvrir|préparer/i }).first().click();
-    await page.waitForTimeout(1500);
-    const bar = page.locator('.scenario-bottom-bar');
-    await expect(bar).toBeVisible({ timeout: 8000 });
+    await startScenarioBar(page);
+    const bar = page.locator('.scenario-bottom-bar').first();
     await expect(bar.locator('.scenario-bottom-bar-title')).toBeVisible({ timeout: 5000 });
   });
 
   test('barre contient section Pause ou Reprendre', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1200);
-    await page.getByRole('button', { name: /préparer|démarrer|ouvrir/i }).first().click();
-    await page.waitForTimeout(1500);
+    await startScenarioBar(page);
     const pauseOrResume = page.locator('.scenario-bar-section-pause, .scenario-bar-section-resume').first();
-    await expect(pauseOrResume).toBeVisible({ timeout: 8000 });
+    await expect(pauseOrResume).toBeVisible({ timeout: 5000 });
   });
 
   test('barre contient bouton Récap', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1200);
-    await page.getByRole('button', { name: /préparer|démarrer|ouvrir/i }).first().click();
-    await page.waitForTimeout(1500);
+    await startScenarioBar(page);
     const recap = page.getByRole('button', { name: /récap/i }).first();
-    await expect(recap).toBeVisible({ timeout: 8000 });
+    await expect(recap).toBeVisible({ timeout: 5000 });
   });
 
-  test('barre contient lien/bouton Terminal', async ({ page }) => {
+  test('barre contient bouton Terminal', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1200);
-    await page.getByRole('button', { name: /préparer|démarrer|ouvrir/i }).first().click();
-    await page.waitForTimeout(1500);
-    const term = page.locator('.scenario-bar-section-terminal button, .scenario-bar a[href*="terminal"]').first();
-    await expect(term).toBeVisible({ timeout: 8000 });
+    await startScenarioBar(page);
+    const term = page.locator('button.scenario-bar-section-terminal').first();
+    await expect(term).toBeVisible({ timeout: 5000 });
   });
 
   test('barre contient liste de tâches ou zone tâches', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1200);
-    await page.getByRole('button', { name: /préparer|démarrer|ouvrir/i }).first().click();
-    await page.waitForTimeout(1500);
+    await startScenarioBar(page);
     const tasks = page.locator('.scenario-bottom-bar-tasks, .scenario-bar-section-tasks').first();
     await expect(tasks).toBeVisible({ timeout: 8000 });
   });
@@ -94,10 +95,9 @@ test.describe('Scénarios – barre inférieure après démarrage', () => {
   test('barre contient Voir tout (expand)', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1200);
-    await page.getByRole('button', { name: /préparer|démarrer|ouvrir/i }).first().click();
-    await page.waitForTimeout(1500);
+    await startScenarioBar(page);
     const expand = page.getByRole('button', { name: /voir tout|expand/i }).first();
-    await expect(expand).toBeVisible({ timeout: 8000 });
+    await expect(expand).toBeVisible({ timeout: 5000 });
   });
 });
 
@@ -105,10 +105,11 @@ test.describe('Scénarios – contenu vue scénario', () => {
   test('vue scénario affiche titre ou howto', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1200);
-    const content = page.locator('#view-scenario .scenario-content-column, .view-scenario-with-terminal');
-    await expect(content).toBeVisible({ timeout: 8000 });
-    const bodyText = await page.locator('main').textContent();
+    const main = page.locator('main').first();
+    await expect(main).toBeVisible({ timeout: 8000 });
+    const bodyText = await page.locator('body').textContent();
     expect(bodyText.length).toBeGreaterThan(200);
+    expect(bodyText).toMatch(/Scénario|Comment faire|SQL|DVWA|terminal/i);
   });
 
   test('vue scénario affiche machines ou cibles', async ({ page }) => {
@@ -130,8 +131,7 @@ test.describe('Scénarios – clic Récap ouvre popup', () => {
   test('clic Récap affiche panneau ou modal récap', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1200);
-    await page.getByRole('button', { name: /préparer|démarrer|ouvrir/i }).first().click();
-    await page.waitForTimeout(1500);
+    await startScenarioBar(page);
     await page.getByRole('button', { name: /récap/i }).first().click();
     await page.waitForTimeout(800);
     const popup = page.locator('.pip-panel, [class*="recap"], [role="dialog"]').first();
@@ -140,13 +140,12 @@ test.describe('Scénarios – clic Récap ouvre popup', () => {
 });
 
 test.describe('Scénarios – abandon (retour lab)', () => {
-  test('bouton Abandon ou retour présent en vue scénario', async ({ page }) => {
+  test('bouton Abandon visible après démarrage du scénario', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1200);
-    const abandon = page.getByRole('button', { name: /abandon|quitter|retour/i }).or(
-      page.getByText(/abandon|quitter/i)
-    ).first();
-    await expect(abandon).toBeVisible({ timeout: 8000 });
+    await startScenarioBar(page);
+    const abandon = page.getByRole('button', { name: /abandon|quitter/i }).first();
+    await expect(abandon).toBeVisible({ timeout: 5000 });
   });
 });
 

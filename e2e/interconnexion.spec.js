@@ -17,9 +17,10 @@ test.describe('Interconnexion – Scénario et Terminal', () => {
   test('démarrer scénario puis ouvrir terminal depuis barre', async ({ page }) => {
     await page.goto('/#/scenario/scenario-02-sqli-dvwa');
     await page.waitForTimeout(1500);
-    await page.getByRole('button', { name: /préparer|démarrer|ouvrir/i }).first().click();
+    await page.getByRole('button', { name: /démarrer le scénario/i }).first().click();
     await page.waitForTimeout(2000);
     const termBtn = page.locator('button.scenario-bar-section-terminal').first();
+    await expect(termBtn).toBeVisible({ timeout: 10000 });
     await termBtn.click();
     const panelHeader = page.locator('.terminal-side-panel-header h3, .terminal-side-panel-header, .terminal-side-panel-resize-handle').first();
     await expect(panelHeader).toBeVisible({ timeout: 15000 });
