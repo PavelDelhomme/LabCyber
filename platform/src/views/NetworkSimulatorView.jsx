@@ -1005,6 +1005,9 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
 
       <div class="network-sim-toolbar" data-testid="sim-toolbar-devices">
         <span class="network-sim-toolbar-label">Appareils — Catégorie :</span>
+        {placeMode && (
+          <span class="network-sim-toolbar-hint" style="font-size:0.8rem; color:var(--text-muted)">Clique sur la carte pour placer. Pour modifier ou supprimer un appareil, clique sur l'appareil sur la carte.</span>
+        )}
         {NODE_TYPES.map((t) => (
           <button
             key={t.type}
@@ -1240,7 +1243,15 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
           <aside class="network-sim-config-panel" style={{ width: panelWidth }}>
             <div class="network-sim-panel-header">
               <h4>Appareil : {escapeHtml(selectedNode.label || selectedNode.id)}</h4>
-              <button type="button" class="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} onClick={() => setSelectedId(null)} title="Fermer le panneau">✕</button>
+              <p class="network-sim-panel-model" style="margin:0.2rem 0 0.5rem; font-size:0.85rem; color:var(--text-muted)">
+                Modèle : {(DEVICE_MODELS[selectedNode.type]?.find((m) => m.value === (selectedNode.deviceModel || ''))?.label) || selectedNode.deviceModel || '—'}
+              </p>
+              <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                <button type="button" class="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} onClick={() => setSelectedId(null)} title="Fermer le panneau">✕</button>
+                <button type="button" class="btn danger" style={{ fontSize: '0.85rem', padding: '0.35rem 0.6rem' }} onClick={() => { if (confirm('Supprimer cet appareil de la carte ?')) deleteSelected(); }} title="Supprimer l'appareil de la carte">
+                  Supprimer cet appareil
+                </button>
+              </div>
             </div>
 
             <section class="network-sim-panel-section">
