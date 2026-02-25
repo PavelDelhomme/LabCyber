@@ -2,10 +2,10 @@
 # Le panneau terminal (terminal-house) utilise lab-terminal → shell = Kali (nmap, tcpdump, sqlmap, etc.).
 # Build depuis la racine du repo : docker build -f attacker/Dockerfile .
 
-# Stage 1 : compiler lab-terminal (Go)
-FROM golang:1.21-alpine AS lab-terminal-builder
+# Stage 1 : compiler lab-terminal (Go) — builder glibc pour que le binaire tourne sur Kali (Debian-based)
+FROM golang:1.21-bookworm AS lab-terminal-builder
 WORKDIR /build
-RUN apk add --no-cache gcc musl-dev
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev && rm -rf /var/lib/apt/lists/*
 COPY lab-terminal/ .
 RUN go mod download 2>/dev/null || true && CGO_ENABLED=1 go build -o /lab-terminal .
 
@@ -81,4 +81,5 @@ RUN mkdir -p /root/.lab_bash_history && \
 EXPOSE 7681 7682
 ENV PORT=7682
 # lab-terminal sur 7682 (panneau terminal-house), ttyd sur 7681 (fallback)
-CMD ["/bin/sh", "-c", "lab-terminal & exec ttyd -p 7681 -i 0.0.0.0 -W bash"]
+# Attendre que lab-terminal écoute sur 7682 avant de lancer ttyd, pour éviter 502 au premier GET /terminal-house/token
+CMD ["/bin/sh", "-c", "lab-terminal & i=0; while [ $i -lt 30 ]; do wget -q -O /dev/null http://127.0.0.1:7682/token 2>/dev/null && break; i=$((i+1)); sleep 1; done; exec ttyd -p 7681 -i 0.0.0.0 -W bash"]

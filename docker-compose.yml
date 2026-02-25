@@ -42,12 +42,12 @@ services:
       - NET_RAW
       - NET_ADMIN
     healthcheck:
-      # OK si ttyd répond ; sinon OK si ttyd absent (autre arch) pour ne pas bloquer la gateway
-      test: ["CMD", "sh", "-c", "wget -q -O /dev/null http://127.0.0.1:7681/ || [ ! -x /usr/local/bin/ttyd ]"]
+      # Vérifier ttyd (7681) et lab-terminal (7682) pour que la gateway ne démarre qu'une fois le terminal prêt
+      test: ["CMD", "sh", "-c", "wget -q -O /dev/null http://127.0.0.1:7681/ && wget -q -O /dev/null http://127.0.0.1:7682/token || ([ ! -x /usr/local/bin/ttyd ] && exit 0) || exit 1"]
       interval: 5s
       timeout: 3s
-      retries: 8
-      start_period: 20s
+      retries: 10
+      start_period: 25s
 
   # ========== WEB (accès via gateway par hostname) ==========
   dvwa:

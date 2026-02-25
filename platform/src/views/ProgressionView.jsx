@@ -10,8 +10,10 @@ const STATUS_FILTERS = [
   { value: 'not_started', label: 'Non commencés' },
 ];
 
-export default function ProgressionView({ scenarios, challenges, storage, onOpenScenario, onOpenRoom }) {
+export default function ProgressionView({ data, scenarios, challenges, storage, onOpenScenario, onOpenRoom }) {
   const [statusFilter, setStatusFilter] = useState('');
+  const [roomStatusFilter, setRoomStatusFilter] = useState('');
+  const rooms = data?.rooms || [];
   const challengesDone = storage ? storage.getChallengesDone() : [];
   const getProgress = (s) => {
     if (!storage || !s.tasks || !s.tasks.length) return { done: 0, total: 0 };
@@ -19,9 +21,17 @@ export default function ProgressionView({ scenarios, challenges, storage, onOpen
     s.tasks.forEach((_, i) => { if (storage.getTaskDone(s.id, i)) done++; });
     return { done, total: s.tasks.length };
   };
+  const getRoomProgress = (r) => {
+    if (!storage || !r.tasks || !r.tasks.length) return { done: 0, total: 0 };
+    let done = 0;
+    r.tasks.forEach((_, i) => { if (storage.getRoomTaskDone(r.id, i)) done++; });
+    return { done, total: r.tasks.length };
+  };
   const getStatus = (s) => storage ? storage.getScenarioStatus(s.id) : 'not_started';
+  const getRoomStatus = (r) => storage ? storage.getRoomStatus(r.id) : 'not_started';
 
   const filteredScenarios = (scenarios || []).filter(s => !statusFilter || getStatus(s) === statusFilter);
+  const filteredRooms = rooms.filter(r => !roomStatusFilter || getRoomStatus(r) === roomStatusFilter);
 
   const isChallengeDone = (id) => Array.isArray(challengesDone) && challengesDone.includes(id);
 
@@ -29,7 +39,7 @@ export default function ProgressionView({ scenarios, challenges, storage, onOpen
     <div id="view-progression" class="view">
       <header class="page-header">
         <h2>Ma progression</h2>
-        <p class="room-description">Suivi des scénarios guidés et des challenges. Statut et tâches sont enregistrés localement. Le lab actif (badge en haut) est utilisé pour le terminal, le bureau et les outils (simulateur, capture, proxy, API).</p>
+        <p class="room-description">Suivi des scénarios guidés, des rooms et des challenges. <strong>Progression enregistrée localement</strong> dans ton navigateur (pas de serveur). Le lab actif (badge en haut) est utilisé pour le terminal, le bureau et les outils.</p>
       </header>
 
       <section class="room-section">
@@ -66,6 +76,42 @@ export default function ProgressionView({ scenarios, challenges, storage, onOpen
         </ul>
         {filteredScenarios.length === 0 && <p class="text-muted">Aucun scénario pour ce filtre.</p>}
         {(scenarios || []).length === 0 && <p class="text-muted">Aucun scénario.</p>}
+      </section>
+
+      <section class="room-section">
+        <h3>Rooms</h3>
+        <p class="section-desc">Même principe que les scénarios : démarre une room depuis la vue room, coche les tâches. Filtre par statut, clique pour ouvrir ou reprendre.</p>
+        <div class="progression-filters">
+          {STATUS_FILTERS.map(f => (
+            <button
+              key={'room-' + (f.value || 'all')}
+              type="button"
+              class={`topbar-btn ${roomStatusFilter === f.value ? 'active' : ''}`}
+              onClick={() => setRoomStatusFilter(f.value)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <ul class="progression-scenarios">
+          {filteredRooms.map(r => {
+            const prog = getRoomProgress(r);
+            const roomStatus = getRoomStatus(r);
+            return (
+              <li key={r.id} class="progression-item">
+                <button type="button" class="progression-scenario-btn" onClick={() => onOpenRoom?.(r.id)}>
+                  <span class={`progression-status-badge status-${roomStatus}`}>
+                    {roomStatus === 'not_started' ? '—' : roomStatus === 'in_progress' ? '…' : roomStatus === 'paused' ? '⏸' : roomStatus === 'completed' ? '✓' : '✕'}
+                  </span>
+                  <span class="progression-progress">{prog.done}/{prog.total}</span>
+                  <span class="progression-title">{escapeHtml(r.title)}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        {filteredRooms.length === 0 && <p class="text-muted">Aucune room pour ce filtre.</p>}
+        {rooms.length === 0 && <p class="text-muted">Aucune room.</p>}
       </section>
 
       <section class="room-section">

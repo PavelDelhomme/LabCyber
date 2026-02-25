@@ -364,6 +364,16 @@ body {
 
 .room-section { margin-bottom: 1.75rem; }
 
+.room-section-locked { opacity: 0.85; pointer-events: none; }
+
+.room-locked-message {
+  padding: 0.75rem 1rem;
+  background: var(--bg-hover);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
 .room-section h3 {
   margin: 0 0 0.75rem;
   font-size: 1.05rem;
@@ -804,6 +814,15 @@ body {
 
 #pip-tasks li:last-child { border-bottom: none; }
 #pip-tasks li.done { color: var(--text-muted); text-decoration: line-through; }
+.pip-tasks-hint { font-size: 0.8rem; color: var(--text-muted); margin: 0 0 0.5rem; }
+.pip-tasks-list { list-style: none; margin: 0; padding: 0; }
+.pip-task-item { cursor: pointer; padding: 0.35rem 0.5rem; border-radius: var(--radius); }
+.pip-task-item:hover { background: var(--bg-hover); }
+.pip-task-item.selected { background: var(--accent-soft); outline: 1px solid var(--accent); }
+.pip-task-detail { margin-top: 0.75rem; padding: 0.6rem; background: var(--bg-hover); border-radius: var(--radius); font-size: 0.9rem; }
+.pip-task-detail-status { font-weight: 600; margin-bottom: 0.25rem; }
+.pip-task-detail-tip { font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0 0; }
+.pip-task-detail-close { margin-top: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.85rem; cursor: pointer; }
 
 .pip-resize-handle {
   position: absolute;
@@ -934,6 +953,21 @@ body {
   border-radius: var(--radius);
   white-space: nowrap;
 }
+.scenario-bottom-bar-tasks li.scenario-bar-task-item { cursor: pointer; }
+.scenario-bottom-bar-tasks li.scenario-bar-task-item:hover { background: var(--accent-soft); }
+.scenario-bottom-bar-tasks li.scenario-bar-task-item.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+.scenario-bar-task-detail {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  max-width: 100%;
+}
+.scenario-bar-task-detail-status { font-weight: 600; margin-bottom: 0.25rem; }
+.scenario-bar-task-detail-tip { font-size: 0.8rem; color: var(--text-muted); margin: 0.25rem 0 0; }
+.scenario-bar-task-detail-close { margin-top: 0.35rem; padding: 0.2rem 0.5rem; font-size: 0.8rem; cursor: pointer; }
 .scenario-bottom-bar-tasks li.done { color: var(--text-muted); text-decoration: line-through; }
 .scenario-bottom-bar-expand {
   flex-shrink: 0;

@@ -89,6 +89,14 @@ export function useStorage() {
   const setScenarioStatus = useCallback((sid, status) => storage && storage.setScenarioStatus(sid, status), []);
   const getScenarioLabId = useCallback((sid) => (storage && storage.getScenarioLabId) ? storage.getScenarioLabId(sid) : null, []);
   const setScenarioLabId = useCallback((sid, labId) => storage && storage.setScenarioLabId && storage.setScenarioLabId(sid, labId), []);
+  const getRoomTaskDone = useCallback((roomId, idx) => storage ? storage.getRoomTaskDone(roomId, idx) : false, []);
+  const setRoomTaskDone = useCallback((roomId, idx, done) => storage && storage.setRoomTaskDone(roomId, idx, done), []);
+  const getRoomStatus = useCallback((roomId) => storage ? storage.getRoomStatus(roomId) : 'not_started', []);
+  const setRoomStatus = useCallback((roomId, status) => storage && storage.setRoomStatus(roomId, status), []);
+  const getRoomLabId = useCallback((roomId) => (storage && storage.getRoomLabId) ? storage.getRoomLabId(roomId) : null, []);
+  const setRoomLabId = useCallback((roomId, labId) => storage && storage.setRoomLabId && storage.setRoomLabId(roomId, labId), []);
+  const getLastRoom = useCallback(() => storage ? storage.getLastRoom() : null, []);
+  const setLastRoom = useCallback((roomId) => storage && storage.setLastRoom(roomId), []);
   const getChallengesDone = useCallback(() => (storage ? storage.getChallengesDone() : []) || [], []);
   const setChallengeDone = useCallback((id, done) => storage && storage.setChallengeDone(id, done), []);
   const getLabs = useCallback(() => (storage ? storage.getLabs() : []) || [], []);
@@ -134,7 +142,9 @@ export function useStorage() {
 
   return {
     getEngagement, setEngagement, getLastScenario, setLastScenario, getLastTaskIndex,
-    getTaskDone, setTaskDone, getScenarioStatus, setScenarioStatus, getScenarioLabId, setScenarioLabId, getChallengesDone, setChallengeDone,
+    getTaskDone, setTaskDone, getScenarioStatus, setScenarioStatus, getScenarioLabId, setScenarioLabId,
+    getRoomTaskDone, setRoomTaskDone, getRoomStatus, setRoomStatus, getRoomLabId, setRoomLabId, getLastRoom, setLastRoom,
+    getChallengesDone, setChallengeDone,
     getLabs, setLabs, getCurrentLabId, setCurrentLabId, getTopologies, setTopology,
     getPipAuto, setPipAuto, clearProgress,
     getTerminalHistory, appendTerminalHistory, clearTerminalHistory, getLabTerminalState, setLabTerminalState, appendLabTerminalHistory, getLabJournal, appendLabJournalEntry,

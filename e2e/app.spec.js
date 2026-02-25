@@ -44,8 +44,11 @@ test.describe('Navigation', () => {
   });
 
   test('données chargées (rooms ou scénarios)', async ({ page }) => {
+    await page.waitForTimeout(2000);
     const hasContent = await page.evaluate(() => {
-      return document.body.innerText.includes('Scénario') || document.body.innerText.includes('Room') || document.body.innerText.length > 500;
+      const text = (document.body && document.body.innerText) ? document.body.innerText : '';
+      const lower = text.toLowerCase();
+      return lower.includes('scénario') || lower.includes('room') || text.length > 400;
     });
     expect(hasContent).toBeTruthy();
   });

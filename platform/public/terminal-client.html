@@ -12,10 +12,24 @@
     #status.error { color: #e74c3c; }
     #status.ok { color: #2ecc71; }
     #terminal { flex: 1; padding: 8px; min-height: 200px; }
+    #retry-wrap { padding: 0.5rem 1rem; }
+    #retry-wrap button {
+      padding: 0.4rem 0.8rem;
+      font-size: 12px;
+      cursor: pointer;
+      background: #333;
+      color: #2ecc71;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+    #retry-wrap button:hover { background: #444; color: #fff; }
   </style>
 </head>
 <body>
   <div id="status">Connexion au terminal…</div>
+  <div id="retry-wrap" style="display:none;">
+    <button type="button" id="retry-btn">Réessayer la connexion</button>
+  </div>
   <div id="terminal"></div>
   <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
@@ -23,13 +37,22 @@
 (function () {
   var statusEl = document.getElementById('status');
   var terminalEl = document.getElementById('terminal');
+  var retryWrap = document.getElementById('retry-wrap');
+  var retryBtn = document.getElementById('retry-btn');
+
   function setStatus(msg, isError) {
     statusEl.textContent = msg;
     statusEl.className = isError ? 'error' : 'ok';
   }
+
+  function showRetry(show) {
+    retryWrap.style.display = show ? 'block' : 'none';
+  }
+
   function notifyExit() {
     try { window.parent.postMessage({ type: 'lab-cyber-terminal-exit' }, '*'); } catch (_) {}
   }
+
   var termRef = null;
   window.addEventListener('message', function (e) {
     if (e.data && e.data.type === 'lab-cyber-terminal-focus' && termRef) {
@@ -43,77 +66,115 @@
   var path = (new URLSearchParams(window.location.search)).get('path') || 'terminal';
   var session = (new URLSearchParams(window.location.search)).get('session') || '';
 
-  function run() {
-    fetch(base + '/' + path + '/token')
-      .then(function (r) { if (!r.ok) throw new Error('Token ' + r.status); return r.text(); })
-      .then(function (token) {
-        token = (token || '').trim();
-        var wsUrl = wsBase + '/' + path + '/ws' + (token ? '?token=' + encodeURIComponent(token) : '');
-        if (session) wsUrl += (wsUrl.indexOf('?') >= 0 ? '&' : '?') + 'session=' + encodeURIComponent(session);
-        var ws = new WebSocket(wsUrl);
-        ws.binaryType = 'arraybuffer';
-        var term = new window.Terminal({ cursorBlink: true, theme: { background: '#0c0c0c' } });
-        termRef = term;
-        var fitAddon = new window.FitAddon.FitAddon();
-        term.loadAddon(fitAddon);
-        term.open(terminalEl);
-        fitAddon.fit();
-        window.addEventListener('resize', function () { fitAddon.fit(); });
-        window.addEventListener('focus', function () { try { term.focus(); } catch (_) {} });
-        setTimeout(function () { try { term.focus(); } catch (_) {} }, 100);
-
-        ws.onopen = function () {
-          setStatus('Connecté. Tapez "exit" pour fermer l’onglet.');
-          var payload = JSON.stringify({ columns: term.cols, rows: term.rows });
-          var buf = new Uint8Array(1 + payload.length);
-          buf[0] = 0x31;
-          for (var i = 0; i < payload.length; i++) buf[1 + i] = payload.charCodeAt(i);
-          ws.send(buf.buffer);
-          try { term.focus(); } catch (_) {}
-        };
-        ws.onerror = function () { setStatus('Erreur WebSocket', true); };
-        ws.onclose = function () {
-          notifyExit();
-          setStatus('Session fermée.', true);
-        };
-        ws.onmessage = function (ev) {
-          var data = ev.data;
-          if (data instanceof ArrayBuffer) {
-            var u8 = new Uint8Array(data);
-            if (u8.length && u8[0] === 0) term.write(new TextDecoder().decode(u8.subarray(1)));
-          } else if (typeof data === 'string') term.write(data);
-          else if (data instanceof Blob) {
-            var r = new FileReader();
-            r.onload = function () {
-              var u8 = new Uint8Array(r.result);
-              if (u8[0] === 0) term.write(new TextDecoder().decode(u8.subarray(1)));
-            };
-            r.readAsArrayBuffer(data);
-          }
-        };
-        term.onData(function (data) {
-          if (ws.readyState !== 1) return;
-          var enc = new TextEncoder().encode(data);
-          var buf = new Uint8Array(1 + enc.length);
-          buf[0] = 0x30;
-          buf.set(enc, 1);
-          ws.send(buf.buffer);
-        });
-        term.onResize(function (size) {
-          if (ws.readyState !== 1) return;
-          var payload = JSON.stringify({ columns: size.cols, rows: size.rows });
-          var buf = new Uint8Array(1 + payload.length);
-          buf[0] = 0x31;
-          for (var i = 0; i < payload.length; i++) buf[1 + i] = payload.charCodeAt(i);
-          ws.send(buf.buffer);
-        });
-      })
-      .catch(function (e) {
-        setStatus('Erreur: ' + (e.message || e), true);
-        notifyExit();
+  function fetchToken() {
+    return fetch(base + '/' + path + '/token')
+      .then(function (r) {
+        if (!r.ok) throw new Error('Token ' + r.status);
+        return r.text();
       });
   }
-  run();
+
+  function connect(token) {
+    token = (token || '').trim();
+    var wsUrl = wsBase + '/' + path + '/ws' + (token ? '?token=' + encodeURIComponent(token) : '');
+    if (session) wsUrl += (wsUrl.indexOf('?') >= 0 ? '&' : '?') + 'session=' + encodeURIComponent(session);
+    var ws = new WebSocket(wsUrl);
+    ws.binaryType = 'arraybuffer';
+    var term = new window.Terminal({ cursorBlink: true, theme: { background: '#0c0c0c' } });
+    termRef = term;
+    var fitAddon = new window.FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(terminalEl);
+    fitAddon.fit();
+    window.addEventListener('resize', function () { fitAddon.fit(); });
+    window.addEventListener('focus', function () { try { term.focus(); } catch (_) {} });
+    setTimeout(function () { try { term.focus(); } catch (_) {} }, 100);
+
+    ws.onopen = function () {
+      setStatus('Connecté. Tapez "exit" pour fermer l’onglet.');
+      showRetry(false);
+      var payload = JSON.stringify({ columns: term.cols, rows: term.rows });
+      var buf = new Uint8Array(1 + payload.length);
+      buf[0] = 0x31;
+      for (var i = 0; i < payload.length; i++) buf[1 + i] = payload.charCodeAt(i);
+      ws.send(buf.buffer);
+      try { term.focus(); } catch (_) {}
+    };
+    ws.onerror = function () { setStatus('Erreur WebSocket', true); };
+    ws.onclose = function () {
+      notifyExit();
+      setStatus('Session fermée.', true);
+    };
+    ws.onmessage = function (ev) {
+      var data = ev.data;
+      if (data instanceof ArrayBuffer) {
+        var u8 = new Uint8Array(data);
+        if (u8.length && u8[0] === 0) term.write(new TextDecoder().decode(u8.subarray(1)));
+      } else if (typeof data === 'string') term.write(data);
+      else if (data instanceof Blob) {
+        var r = new FileReader();
+        r.onload = function () {
+          var u8 = new Uint8Array(r.result);
+          if (u8[0] === 0) term.write(new TextDecoder().decode(u8.subarray(1)));
+        };
+        r.readAsArrayBuffer(data);
+      }
+    };
+    term.onData(function (data) {
+      if (ws.readyState !== 1) return;
+      var enc = new TextEncoder().encode(data);
+      var buf = new Uint8Array(1 + enc.length);
+      buf[0] = 0x30;
+      buf.set(enc, 1);
+      ws.send(buf.buffer);
+    });
+    term.onResize(function (size) {
+      if (ws.readyState !== 1) return;
+      var payload = JSON.stringify({ columns: size.cols, rows: size.rows });
+      var buf = new Uint8Array(1 + payload.length);
+      buf[0] = 0x31;
+      for (var i = 0; i < payload.length; i++) buf[1 + i] = payload.charCodeAt(i);
+      ws.send(buf.buffer);
+    });
+  }
+
+  function run(attemptNumber) {
+    showRetry(false);
+    var attempt = typeof attemptNumber === 'number' ? attemptNumber : 0;
+    var maxAutoRetries = 4;
+    if (attempt > 0) {
+      setStatus('Connexion au terminal… (tentative ' + (attempt + 1) + '/' + (maxAutoRetries + 1) + ')', false);
+    } else {
+      setStatus('Connexion au terminal…', false);
+    }
+
+    fetchToken()
+      .then(function (token) {
+        connect(token);
+      })
+      .catch(function (e) {
+        var msg = e.message || String(e);
+        if (attempt < maxAutoRetries) {
+          var delay = [2000, 4000, 8000, 12000][attempt];
+          setStatus('Connexion au terminal… nouvel essai dans ' + (delay / 1000) + ' s.', false);
+          setTimeout(function () { run(attempt + 1); }, delay);
+        } else {
+          if (msg.indexOf('502') >= 0) {
+            setStatus('Le service terminal met du temps à démarrer (502). Cliquez sur « Réessayer » ci-dessous.', true);
+          } else {
+            setStatus('Erreur: ' + msg, true);
+          }
+          showRetry(true);
+          notifyExit();
+        }
+      });
+  }
+
+  retryBtn.addEventListener('click', function () {
+    run(0);
+  });
+
+  run(0);
 })();
   </script>
 </body>

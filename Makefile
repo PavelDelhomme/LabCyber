@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start
+.PHONY: help up down build rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start terminal-check
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -38,6 +38,7 @@ help:
 	@echo "  make logs-SVC       Logs d'un service (ex: make logs-gateway)"
 	@echo "  make terminal-html  Verifier que l'injection exit est OK (page /terminal/)"
 	@echo "  make shell          Shell dans le conteneur attaquant"
+	@echo "  make terminal-check Vérifier que le backend terminal (7682) répond — en cas de 502 : make rebuild"
 	@echo "  make test            Tests automatisés (15 blocs : structure, JSON, HTTP, store, etc.)"
 	@echo "  make test-full       Tests complets (nécessite lab up)"
 	@echo "  make test-e2e        Tests E2E navigateur (Playwright dans Docker) — lance make up si besoin"
@@ -147,9 +148,11 @@ tests:
 	@echo "  Rapports : test-results.txt, test-full-results.txt, e2e/test-results/ et playwright-report/ (si généré)"
 
 # Tests E2E (Playwright) : exécutés dans un conteneur Docker, uniquement via Makefile.
+# Reconstruit la plateforme pour que l'UI servie (simulateur, bâtiments, tous les types d'appareils) soit à jour.
 # Image : mcr.microsoft.com/playwright:v1.58.2-noble. Suites : Navigation + Terminal (e2e/app.spec.js).
-# Démarre gateway (et dépendances) si besoin, puis lance le conteneur e2e.
 test-e2e:
+	@echo "  [test-e2e] Rebuild plateforme (pour simulateur, bâtiments, types d'appareils à jour)..."
+	cd $(ROOT) && docker compose build --no-cache platform
 	@echo "  [test-e2e] Démarrage des services si besoin..."
 	cd $(ROOT) && docker compose up -d gateway
 	@echo "  [test-e2e] Attente gateway (5 s)..."
@@ -169,7 +172,12 @@ shell: shell-attacker
 shell-attacker:
 	cd $(ROOT) && docker compose exec attaquant bash
 
-# Logs : suivi en direct. Ne se coupe pas : en cas de redémarrage (make restart ailleurs), les logs reprennent seuls après 2 s.
+# Verifier que lab-terminal (7682) repond dans attaquant — si 502 au panneau terminal : make rebuild
+terminal-check:
+	@echo "Verification du backend terminal (lab-terminal sur 7682)..."
+	@cd $(ROOT) && docker compose exec -T attaquant sh -c 'wget -q -O - http://127.0.0.1:7682/token' && echo "" && echo "OK : lab-terminal repond." || (echo "Echec : lab-terminal ne repond pas. Reconstruire : make rebuild"; exit 1)
+
+# Logs : suivi en direct. Ne se coupe pas
 # Optionnel : make logs LOGFILE=lab.log écrit aussi dans lab.log (historique conservé).
 # Ctrl+C pour arrêter.
 logs:

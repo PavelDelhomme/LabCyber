@@ -12,6 +12,7 @@ export default function Sidebar({
   currentScenarioId,
   activeScenarioId,
   currentRoomId,
+  activeRoomId,
   scenarios,
   data,
   config,
@@ -183,11 +184,12 @@ export default function Sidebar({
                     return (
                       <button
                         key={room.id}
-                        class={`nav-item nav-item-sub ${view === 'room' && currentRoomId === room.id ? 'active' : ''}`}
+                        class={`nav-item nav-item-sub ${view === 'room' && currentRoomId === room.id ? 'active' : ''} ${activeRoomId === room.id ? 'scenario-in-progress' : ''}`}
                         onClick={() => onOpenRoom(room.id)}
                       >
                         <span class="nav-icon" style={`color:${cat.color || '#9aa0a6'}`}>{cat.icon || '•'}</span>
                         <span>{escapeHtml(room.title)}</span>
+                        {activeRoomId === room.id && <span class="sidebar-scenario-badge" title="Room en cours">●</span>}
                       </button>
                     );
                   })
@@ -195,11 +197,12 @@ export default function Sidebar({
                     (byCat[cat.id] || []).map(room => (
                       <button
                         key={room.id}
-                        class={`nav-item nav-item-sub ${view === 'room' && currentRoomId === room.id ? 'active' : ''}`}
+                        class={`nav-item nav-item-sub ${view === 'room' && currentRoomId === room.id ? 'active' : ''} ${activeRoomId === room.id ? 'scenario-in-progress' : ''}`}
                         onClick={() => onOpenRoom(room.id)}
                       >
                         <span class="nav-icon" style={`color:${cat.color || '#9aa0a6'}`}>{cat.icon || '•'}</span>
                         <span>{escapeHtml(room.title)}</span>
+                        {activeRoomId === room.id && <span class="sidebar-scenario-badge" title="Room en cours">●</span>}
                       </button>
                     ))
                   )}

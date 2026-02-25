@@ -138,6 +138,7 @@ export default function App() {
   const [currentScenarioId, setCurrentScenarioId] = useState(null);
   const [currentRoomId, setCurrentRoomId] = useState(null);
   const [scenarioStatusRevision, setScenarioStatusRevision] = useState(0);
+  const [roomStatusRevision, setRoomStatusRevision] = useState(0);
   const [learningTopicId, setLearningTopicId] = useState(null);
   const [learningSubId, setLearningSubId] = useState(null);
   const [docOfflineId, setDocOfflineId] = useState(null);
@@ -182,6 +183,9 @@ export default function App() {
   const handleStartScenario = (scenarioId) => {
     if (!storage || !scenarioId) return;
     const scenario = (scenarios || []).find(s => s.id === scenarioId);
+    (data?.rooms || []).forEach(r => {
+      if (storage.getRoomStatus(r.id) === 'in_progress') storage.setRoomStatus(r.id, 'paused');
+    });
     (scenarios || []).forEach(s => {
       if (s.id !== scenarioId && storage.getScenarioStatus(s.id) === 'in_progress') {
         storage.setScenarioStatus(s.id, 'paused');
@@ -273,6 +277,73 @@ export default function App() {
     setTerminalPanelMinimized(false);
     persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
     setScenarioStatusRevision((r) => r + 1);
+  };
+
+  const handleStartRoom = (roomId) => {
+    if (!storage || !roomId) return;
+    const roomsList = data?.rooms || [];
+    const room = roomsList.find(r => r.id === roomId);
+    (scenarios || []).forEach(s => {
+      if (storage.getScenarioStatus(s.id) === 'in_progress') storage.setScenarioStatus(s.id, 'paused');
+    });
+    roomsList.forEach(r => {
+      if (r.id !== roomId && storage.getRoomStatus(r.id) === 'in_progress') storage.setRoomStatus(r.id, 'paused');
+    });
+    storage.setRoomStatus(roomId, 'in_progress');
+    let labIdToUse = currentLabId || 'default';
+    if (labIdToUse === 'default' && storage.getLabs && storage.setLabs && storage.setCurrentLabId && room) {
+      const roomTitle = room.title || roomId;
+      const newId = 'lab-room-' + Date.now();
+      const newLab = { id: newId, name: 'Lab – ' + roomTitle, description: 'Lab créé pour la room', createdAt: new Date().toISOString() };
+      const labs = storage.getLabs() || [];
+      storage.setLabs([...labs, newLab]);
+      storage.setCurrentLabId(newId);
+      onLabChange(newId);
+      labIdToUse = newId;
+      if (storage.setRoomLabId) storage.setRoomLabId(roomId, newId);
+      setTerminalUseDefaultLab(false);
+      persistUiSession({ terminalUseDefaultLab: false });
+      openTerminalPanel(labIdToUse);
+      setTerminalPanelMinimized(false);
+      persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
+      setRoomStatusRevision((r) => r + 1);
+      return;
+    }
+    if (labIdToUse && storage.setRoomLabId) storage.setRoomLabId(roomId, labIdToUse);
+    setTerminalUseDefaultLab(false);
+    persistUiSession({ terminalUseDefaultLab: false });
+    openTerminalPanel(labIdToUse);
+    setTerminalPanelMinimized(false);
+    persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
+    setRoomStatusRevision((r) => r + 1);
+  };
+
+  const handleAbandonRoom = (roomId) => {
+    if (currentLabId && currentLabId !== 'default' && storage?.getRoomLabId?.(roomId) === currentLabId) {
+      onLabChange('default');
+    }
+    setTerminalUseDefaultLab(true);
+    persistUiSession({ terminalUseDefaultLab: true });
+  };
+
+  const handleResumeRoom = (roomId) => {
+    if (!storage || !roomId) return;
+    (scenarios || []).forEach(s => {
+      if (storage.getScenarioStatus(s.id) === 'in_progress') storage.setScenarioStatus(s.id, 'paused');
+    });
+    (data?.rooms || []).forEach(r => {
+      if (r.id !== roomId && storage.getRoomStatus(r.id) === 'in_progress') storage.setRoomStatus(r.id, 'paused');
+    });
+    storage.setRoomStatus(roomId, 'in_progress');
+    const labId = storage.getRoomLabId?.(roomId);
+    if (labId && labId !== currentLabId) onLabChange(labId);
+    setTerminalUseDefaultLab(false);
+    persistUiSession({ terminalUseDefaultLab: false });
+    setLabPanelOpen(false);
+    setTerminalPanelOpen(true);
+    setTerminalPanelMinimized(false);
+    persistUiSession({ terminalPanelOpen: true, terminalPanelMinimized: false, labPanelOpen: false });
+    setRoomStatusRevision((r) => r + 1);
   };
 
   const openTerminalPanel = (forLabId) => {
@@ -370,12 +441,28 @@ export default function App() {
     [activeScenarioId, scenarios]
   );
 
+  const rooms = data?.rooms || [];
+  const activeRoomId = useMemo(() => {
+    if (!storage || !rooms?.length) return null;
+    const found = rooms.find(r => storage.getRoomStatus(r.id) === 'in_progress');
+    return found ? found.id : null;
+  }, [rooms, storage, roomStatusRevision]);
+  const activeRoom = useMemo(
+    () => (activeRoomId ? rooms.find(r => r.id === activeRoomId) : null),
+    [activeRoomId, rooms]
+  );
+
   // Quand un scénario est en cours, afficher son lab. Quand on abandonne / termine / met en pause, on ne touche pas au lab affiché (on ne repasse pas au lab par défaut).
   useEffect(() => {
     if (!activeScenarioId || !storage?.getScenarioLabId) return;
     const labId = storage.getScenarioLabId(activeScenarioId);
     if (labId && labId !== currentLabId) setCurrentLabId(labId);
   }, [activeScenarioId, storage, scenarioStatusRevision]);
+  useEffect(() => {
+    if (!activeRoomId || !storage?.getRoomLabId) return;
+    const labId = storage.getRoomLabId(activeRoomId);
+    if (labId && labId !== currentLabId) setCurrentLabId(labId);
+  }, [activeRoomId, storage, roomStatusRevision]);
 
   const onLabChange = (id) => {
     const next = id || 'default';
@@ -606,7 +693,7 @@ export default function App() {
   };
 
   const currentScenario = currentScenarioId ? scenarios.find(s => s.id === currentScenarioId) : null;
-  const showPipButton = !!activeScenarioId;
+  const showPipButton = !!activeScenarioId || !!activeRoomId;
   const getViewUrl = (v) => `${typeof window !== 'undefined' ? window.location.origin + (window.location.pathname || '/') : ''}#/${v}`;
 
   const ViewComponent = VIEWS[view] || Dashboard;
@@ -619,6 +706,7 @@ export default function App() {
         currentScenarioId={currentScenarioId}
         activeScenarioId={activeScenarioId}
         currentRoomId={currentRoomId}
+        activeRoomId={activeRoomId}
         scenarios={scenarios}
         data={data}
         config={config}
@@ -626,7 +714,7 @@ export default function App() {
         onOpenScenario={onOpenScenario}
         onOpenRoom={onOpenRoom}
       />
-      <main class={`main ${activeScenarioId ? 'has-scenario-bar' + (scenarioBarCollapsed ? ' scenario-bar-collapsed' : '') : ''}`} style={{ marginRight: terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : (capturePanelOpen && capturePanelPosition === 'right' ? 360 : 0) }}>
+      <main class={`main ${(activeScenarioId || activeRoomId) ? 'has-scenario-bar' + (scenarioBarCollapsed ? ' scenario-bar-collapsed' : '') : ''}`} style={{ marginRight: terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : (capturePanelOpen && capturePanelPosition === 'right' ? 360 : 0) }}>
         <Topbar
           view={view}
           sidebarCollapsed={sidebarCollapsed}
@@ -664,6 +752,8 @@ export default function App() {
         <div id="topbar-context" class="topbar-context" aria-live="polite">
           {activeScenario
             ? `Scénario en cours : ${activeScenario.title}`
+            : activeRoom
+            ? `Room en cours : ${activeRoom.title}`
             : view === 'scenario' && currentScenario
             ? `Scénario : ${currentScenario.title}`
             : view === 'room' && currentRoomId
@@ -710,6 +800,10 @@ export default function App() {
               onResumeScenario={handleResumeScenario}
               onScenarioStatusChange={() => setScenarioStatusRevision((r) => r + 1)}
               onAbandonScenario={handleAbandonScenario}
+              onStartRoom={handleStartRoom}
+              onResumeRoom={handleResumeRoom}
+              onRoomStatusChange={() => setRoomStatusRevision((r) => r + 1)}
+              onAbandonRoom={handleAbandonRoom}
               optionsInLeftPanel={optionsInLeftPanel}
               onOptionsInLeftPanelChange={(v) => { setOptionsInLeftPanel(v); persistUiSession({ optionsInLeftPanel: v }); }}
             />
@@ -723,7 +817,7 @@ export default function App() {
       <button type="button" class="log-fab" onClick={() => setLogOpen(true)} aria-label="Ouvrir le journal" title="Journal d'activité">📋</button>
       <button type="button" class="cve-fab" onClick={() => setCvePanelOpen(true)} aria-label="Recherche CVE" title="Rechercher un CVE">CVE</button>
       <CvePanel open={cvePanelOpen} onClose={() => setCvePanelOpen(false)} />
-      {showPipButton && <PipPanel open={pipOpen} scenario={activeScenario || currentScenario} onClose={() => setPipOpen(false)} />}
+      {showPipButton && <PipPanel open={pipOpen} scenario={activeScenario || activeRoom || currentScenario} onClose={() => setPipOpen(false)} getTaskDone={activeRoom && !activeScenarioId ? (idx) => storage?.getRoomTaskDone(activeRoom.id, idx) : undefined} />}
       {activeScenarioId && activeScenario && (
           <ScenarioBottomBar
             scenario={activeScenario}
@@ -746,6 +840,31 @@ export default function App() {
             onPause={() => { storage?.setScenarioStatus(activeScenario.id, 'paused'); setScenarioStatusRevision((r) => r + 1); }}
             onResume={() => handleResumeScenario(activeScenario.id)}
             status={storage?.getScenarioStatus?.(activeScenario.id) || 'not_started'}
+            getTerminalUrl={() => getTerminalUrl(terminalUseDefaultLab, activeTerminalTabId)}
+          />
+      )}
+      {!activeScenarioId && activeRoomId && activeRoom && (
+          <ScenarioBottomBar
+            scenario={activeRoom}
+            storage={storage}
+            getTaskDone={(idx) => storage?.getRoomTaskDone(activeRoom.id, idx)}
+            collapsed={scenarioBarCollapsed}
+            onCollapsed={setScenarioBarCollapsed}
+            onExpand={() => {
+              window.location.hash = '#/room/' + encodeURIComponent(activeRoomId);
+              setViewState('room');
+              setCurrentRoomId(activeRoomId);
+              requestAnimationFrame(() => {
+                const el = document.querySelector('#view-room .room-header');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              });
+            }}
+            terminalStripWidth={terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : 0}
+            onOpenTerminal={() => openTerminalPanel(currentLabId || undefined)}
+            onOpenPipRecap={() => setPipOpen(true)}
+            onPause={() => { storage?.setRoomStatus(activeRoom.id, 'paused'); setRoomStatusRevision((r) => r + 1); }}
+            onResume={() => handleResumeRoom(activeRoom.id)}
+            status={storage?.getRoomStatus?.(activeRoom.id) || 'not_started'}
             getTerminalUrl={() => getTerminalUrl(terminalUseDefaultLab, activeTerminalTabId)}
           />
       )}
@@ -787,8 +906,8 @@ export default function App() {
             }}
           />
           <header class="terminal-side-panel-header">
-            <h3>{terminalPanelMinimized ? '⌨' : 'Terminal web (attaquant)'}{!terminalPanelMinimized && currentLab?.name && currentLab.id !== 'default' ? ` – ${currentLab.name}` : ''}</h3>
-            {!terminalPanelMinimized && currentLabId !== 'default' && !activeScenarioId && (
+            <h3 class="terminal-side-panel-title">{terminalPanelMinimized ? '⌨' : 'Terminal web (attaquant)'}{!terminalPanelMinimized && currentLab?.name && currentLab.id !== 'default' ? ` – ${currentLab.name}` : ''}</h3>
+            {!terminalPanelMinimized && currentLabId !== 'default' && !activeScenarioId && !activeRoomId && (
               <div class="terminal-lab-choice">
                 <button type="button" class={`terminal-lab-choice-btn ${terminalUseDefaultLab ? 'active' : ''}`} onClick={() => { setTerminalUseDefaultLab(true); persistUiSession({ terminalUseDefaultLab: true }); }} title="Terminal du lab par défaut">Lab défaut</button>
                 <button type="button" class={`terminal-lab-choice-btn ${!terminalUseDefaultLab ? 'active' : ''}`} onClick={() => { setTerminalUseDefaultLab(false); persistUiSession({ terminalUseDefaultLab: false }); }} title="Terminal du lab actif">Lab actif</button>
@@ -797,7 +916,7 @@ export default function App() {
             <button type="button" class="terminal-side-panel-minimize" onClick={() => { setTerminalPanelMinimized(m => !m); persistUiSession({ terminalPanelMinimized: !terminalPanelMinimized }); }} title={terminalPanelMinimized ? 'Afficher le panneau' : 'Réduire (cacher sans fermer)'} aria-label={terminalPanelMinimized ? 'Agrandir' : 'Réduire'}>{terminalPanelMinimized ? '▶' : '◀'}</button>
             <button type="button" class="terminal-side-panel-close" onClick={() => { setTerminalPanelOpen(false); persistUiSession({ terminalPanelOpen: false }); }} aria-label="Fermer le panneau">×</button>
           </header>
-          <p class="terminal-side-panel-hint">En cas d'erreur 502 : le terminal peut mettre 15–20 s à démarrer. Double-clic sur un onglet pour le renommer.</p>
+          <p class="terminal-side-panel-hint">Le terminal peut mettre 15–20 s à démarrer. En cas d'erreur 502, cliquez sur « Recharger » ci-dessus ou sur « Réessayer la connexion » dans le cadre du terminal. Double-clic sur un onglet pour le renommer.</p>
           <div class="terminal-side-panel-body" ref={terminalPanelBodyRef}>
             {!terminalPanelMinimized && (
               <nav class="terminal-side-panel-tabs-vertical" aria-label="Sessions terminal">

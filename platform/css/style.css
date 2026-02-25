@@ -589,6 +589,8 @@ body {
 .scenario-actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
 .room-section { margin-bottom: 1.75rem; }
+.room-section-locked { opacity: 0.85; pointer-events: none; }
+.room-locked-message { padding: 0.75rem 1rem; background: var(--bg-hover); border-radius: var(--radius); color: var(--text-muted); font-size: 0.95rem; }
 
 .room-section h3 {
   margin: 0 0 0.75rem;
@@ -1379,11 +1381,12 @@ body {
   padding: 0.6rem 0.75rem;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   min-height: 48px;
   background: var(--bg-hover);
 }
-.terminal-side-panel-header h3 {
+.terminal-side-panel-header h3,
+.terminal-side-panel-title {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
@@ -1392,6 +1395,10 @@ body {
   padding-right: 0.5rem;
   border-right: 1px solid var(--border);
   margin-right: 0.25rem;
+  white-space: normal;
+  word-break: break-word;
+  min-width: 0;
+  max-width: 100%;
 }
 .terminal-lab-choice {
   display: flex;
@@ -1655,6 +1662,7 @@ body {
   color: var(--text-muted);
   background: var(--bg-dark);
   border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   flex-shrink: 0;
 }
 .terminal-tab-pane {
@@ -2206,15 +2214,40 @@ body {
 .network-sim-toolbar-sep { color: var(--border); margin: 0 0.35rem; }
 .network-sim-toolbar-hint { font-size: 0.85rem; color: var(--accent); margin-left: 0.35rem; }
 .network-sim-canvas-wrap { background: var(--bg-dark); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.network-sim-canvas-and-config { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
-.network-sim-canvas-and-config .network-sim-canvas-wrap { flex: 1; min-width: 320px; }
-.network-sim-config-panel { width: 280px; flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+.network-sim-canvas-wrap.network-sim-place-mode { cursor: crosshair; }
+.network-sim-canvas-and-config { display: flex; gap: 0; align-items: stretch; flex-wrap: nowrap; }
+.network-sim-canvas-area { flex: 1 1 0; min-width: 280px; position: relative; }
+.network-sim-canvas-area .network-sim-canvas-wrap { width: 100%; position: relative; }
+.network-sim-panel-resizer { width: 6px; min-width: 6px; cursor: col-resize; background: var(--border); flex-shrink: 0; }
+.network-sim-panel-resizer:hover { background: var(--accent); }
+.network-sim-zoom-overlay { position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+.network-sim-config-panel { min-width: 220px; max-width: 560px; flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; max-height: 85vh; overflow-y: auto; }
+.network-sim-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem; }
+.network-sim-panel-header h4 { margin: 0; font-size: 0.95rem; }
+.network-sim-panel-section { margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.network-sim-panel-section:last-of-type { border-bottom: none; }
+.network-sim-panel-section-title { margin: 0 0 0.35rem; font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+.network-sim-info-list { margin: 0; font-size: 0.85rem; }
+.network-sim-info-list dt { color: var(--text-muted); margin-top: 0.35rem; }
+.network-sim-info-list dt:first-child { margin-top: 0; }
+.network-sim-info-list dd { margin: 0 0 0 0.5rem; }
 .network-sim-config-panel h4 { margin: 0 0 0.75rem; font-size: 0.95rem; }
 .network-sim-config-form { display: flex; flex-direction: column; gap: 0.35rem; }
 .network-sim-config-form label { font-size: 0.85rem; color: var(--text-muted); }
 .network-sim-config-form input, .network-sim-config-form select { padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-dark); color: var(--text); }
 .network-sim-ports-list { list-style: none; margin: 0; padding: 0; font-size: 0.85rem; font-family: var(--font-mono); }
 .network-sim-ports-list li { padding: 0.2rem 0; border-bottom: 1px solid var(--border); }
+.network-sim-layer-badge { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 600; background: var(--accent-soft); color: var(--accent); border-radius: 4px; }
+.network-sim-device-terminal { margin-top: 0.75rem; border-top: 1px solid var(--border); padding-top: 0.75rem; }
+.network-sim-terminal-wrap { background: var(--bg-dark); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; max-height: 200px; display: flex; flex-direction: column; }
+.network-sim-terminal-output { overflow-y: auto; flex: 1; min-height: 60px; }
+.network-sim-terminal-line { margin-bottom: 0.25rem; }
+.network-sim-terminal-prompt { color: var(--accent); margin-right: 0.35rem; }
+.network-sim-terminal-cmd { color: var(--text); }
+.network-sim-terminal-out { margin: 0.15rem 0 0 1rem; white-space: pre-wrap; color: var(--text-muted); font-size: 0.75rem; }
+.network-sim-terminal-input-row { display: flex; align-items: center; gap: 0.25rem; margin-top: 0.35rem; padding-top: 0.35rem; border-top: 1px solid var(--border); }
+.network-sim-terminal-input { flex: 1; padding: 0.3rem 0.4rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: var(--font-mono); font-size: 0.8rem; }
+.network-sim-terminal-input:focus { outline: none; border-color: var(--accent); }
 .proxy-config-form { margin-bottom: 0.75rem; }
 .proxy-config-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; margin-bottom: 0.5rem; }
 .proxy-config-grid input, .proxy-config-grid select { padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-dark); color: var(--text); }

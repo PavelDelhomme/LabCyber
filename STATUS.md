@@ -8,7 +8,8 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 ## Ce que vous devez faire précisément
 
-- **Tests** : **`make tests`** lance tout (lab up + tests automatisés + tests complets + E2E) et génère les rapports (test-results.txt, test-full-results.txt, E2E dans playwright-report/). Sinon : `make test` (15 blocs), `make test-full` (lab requis), `make test-e2e` (Playwright). Rapport seul : `make test-report` ou `make test-full-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md) et [docs/TESTS-E2E.md](docs/TESTS-E2E.md).
+- **Tests** : **`make tests`** lance tout (lab up + tests automatisés + tests complets + E2E) et génère les rapports (test-results.txt, test-full-results.txt, E2E dans playwright-report/). Sinon : `make test` (15 blocs), `make test-full` (lab requis), **`make test-e2e`** (Playwright — **reconstruit la plateforme** avant de lancer les tests pour que l’UI simulateur, bâtiments, tous les types d’appareils soit à jour). Rapport seul : `make test-report` ou `make test-full-report`. Voir [docs/TESTS-AUTOMATISES.md](docs/TESTS-AUTOMATISES.md) et [docs/TESTS-E2E.md](docs/TESTS-E2E.md).
+- **Voir les modifs du simulateur (ou de la plateforme) dans le navigateur** : l’app servie par Docker est celle **construite dans l’image**. Après avoir modifié le code (simulateur, bâtiments, types d’appareils, etc.), il faut **reconstruire la plateforme** : `docker compose build platform && docker compose up -d` (ou `make restart-clean`). Sinon tu continues à voir l’ancienne version (ex. seulement PC, Routeur, Switch, Serveur).
 - **Targets** : les cibles (DVWA, Juice, vuln-api, vuln-network, etc.) sont enregistrées dans **`platform/data/targets.json`** et **`platform/public/data/targets.json`** (catalogue JSON, clé `targets`). Ce n’est pas un dossier « targets » mais des **fichiers de catalogue** utilisés par Engagements et Dashboard.
 - **vuln-network / vuln-api** : opérationnels quand le lab est up. vuln-api est testé (api.lab, `/api/health`, `/api/products`, `/api/users/1`) ; vuln-network est testé via attaquant → SSH. Améliorations possibles : plus de routes API, plus de services dans vuln-network, selon les scénarios.
 - **Packs d’outils** : les packs sont des **métadonnées** (`toolPacks.json`, `labToolPresets.json`, `labToolPresets.byScenario`). Les **outils sont déjà dans l’image attaquant** (Kali). Le terminal ouvert dans le lab = shell du lab actif (conteneur attaquant) ; les packs recommandés par scénario sont appliqués à la création du lab (lab dédié au scénario).
@@ -52,7 +53,7 @@ Après `make test` (15 blocs verts), à faire **à la main** ou en E2E :
 | **Cibles navigateur** | Depuis un scénario ou Engagements : ouvrir DVWA, Juice, bWAPP via /cible/* (même origine). Vérifier que les pages se chargent. |
 | **Requêtes API (Postman-like)** | Vue Requêtes API : envoyer GET /api/health, /api/products vers api.lab (Host). Vérifier réponses. |
 | **Capture pcap** | Ouvrir la vue Capture, charger un fichier .pcap (capturé sur ton PC). Vérifier colonnes, filtre, détail. |
-| **Simulateur réseau** | Ouvrir la vue Simulateur : créer une carte, ajouter des nœuds (PC, routeur), liens. Vérifier persistance par lab (changer de lab, revenir). |
+| **Simulateur réseau** | Ouvrir la vue Simulateur : **Nouvelle carte** ou sélecteur de carte, **placer** des nœuds (PC, routeur, pare-feu, AP, cloud, etc.), **changer le type** d’un appareil déjà placé (panneau Configuration → « Type d’appareil »), **nommer** (champ « Nom (comme Packet Tracer) »). **Relier** 2 appareils (bouton Relier). **Bâtiments** : « Bâtiments / Zones », « Nouveau bâtiment », sélection de zone. Panneau droit : Infos, Config (DNS serveur, SSID AP, L2/L3 routeur/switch), Terminal (nslookup/dig). **Cartes existantes** : migrées automatiquement (champs routerLayer, buildingId, etc.). Persistance par lab. |
 | **Proxy** | Vue Proxy : configurer un proxy (ex. Squid du lab si `make proxy`). Vérifier que les requêtes passent par le proxy. |
 | **Bureau VNC** | Avec lab up : ouvrir http://127.0.0.1:4080/desktop/ → noVNC (bureau distant). Vérifier connexion WebSocket. |
 | **Cours / Learning** | Vue Doc & Cours : parcourir thèmes, ouvrir un doc/cours. Vérifier sync hors ligne si activé. |
@@ -61,11 +62,13 @@ Après `make test` (15 blocs verts), à faire **à la main** ou en E2E :
 | **CVE** | Recherche CVE (NVD), afficher un résultat dans le panneau. (À améliorer : enregistrement par lab.) |
 | **Packs outils** | Créer un lab avec un scénario qui a des packs recommandés. Ouvrir le terminal du lab : vérifier que les outils (nmap, sqlmap, etc.) sont disponibles. |
 
-**Résumé** : les tests automatisés couvrent **fichiers, JSON, HTTP, store, gateway, vues présentes**. L’**interaction utilisateur** est couverte par les **tests E2E** (**`make test-e2e`**) : Navigation, Terminal (panneau), **toutes les vues** (Learning, Docs, Engagements, Progression, Labs, Capture, Simulateur, Proxy, API, Options, CVE), **barre scénario**, **cibles** (/cible/dvwa/), **bureau VNC**, **Bibliothèque doc** (#/doc-offline), **Progression** (liste scénarios/tâches), **Capture** (filtre type Wireshark, zone upload), **API client** (bouton Envoyer). Suite complète : **`make tests`**. Voir [docs/TESTS-E2E.md](docs/TESTS-E2E.md).
+**Résumé** : les tests automatisés (**`make test`**) couvrent **fichiers, JSON, HTTP, store, gateway, vues présentes** (15 blocs). L’**interaction utilisateur** est couverte par les **tests E2E** (**`make test-e2e`**) : Navigation, Terminal (panneau), toutes les vues, barre scénario, cibles, bureau VNC, Bibliothèque doc, Progression, Capture, API client. **E2E Simulateur** (`views-detail.spec.js`) : canvas, toolbar, **sélecteur de carte + Nouvelle carte**, Bâtiments / Nouveau bâtiment, **Relier (liaison)**, Routeur/Switch (L2/L3), **placement d’un PC + sélection + panneau Configuration (Type d’appareil, Nom)**. **À vérifier** : tous les tests E2E ne sont pas encore validés en CI (environnement Docker) ; exécuter **`make test-e2e`** régulièrement et corriger les éventuels échecs (scroll + data-testid sim-buildings / sim-toolbar-devices pour le simulateur). **Prochaines étapes après simulateur** : **Requêtes API (Postman)** et **Capture pcap** (trafic réel, analyse, lien optionnel avec simulateur/lab). Suite complète : **`make tests`**. Voir [docs/TESTS-E2E.md](docs/TESTS-E2E.md).
 
 ---
 
 ## Reste à faire pour continuer le projet
+
+**Note TUI** : À terme, toutes les fonctionnalités (plateforme web, simulateur, terminal, capture, proxy, scénarios, etc.) devront être intégrées en **TUI** (Terminal User Interface) pour une utilisation en ligne de commande. À planifier (module TUI ou client CLI).
 
 Liste **actionnable** pour avancer après les tests :
 
@@ -79,7 +82,8 @@ Liste **actionnable** pour avancer après les tests :
    - Lier explicitement simulateur ↔ lab (carte = lab actuel).  
    - Lier capture ↔ lab (capture dans le lab actuel).  
    - Lier requêtes API ↔ lab (base URL selon lab/cible).  
-   - Progression : mise à jour automatique quand une tâche est validée.
+   - Progression : mise à jour automatique quand une tâche est validée.  
+   - **Plus tard (à voir bien plus tard)** : permettre **optionnellement** de connecter le **panneau terminal du lab** aux **scénarios en cours** (terminal dédié au scénario, commandes en contexte, etc.) ; lier le reste (capture, proxy, API) au scénario si souhaité. À préciser selon les besoins pédagogiques.
 
 3. **Doc & Learning**  
    - Panneau Doc/Cours en panneau droit (sans quitter la page).  
@@ -88,11 +92,13 @@ Liste **actionnable** pour avancer après les tests :
 
 4. **Qualité & robustesse**  
    - Tester à la main : terminal (onglets, PiP, rechargement), barre scénario, abandon scénario, cibles navigateur.  
-   - Optionnel : ajouter des tests E2E (Playwright/Cypress) pour les parcours critiques.
+   - **Tests E2E** : les ~200+ tests E2E ne couvrent pas encore tous les parcours ; exécuter **`make test-e2e`** régulièrement, corriger les échecs et ajouter les scénarios manquants (simulateur : plusieurs cartes, liaison, changement de type ; API client ; capture pcap).
 
 5. **Contenu**  
    - Compléter scénarios (howto, tasks, urlKey), ajouter scénarios SIP/téléphonie si besoin.  
    - Vuln-api / vuln-network : ajouter routes ou services selon les scénarios.
+
+**Prochaines étapes après simulateur** : **Requêtes API (Postman-like)** — champs, historique, lien au lab/cible ; **Capture pcap** — trafic réel, analyse avancée, lien optionnel au simulateur/lab. Puis interconnexions (simulateur ↔ lab, capture ↔ lab).
 
 Ensuite : Phase 4 (bureau fait maison), Phase 5 (interconnexion complète, reprise lab), voir [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md).
 
@@ -142,15 +148,78 @@ Ensuite : Phase 4 (bureau fait maison), Phase 5 (interconnexion complète, repri
 
 ### Simulateur réseau (à faire correctement – beaucoup manquant)
 
-- **Persistance des cartes** : carte courante persistée avant changement de carte (select) et avant changement de lab (état du lab quitté sauvegardé). Reste : design, types d'appareils.
+- **Persistance des cartes** : carte courante persistée avant changement de carte (select) et avant changement de lab. **Sans carte** : une **Carte 1** est créée automatiquement à l’ouverture du simulateur (pour que la barre d’outils, Bâtiments et types d’appareils soient toujours disponibles). **Migration** : `migrateNode` pour les anciennes topologies.
+- **Zoom** : **boutons − / + / 100%** au-dessus de la carte ; molette sur la zone carte ; pan au glisser.
+- **Liaisons** : **cliquer sur une liaison** ouvre le panneau **Liaison** (de/vers, type de câble, **ports Fa0/X et Fa0/Y** éditables, **Supprimer la liaison**). Les ports sont affichés sur le trait.
 - **Nouvelle carte** : pouvoir personnaliser (nom, contexte) dès la création.
 - **Design** : le **titre/nom** de l’appareil (ex. « PC ») est **décalé** par rapport au centre du bloc ; ajouter des **éléments visuels minimal** pour distinguer routeur, PC, switch, serveur (icônes ou formes spécifiques).
-- **Types d’appareils** : pas seulement PC, Routeur, Switch, Serveur — ajouter **téléphone**, **tablette**, **firewall**, **AP WiFi**, **cloud**, etc. pour un ensemble complet type Packet Tracer.
+- **Types d’appareils** : PC, Routeur, Switch, Serveur, Pare-feu, AP, Cloud, Modem, Hub, Bridge, Backbone, Téléphone IP, Imprimante, Tablette, Caméra IP — avec **changement de type après placement** (panneau Configuration → « Type d’appareil », comme Packet Tracer) et **nommage** (champ « Nom (comme Packet Tracer) »).
+- **Modèles par type** : plusieurs modèles pour Pare-feu (Cisco ASA, pfSense, FortiGate, Palo Alto), Point d’accès (Cisco WAP, UniFi, Aruba, Ruckus), Cloud (WAN, FAI, Datacenter), etc.
 - **Types de liaisons** : étendre au-delà d’Ethernet/Console/Fibre — **WiFi**, **données mobiles**, **RJ12**, etc. pour modéliser des liens réalistes.
 - **Carte et lab par défaut** : une **carte par défaut** avec au moins la **machine Kali (attaquant)** connectée, pour tester les intrusions dans les systèmes virtuels créés ; contexte « lab actuel » ou lab choisi, connecté au simulateur.
-- **Routeur / équipements** : pouvoir définir **modèle** (ex. Cisco, type) ; options plus poussées (config routeur/switch) : **interface minimal type terminal** pour configurer le routeur/PC (CLI simulée ou lien vers terminal).
+- **Liaisons** : clic sur une liaison ouvre le panneau (ports Fa0/X éditables, supprimer). **À faire** : connexions logiques par type d’appareil (PC : WiFi/Bluetooth ; routeur : pas de Bluetooth).
+- **Routeur / équipements** : **modèle** (Cisco, HP, Juniper, etc.) ; **niveau L2 ou L3** pour le routeur (config « Niveau (couche) ») ; **commutateur (switch) L2 ou L3** avec libellés clairs (L2 = MAC, L3 = routage IP) ; configuration **ultra poussée mais compréhensible** par type d’appareil ; CLI simulée (terminal) par nœud.
 - **Capture pcap** : pouvoir indiquer que la capture s’exécute **dans le lab actuel** ou dans un lab donné ; lien clair simulateur ↔ lab ↔ capture.
 - **Scénarios à ajouter plus tard** : scénarios **SIP** et **téléphonie** (VoIP, etc.) en plus des scénarios existants.
+
+#### Roadmap : simulateur ultra perfectionné (objectif au-delà de Packet Tracer)
+
+*Liste exhaustive des éléments à ajouter pour un simulateur d'infrastructure de A à Z, avec bâtiments, couches, applicatif et connexions réelles.*
+
+**Placement et disposition**
+- [x] Placement au clic sur la carte (clic type puis clic carte).
+- [x] Glisser-déposer pour déplacer les nœuds.
+- [x] Zoom et pan sur la carte (molette : zoom, glisser le fond : pan).
+- [x] Grille magnétique optionnelle (case « Aligner à la grille », pas 20 px).
+- [x] Raccourcis clavier (Suppr / Backspace : supprimer le nœud sélectionné, Échap : annuler mode placement/liaison/sélection).
+
+**Bâtiments et couches physiques**
+- [x] **Bâtiments / salles** : conteneurs (bâtiment A, salle serveurs, étage) — liste déroulante « Placer dans », chips par bâtiment (renommer, supprimer), nouveaux nœuds reçoivent `buildingId` ; affichage du bâtiment dans le panneau Infos.
+- [ ] **Câblage réel** : chemins de câbles le long de murs/plafonds (visualisation L1), longueur, type de câble par segment.
+- [ ] **Rack / baie** : disposition en baie (U), position en U pour serveurs et switches.
+
+**Types d'appareils (étendre)**
+- [x] Téléphone IP, tablette, smartphone (phone, tablet) ; pare-feu (firewall), point d'accès (ap), cloud, modem, hub, bridge, backbone, imprimante (printer), caméra IP (camera) — avec modèles (Cisco, HP, Juniper, etc.) et config par type (DNS serveur, SSID AP, placeholder règles pare-feu).
+- [ ] IDS/IPS, load balancer ; contrôleur WLC.
+- [ ] **Bluetooth** : nœud Bluetooth, liaison Bluetooth (portée, couche applicative simulée).
+
+**Types de câbles et liaisons (étendre)**
+- [x] Cuivre : droit, croisé, rollover ; Fibre : monomode, multimode ; Console : RJ-45, Série DTE-DCE ; Sans fil : WiFi 2,4 / 5 GHz (catégorisés dans l'UI).
+- [ ] RJ11, RJ12, Coax ; SFP, longueur de câble ; USB-console ; Bluetooth, LoRa, 4G/5G.
+
+**Couches réseau et protocoles**
+- [x] Indicateur de couche par nœud (L1/L2/L3).
+- [ ] Indication de la couche sur les liens (L1 physique, L2 Ethernet, L3 IP).
+- [x] Simulation de paquets : **play / pause / arrêt**, animation le long des liaisons.
+- [ ] Vitesse réglable, choix du lien à animer.
+- [ ] Visualisation des paquets : type (ARP, ICMP, TCP, UDP), couleur par protocole.
+- [ ] Mode « simulation pas à pas » : avancer d'un saut (routeur → routeur) au clic.
+
+**Applicatif et services**
+- [ ] **Couche applicative** : par appareil, configurer des services (HTTP, DNS, SSH, etc.) et les lier à des « utilisateurs » (PC) qui les utilisent.
+- [ ] **Scénarios de trafic** : « PC1 ping PC2 », « PC1 ouvre http://serveur-web » → génération de paquets simulés et tracé du chemin.
+- [ ] **DNS / DHCP simulés** : serveur DHCP dans le simulateur, résolution DNS interne (noms d'hôtes → IP).
+- [ ] **VLAN** : configuration VLAN par interface (switch, routeur), étiquetage 802.1Q sur les liens.
+
+**Connexions et tests**
+- [ ] **Vraie connexion** : option « lier au lab » : un nœud du simulateur = une cible du lab (DVWA, api.lab, etc.) ; le terminal du lab peut ping/configurer en cohérence avec la topologie.
+- [ ] **Test de connectivité** : bouton « Tester » sur un lien (simulation ping ou check L2/L3).
+- [ ] **Validation de topologie** : détection d'erreurs (boucle, mauvaise config IP, câble inadapté PC–PC sans croisé).
+
+**Export, import, partage**
+- [ ] Export de la topologie (JSON, image PNG/SVG).
+- [ ] Import de topologie (JSON).
+- [ ] Modèles / templates de topologies (DMZ, petit bureau, datacenter).
+
+**Terminal et CLI par appareil**
+- [x] Terminal simulé par nœud (ipconfig, ping, show ip route, show running-config, help).
+- [ ] Étendre la CLI : plus de commandes Cisco/HP (ACL, NAT, VLAN, OSPF minimal).
+- [ ] Mode « enable » / « config » avec prompt différent (Router#, Router(config)#).
+
+**Documentation et aide**
+- [ ] Infobulle par type de câble (quand utiliser droit vs croisé).
+- [ ] Aide intégrée (raccourcis, bonnes pratiques).
+- [ ] Lien vers la doc projet (topologie, capture, lab) depuis le simulateur.
 
 ### Avertissements connus (logs)
 
@@ -206,6 +275,7 @@ Ensuite : Phase 4 (bureau fait maison), Phase 5 (interconnexion complète, repri
 ### Scénarios à ajouter plus tard
 
 - Scénarios **SIP** et **téléphonie** (VoIP, IP téléphony, etc.) en plus des scénarios actuels.
+- **Scénarios data et IA (ultra poussés)** : emprisonnement de datasets, fuites de données, biais et fairness, poisoning, extraction de modèles, etc. — à concevoir et implémenter de manière approfondie.
 
 ### Infrastructure / contenu
 

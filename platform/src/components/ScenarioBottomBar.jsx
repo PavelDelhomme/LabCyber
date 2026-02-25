@@ -1,8 +1,10 @@
+import { useState } from 'preact/hooks';
 import { escapeHtml } from '../lib/store';
 
 export default function ScenarioBottomBar({
   scenario,
   storage,
+  getTaskDone: getTaskDoneProp,
   onExpand,
   collapsed,
   onCollapsed,
@@ -14,12 +16,14 @@ export default function ScenarioBottomBar({
   status = 'not_started',
   getTerminalUrl,
 }) {
+  const [expandedTaskIndex, setExpandedTaskIndex] = useState(null);
   if (!scenario) return null;
 
   const tasks = scenario.tasks || [];
   const machines = scenario.machines || [];
   const storageRef = typeof window !== 'undefined' ? window.LabCyberStorage : storage;
-  const isTaskDone = (idx) => storageRef ? storageRef.getTaskDone(scenario.id, idx) : false;
+  const isTaskDone = (idx) => getTaskDoneProp ? !!getTaskDoneProp(idx) : (storageRef ? storageRef.getTaskDone(scenario.id, idx) : false);
+  const expandedTask = expandedTaskIndex != null && tasks[expandedTaskIndex] ? tasks[expandedTaskIndex] : null;
 
   const copyCommand = (note) => {
     const cmd = (note || '').replace(/^[^:]*:\s*/i, '').trim() || note;
@@ -69,11 +73,32 @@ export default function ScenarioBottomBar({
           <div class="scenario-bar-section-tasks">
             <ul class="scenario-bottom-bar-tasks">
               {tasks.map((t, i) => (
-                <li key={i} class={isTaskDone(i) ? 'done' : ''}>
+                <li
+                  key={i}
+                  class={`scenario-bar-task-item ${isTaskDone(i) ? 'done' : ''} ${expandedTaskIndex === i ? 'selected' : ''}`}
+                  onClick={() => setExpandedTaskIndex(expandedTaskIndex === i ? null : i)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedTaskIndex(expandedTaskIndex === i ? null : i); } }}
+                  aria-expanded={expandedTaskIndex === i}
+                  aria-pressed={isTaskDone(i)}
+                  title="Cliquer pour voir le détail"
+                >
                   {isTaskDone(i) ? '✓ ' : ''}{escapeHtml(t.title)}
                 </li>
               ))}
             </ul>
+            {expandedTask != null && (
+              <div class="scenario-bar-task-detail" role="region" aria-label="Détail de l'étape">
+                <div class="scenario-bar-task-detail-status">
+                  {isTaskDone(expandedTaskIndex) ? '✓ Fait' : 'À faire'}
+                </div>
+                <strong>{escapeHtml(expandedTask.title)}</strong>
+                {expandedTask.content && <p>{escapeHtml(expandedTask.content)}</p>}
+                {expandedTask.tip && <p class="scenario-bar-task-detail-tip">💡 {escapeHtml(expandedTask.tip)}</p>}
+                <button type="button" class="scenario-bar-task-detail-close" onClick={e => { e.stopPropagation(); setExpandedTaskIndex(null); }}>Fermer</button>
+              </div>
+            )}
             {onExpand && (
               <button type="button" class="scenario-bottom-bar-expand" onClick={onExpand} title="Voir le scénario complet">Voir tout</button>
             )}

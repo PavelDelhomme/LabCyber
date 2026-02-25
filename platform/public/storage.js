@@ -13,6 +13,7 @@
   const MAX_LOGS = 1000;
 
   const KV_LAST_SCENARIO = 'lastScenario';
+  const KV_LAST_ROOM = 'lastRoom';
   const KV_LAST_TASK = 'lastTask';
   const KV_PIP_AUTO = 'pipAuto';
   const KEY_ENGAGEMENT = 'engagement';
@@ -53,6 +54,7 @@
   let cache = {
     lastScenario: null,
     lastTask: null,
+    lastRoom: null,
     pipAuto: false,
     engagement: null,
     taskDoneMap: Object.create(null),
@@ -129,6 +131,7 @@
         rows.forEach(function (row) {
           switch (row.k) {
             case KV_LAST_SCENARIO: cache.lastScenario = row.v != null ? row.v : null; break;
+            case KV_LAST_ROOM: cache.lastRoom = row.v != null ? row.v : null; break;
             case KV_LAST_TASK: cache.lastTask = row.v != null ? row.v : null; break;
             case KV_PIP_AUTO: cache.pipAuto = row.v === true || row.v === '1'; break;
             case KEY_ENGAGEMENT: cache.engagement = row.v; break;
@@ -278,6 +281,12 @@
       writeQueue.push(setData(STORE_DATA, KV_LAST_TASK, cache.lastTask));
     },
 
+    getLastRoom: function () { return cache.lastRoom; },
+    setLastRoom: function (roomId) {
+      cache.lastRoom = roomId || null;
+      writeQueue.push(setData(STORE_DATA, KV_LAST_ROOM, cache.lastRoom));
+    },
+
     getPipAuto: function () { return cache.pipAuto; },
     setPipAuto: function (value) {
       cache.pipAuto = !!value;
@@ -336,6 +345,25 @@
       if (labId == null || labId === '') delete cache.scenarioLab[scenarioId];
       else cache.scenarioLab[scenarioId] = labId;
       writeQueue.push(setData(STORE_DATA, KEY_SCENARIO_LAB, cache.scenarioLab));
+    },
+
+    getRoomTaskDone: function (roomId, taskIndex) {
+      return this.getTaskDone('room:' + roomId, taskIndex);
+    },
+    setRoomTaskDone: function (roomId, taskIndex, done) {
+      this.setTaskDone('room:' + roomId, taskIndex, done);
+    },
+    getRoomStatus: function (roomId) {
+      return this.getScenarioStatus('room:' + roomId);
+    },
+    setRoomStatus: function (roomId, status) {
+      this.setScenarioStatus('room:' + roomId, status);
+    },
+    getRoomLabId: function (roomId) {
+      return this.getScenarioLabId('room:' + roomId);
+    },
+    setRoomLabId: function (roomId, labId) {
+      this.setScenarioLabId('room:' + roomId, labId);
     },
 
     getChallengesDone: function () {
@@ -665,12 +693,14 @@
       cache.challengesDone = [];
       cache.lastScenario = null;
       cache.lastTask = null;
+      cache.lastRoom = null;
       writeQueue.push(setData(STORE_DATA, KEY_TASK_DONE_MAP, cache.taskDoneMap));
       writeQueue.push(setData(STORE_DATA, KEY_SCENARIO_STATUS, cache.scenarioStatus));
       writeQueue.push(setData(STORE_DATA, KEY_SCENARIO_LAB, cache.scenarioLab));
       writeQueue.push(setData(STORE_DATA, KEY_CHALLENGES_DONE, cache.challengesDone));
       writeQueue.push(setData(STORE_DATA, KV_LAST_SCENARIO, null));
       writeQueue.push(setData(STORE_DATA, KV_LAST_TASK, null));
+      writeQueue.push(setData(STORE_DATA, KV_LAST_ROOM, null));
     }
   };
 

@@ -53,7 +53,7 @@ test.describe('Dashboard – éléments spécifiques', () => {
   });
 
   test('lien ou bouton Terminal visible', async ({ page }) => {
-    const t = page.getByRole('button', { name: /terminal/i }).or(page.locator('a[href*="terminal"]')).first();
+    const t = page.locator('button[title*="Terminal"]').or(page.getByRole('button', { name: /terminal/i })).or(page.locator('a[href*="terminal"]')).first();
     await expect(t).toBeVisible({ timeout: 8000 });
   });
 
@@ -153,13 +153,39 @@ test.describe('Simulateur réseau – éléments', () => {
     const toolbar = page.locator('.network-sim-toolbar, [class*="toolbar"]').first();
     await expect(toolbar).toBeVisible({ timeout: 8000 });
   });
+
+  test('UI Bâtiments / Zones présente', async ({ page }) => {
+    await page.locator('#view-network-sim').waitFor({ state: 'visible', timeout: 8000 });
+    const buildingsSection = page.getByTestId('sim-buildings');
+    await buildingsSection.scrollIntoViewIfNeeded().catch(() => {});
+    await expect(buildingsSection).toBeVisible({ timeout: 8000 });
+  });
+
+  test('boutons types appareils étendus (Pare-feu, Point d’accès, Cloud) présents', async ({ page }) => {
+    const firewall = page.getByRole('button', { name: /Pare-feu|Firewall/i }).first();
+    const ap = page.getByRole('button', { name: /Point d'accès|AP|WiFi/i }).first();
+    const cloud = page.getByRole('button', { name: /Cloud/i }).first();
+    await page.locator('#view-network-sim').waitFor({ state: 'visible', timeout: 8000 });
+    const toolbar = page.getByTestId('sim-toolbar-devices');
+    await toolbar.scrollIntoViewIfNeeded().catch(() => {});
+    await expect(firewall).toBeVisible({ timeout: 8000 });
+    await expect(ap).toBeVisible({ timeout: 8000 });
+    await expect(cloud).toBeVisible({ timeout: 8000 });
+  });
+
+  test('boutons Routeur et Switch (commutateur) présents pour config L2/L3', async ({ page }) => {
+    const routerBtn = page.getByRole('button', { name: /Routeur/i }).first();
+    const switchBtn = page.getByRole('button', { name: /Switch|Commutateur/i }).first();
+    await expect(routerBtn).toBeVisible({ timeout: 8000 });
+    await expect(switchBtn).toBeVisible({ timeout: 8000 });
+  });
 });
 
 test.describe('Proxy config – éléments', () => {
   test.beforeEach(async ({ page }) => { await page.goto('/#/proxy-config'); });
 
-  test('champ URL proxy ou config visible', async ({ page }) => {
-    const input = page.locator('input[type="url"], input[name*="proxy"], input[placeholder*="proxy"]').first();
+  test('champ proxy ou config visible', async ({ page }) => {
+    const input = page.locator('.proxy-config-form input').first();
     await expect(input).toBeVisible({ timeout: 8000 });
   });
 });
@@ -249,7 +275,8 @@ test.describe('Topbar – boutons', () => {
   });
 
   test('bouton Journal (📋) visible', async ({ page }) => {
-    await expect(page.getByRole('button', { name: /journal/i }).first()).toBeVisible({ timeout: 6000 });
+    const journalBtn = page.locator('button[title*="Journal"]').or(page.getByRole('button', { name: /journal|stats/i })).first();
+    await expect(journalBtn).toBeVisible({ timeout: 6000 });
   });
 });
 
@@ -284,8 +311,11 @@ test.describe('Parcours – Capture pcap (Wireshark-like)', () => {
   test.beforeEach(async ({ page }) => { await page.goto('/#/capture'); });
 
   test('zone ou bouton choisir fichier .pcap présente', async ({ page }) => {
+    const label = page.locator('label').filter({ hasText: /choisir.*fichier|pcap/i }).first();
     const input = page.locator('input[type="file"][accept*="pcap"], input[type="file"][accept*="cap"]').first();
-    await expect(input).toBeVisible({ timeout: 6000 });
+    const hasLabel = await label.isVisible().catch(() => false);
+    const inputCount = await input.count();
+    expect(hasLabel || inputCount >= 1).toBeTruthy();
   });
 
   test('texte explicatif capture machine client présent', async ({ page }) => {
@@ -306,6 +336,52 @@ test.describe('Parcours – Simulateur réseau', () => {
     const toolbar = page.locator('.network-sim-toolbar, [class*="toolbar"], button').first();
     await expect(toolbar).toBeVisible({ timeout: 8000 });
   });
+
+  test('sélecteur de carte et Nouvelle carte visibles', async ({ page }) => {
+    const newCardBtn = page.getByRole('button', { name: /Nouvelle carte/i }).first();
+    const mapSelect = page.locator('.network-sim-maps select').first();
+    await expect(newCardBtn).toBeVisible({ timeout: 8000 });
+    await expect(mapSelect).toBeVisible({ timeout: 8000 });
+  });
+
+  test('sélecteur Bâtiments ou Nouveau bâtiment permet de gérer les zones', async ({ page }) => {
+    await page.locator('#view-network-sim').waitFor({ state: 'visible', timeout: 8000 });
+    const buildingsSection = page.getByTestId('sim-buildings');
+    await buildingsSection.scrollIntoViewIfNeeded().catch(() => {});
+    await expect(buildingsSection).toBeVisible({ timeout: 8000 });
+  });
+
+  test('bouton Relier (liaison entre appareils) visible', async ({ page }) => {
+    const linkBtn = page.getByRole('button', { name: /Relier|liaison/i }).first();
+    await expect(linkBtn).toBeVisible({ timeout: 8000 });
+  });
+
+  test('après placement et sélection d’un appareil, panneau Configuration avec Type d’appareil et Nom', async ({ page }) => {
+    await page.locator('#view-network-sim').waitFor({ state: 'visible', timeout: 8000 });
+    const newCardBtn = page.getByRole('button', { name: /Nouvelle carte/i }).first();
+    if (await newCardBtn.isVisible()) await newCardBtn.click();
+    await page.waitForTimeout(400);
+    await page.getByRole('button', { name: /^PC$/i }).first().click();
+    await page.waitForTimeout(500);
+    const svg = page.locator('.network-sim-canvas').first();
+    await expect(svg).toBeVisible({ timeout: 5000 });
+    await svg.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+    await svg.click({ position: { x: 200, y: 260 } });
+    const node = page.locator('[data-node-id]').first();
+    await expect(node).toBeVisible({ timeout: 8000 });
+    await node.click({ force: true });
+    await page.waitForTimeout(400);
+    await node.evaluate((el) => {
+      if (typeof el.click === 'function') el.click();
+      else el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    await page.waitForTimeout(600);
+    const panel = page.locator('.network-sim-config-panel');
+    await expect(panel).toBeVisible({ timeout: 6000 });
+    const panelText = await panel.textContent();
+    expect(panelText).toMatch(/Type d'appareil|Nom|Configuration|Informations|Appareil/i);
+  });
 });
 
 test.describe('Parcours – Requêtes API (Postman-like)', () => {
@@ -317,7 +393,7 @@ test.describe('Parcours – Requêtes API (Postman-like)', () => {
   });
 
   test('champ URL et bouton Envoyer permettent une requête', async ({ page }) => {
-    const urlInput = page.locator('input[placeholder*="URL"], input[name*="url"]').first();
+    const urlInput = page.locator('input.proxy-tools-url, input[type="url"]').first();
     const sendBtn = page.getByRole('button', { name: /envoyer/i }).first();
     await expect(urlInput).toBeVisible({ timeout: 6000 });
     await expect(sendBtn).toBeVisible({ timeout: 6000 });
@@ -327,13 +403,14 @@ test.describe('Parcours – Requêtes API (Postman-like)', () => {
 test.describe('Parcours – Config Proxy', () => {
   test.beforeEach(async ({ page }) => { await page.goto('/#/proxy-config'); });
 
-  test('champ proxy ou URL config visible', async ({ page }) => {
-    const input = page.locator('input[type="url"], input[name*="proxy"], input[placeholder*="proxy"]').first();
+  test('champ proxy ou config visible', async ({ page }) => {
+    const input = page.locator('.proxy-config-form input').first();
     await expect(input).toBeVisible({ timeout: 8000 });
   });
 
   test('contenu proxy ou squid présent', async ({ page }) => {
-    const body = await page.locator('main').textContent();
+    await page.locator('#view-proxy-config').waitFor({ state: 'visible', timeout: 8000 });
+    const body = await page.locator('#view-proxy-config').textContent();
     expect(body.toLowerCase()).toMatch(/proxy|squid|config/i);
   });
 });

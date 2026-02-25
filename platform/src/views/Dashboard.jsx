@@ -32,6 +32,12 @@ export default function Dashboard({ data, scenarios, config, targets, challenges
     s.tasks.forEach((_, i) => { if (storage.getTaskDone(s.id, i)) done++; });
     return { done, total: s.tasks.length };
   };
+  const getRoomProgress = (r) => {
+    if (!storage || !r.tasks || !r.tasks.length) return { done: 0, total: 0 };
+    let done = 0;
+    r.tasks.forEach((_, i) => { if (storage.getRoomTaskDone(r.id, i)) done++; });
+    return { done, total: r.tasks.length };
+  };
 
   const lastId = storage ? storage.getLastScenario() : null;
 
@@ -89,14 +95,17 @@ export default function Dashboard({ data, scenarios, config, targets, challenges
       </section>
       <section class="dashboard-section">
         <h3 class="section-title">Rooms</h3>
+        <p class="section-desc">Démarre une room comme un scénario (bouton Démarrer dans la vue room). Progression et barre des tâches identiques.</p>
         <div class="dashboard-grid" id="dashboard-cards">
           {filteredRooms.length === 0 && <p class="section-desc">Aucune room ne correspond.</p>}
           {filteredRooms.map(room => {
             const cat = byCategory(categories, room.category);
+            const prog = getRoomProgress(room);
             return (
               <article key={room.id} class="card" onClick={() => onOpenRoom(room.id)} style="cursor:pointer">
                 <h3 class="card-title">{escapeHtml(room.title)}</h3>
                 <p class="card-category">{escapeHtml(cat.name || room.category)}</p>
+                {prog.total > 0 && <p class="card-meta"><span class="difficulty-badge">{escapeHtml(room.difficulty || '')}</span> {prog.done}/{prog.total} tâches</p>}
               </article>
             );
           })}
