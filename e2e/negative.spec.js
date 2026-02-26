@@ -55,6 +55,26 @@ test.describe('Negative – HTTP (réponses attendues)', () => {
   });
 });
 
+test.describe('Negative – HTTP : requêtes qui doivent échouer (404)', () => {
+  test('GET /data/fichier-inexistant-xyz-123.json renvoie 404 (pas 200)', async ({ request }) => {
+    const res = await request.get('/data/fichier-inexistant-xyz-123.json');
+    expect(res.status()).toBe(404);
+  });
+
+  test('GET /docs/aucun-fichier-12345.md renvoie 404 (pas 200)', async ({ request }) => {
+    const res = await request.get('/docs/aucun-fichier-12345.md');
+    expect(res.status()).toBe(404);
+  });
+
+  test('GET /api/endpoint-qui-nexiste-pas renvoie 404 ou 502 (pas 200 OK)', async ({ request }) => {
+    const res = await request.get('/api/endpoint-qui-nexiste-pas', {
+      headers: { Host: 'api.lab' }
+    });
+    // 404 = route inexistante, 405 = method non autorisée, 502/503 = vuln-api non démarré
+    expect([404, 405, 502, 503]).toContain(res.status());
+  });
+});
+
 test.describe('Negative – UI : éléments qui ne doivent pas être visibles sans action', () => {
   test('sans ouvrir le terminal, panneau terminal masqué ou pas dans le DOM', async ({ page }) => {
     await page.goto('/');

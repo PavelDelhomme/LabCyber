@@ -216,7 +216,13 @@ test.describe('Bibliothèque doc (doc-offline) – éléments', () => {
   test('contenu doc ou bibliothèque ou source présent', async ({ page }) => {
     await page.waitForTimeout(800);
     const body = await page.locator('body').textContent();
-    expect(body).toMatch(/doc|bibliothèque|source|offline/i);
+    expect(body).toMatch(/doc|bibliothèque|source|offline|OWASP|Cybersécurité/i);
+  });
+
+  test('catégories ou liste de sources visibles', async ({ page }) => {
+    await page.waitForTimeout(1000);
+    const catOrList = page.locator('.doc-offline-category, .doc-offline-item, .doc-offline-list').first();
+    await expect(catOrList).toBeVisible({ timeout: 6000 });
   });
 });
 
@@ -304,6 +310,12 @@ test.describe('Parcours – Documentation projet (Docs)', () => {
     await page.waitForTimeout(800);
     const body = await page.locator('main').textContent();
     expect(body).toMatch(/documentation|doc|projet|roadmap/i);
+  });
+
+  test('liste des entrées docs (index, usage, tests) cliquables', async ({ page }) => {
+    await page.waitForTimeout(800);
+    const links = page.locator('a[href*="docs"], a[href*="#/docs"], .doc-entry');
+    await expect(links.first()).toBeVisible({ timeout: 6000 });
   });
 });
 
