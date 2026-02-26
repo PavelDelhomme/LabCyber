@@ -1106,22 +1106,25 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       <div class="network-sim-section network-sim-section-toolbar">
         <h3 class="network-sim-section-title">Appareils et liaisons</h3>
       <div class="network-sim-toolbar" data-testid="sim-toolbar-devices">
-        <span class="network-sim-toolbar-label">Appareils — Catégorie :</span>
-        {placeMode && (
-          <span class="network-sim-toolbar-hint" style="font-size:0.8rem; color:var(--text-muted)">Clique sur la carte pour placer. Pour modifier ou supprimer un appareil, clique sur l'appareil sur la carte.</span>
-        )}
-        {NODE_TYPES.map((t) => (
-          <button
-            key={t.type}
-            type="button"
-            class={`btn btn-secondary ${placeMode === t.type ? 'active' : ''}`}
-            onClick={() => { setPlaceMode(placeMode === t.type ? null : t.type); setPlaceModel(DEVICE_MODELS[t.type]?.[0]?.value ?? null); setLinkMode(false); }}
-            style={{ borderColor: t.color }}
-            title={`Choisir modèle puis cliquer sur la carte`}
-          >
-            {t.label}
-          </button>
-        ))}
+        <div class="network-sim-toolbar-row" data-testid="sim-toolbar-device-buttons">
+          <span class="network-sim-toolbar-label">Appareils — Catégorie :</span>
+          {placeMode && (
+            <span class="network-sim-toolbar-hint" style="font-size:0.8rem; color:var(--text-muted)">Clique sur la carte pour placer. Pour modifier ou supprimer un appareil, clique sur l'appareil sur la carte.</span>
+          )}
+          {NODE_TYPES.map((t) => (
+            <button
+              key={t.type}
+              type="button"
+              class={`btn btn-secondary ${placeMode === t.type ? 'active' : ''}`}
+              data-testid={t.type === 'firewall' ? 'sim-btn-firewall' : t.type === 'ap' ? 'sim-btn-ap' : t.type === 'cloud' ? 'sim-btn-cloud' : undefined}
+              onClick={() => { setPlaceMode(placeMode === t.type ? null : t.type); setPlaceModel(DEVICE_MODELS[t.type]?.[0]?.value ?? null); setLinkMode(false); }}
+              style={{ borderColor: t.color }}
+              title={`Choisir modèle puis cliquer sur la carte`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
         {placeMode && (
           <>
             <span class="network-sim-toolbar-sep">→</span>

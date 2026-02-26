@@ -2239,6 +2239,13 @@ body {
   align-items: center;
   gap: 0.5rem;
 }
+/* Rangée appareils : tous les types visibles (PC, Routeur, Pare-feu, Point d'accès, Cloud, etc.) */
+.network-sim-toolbar-row[data-testid="sim-toolbar-device-buttons"] {
+  flex-wrap: wrap;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 0.25rem;
+}
 .network-sim-toolbar-label { font-size: 0.9rem; color: var(--text-muted); margin-right: 0.25rem; font-weight: 500; }
 .network-sim-toolbar-sep { color: var(--border); margin: 0 0.35rem; }
 .network-sim-toolbar-hint { font-size: 0.85rem; color: var(--accent); margin-left: 0.35rem; }

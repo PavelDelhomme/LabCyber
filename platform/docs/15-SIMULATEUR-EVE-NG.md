@@ -82,6 +82,8 @@ EVE_NG_ISO_PATH=/chemin/absolu/vers/LabCyber/isos/eve-ce-prod-6.2.0-4-full.iso
 2. **Suivre l'installation** dans la fenêtre (choisir le disque, valider, etc.) jusqu'à ce qu'elle se termine.
 3. **Quand l'installateur annonce un redémarrage** : **fermer immédiatement la fenêtre QEMU** (Ctrl+C ou fermer la fenêtre). Ne pas laisser la VM redémarrer.
 4. **Lancer** `make eve-ng-boot` → démarre EVE-NG depuis le disque, sans ISO.
+5. **Premier démarrage** : l'écran console demande la config (hostname, domaine, IP DHCP/statique, NTP, proxy). Login : **root** / **eve**. Suis les prompts (entrée pour défauts). À la fin, EVE redémarre.
+6. **Après redémarrage** : Web UI → **https://127.0.0.1:9443** (login **admin** / **eve**). SSH → `ssh -p 9022 root@127.0.0.1`.
 
 **Pourquoi fermer avant le redémarrage ?** Avec `eve-ng-run`, le CD reste en priorité de boot (`-boot order=dc`). Si la VM redémarre, elle repart sur le CD → l'installateur se relance → **boucle infinie**. La seule façon de démarrer depuis le disque est `make eve-ng-boot` (pas de CD, boot sur disque uniquement).
 
@@ -97,6 +99,29 @@ Si l'installateur EVE-NG bloque ou échoue :
 4. **Graphiques** : si la fenêtre QEMU reste noire, `-vga std` est déjà dans le Makefile.
 5. **Repartir de zéro** : `rm isos/eve-ng-disk.qcow2` puis `make eve-ng-run`.
 6. **Réseau** : l'option `-nic user` configure un NAT ; pour un accès direct, utilise `-nic bridge,br=br0` (selon ta config).
+
+### Accès à l'interface web EVE-NG (depuis ton PC)
+
+L'interface web d'EVE-NG est **celle de la VM** : c'est l'UI de gestion des topologies (labs, nœuds, Docker, etc.), pas la console texte du système.
+
+- **URL** : **https://127.0.0.1:9443** (depuis ton navigateur sur la machine hôte).
+- **Attendre** : la VM met 2–5 minutes à démarrer. Une fois le boot terminé (prompt login sur la fenêtre QEMU), le service web est prêt.
+- **Certificat** : le navigateur affiche un avertissement (certificat auto-signé) → « Avancé » → « Accepter le risque et continuer » (ou équivalent).
+- **Login** : **admin** / **eve**.
+
+### Que faire maintenant (premier login)
+
+1. **Console** : connecte-toi avec **root** / **eve**.
+2. **Configuration** : suis l'assistant (hostname, domaine, IP DHCP/statique, NTP, proxy). Tu peux garder les défauts (entrée).
+3. **Redémarrage** : à la fin, EVE redémerge. Ferme la fenêtre, relance `make eve-ng-boot`.
+4. **Web UI** : ouvre **https://127.0.0.1:9443** dans ton navigateur. Login : **admin** / **eve**.
+5. **Mise à jour** (optionnel) : en SSH (`ssh -p 9022 root@127.0.0.1`) : `apt-get update && apt-get upgrade`.
+
+---
+
+## Review EVE-NG et souhaits pour LabCyber
+
+→ **Fichier dédié** : [17-EVE-NG-REVIEW-SOUHAITS.md](17-EVE-NG-REVIEW-SOUHAITS.md) — passe EVE-NG en revue, note ce que tu veux intégrer au simulateur LabCyber, priorise.
 
 ---
 

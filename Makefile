@@ -279,6 +279,10 @@ eve-ng-check:
 	@if [ -f "$(EVE_NG_ISO)" ]; then echo "  OK : ISO trouvée."; echo "  Fichier : $(EVE_NG_ISO)"; ls -lh "$(EVE_NG_ISO)" | awk '{ print "  Taille : " $$5 }'; echo "  Pour lancer une VM de test : make eve-ng-run"; else echo "  Erreur : ISO introuvable : $(EVE_NG_ISO)"; echo "  Placez eve-ce-prod-6.2.0-4-full.iso dans isos/ ou utilisez make eve-ng-check EVE_NG_ISO=/chemin/iso"; exit 1; fi
 
 eve-ng-run: eve-ng-check eve-ng-disk
+	@echo "  ⚠️  make eve-ng-run = UNIQUEMENT pour la 1ère installation (ISO sur disque vierge)"
+	@echo "  Si EVE-NG est déjà installé, utilise plutôt : make eve-ng-boot"
+	@echo "  On continue dans 5 s (Ctrl+C pour annuler)..."
+	@sleep 5
 	@echo "  Lancement VM EVE-NG (RAM 8G, 4 vCPU, disque virtuel, réseau)"
 	@echo "  INSTALLATION : une fois l'installateur terminé, FERMEZ la fenêtre (ne laissez pas redémarrer), puis lancez : make eve-ng-boot"
 	@which qemu-system-x86_64 >/dev/null 2>&1 || (echo "  Erreur : qemu-system-x86_64 non trouvé. Installez qemu-system-x86."; exit 1)
@@ -296,16 +300,23 @@ eve-ng-run: eve-ng-check eve-ng-disk
 	    -nic user; \
 	fi
 
+# Ports EVE-NG : 9443 (HTTPS web), 9022 (SSH) — changer dans .env si conflit
+EVE_NG_HTTPS_PORT ?= 9443
+EVE_NG_SSH_PORT ?= 9022
+
 eve-ng-boot: eve-ng-disk
 	@echo "  Démarrage EVE-NG depuis le disque (sans ISO) — fermez la fenêtre pour arrêter."
+	@echo "  Web : https://127.0.0.1:$(EVE_NG_HTTPS_PORT)  |  SSH : -p $(EVE_NG_SSH_PORT) root@127.0.0.1  |  Login : root / eve"
 	@which qemu-system-x86_64 >/dev/null 2>&1 || (echo "  Erreur : qemu-system-x86_64 non trouvé."; exit 1)
 	@if [ ! -f "$(EVE_NG_DISK)" ]; then echo "  Erreur : disque absent. Lancez d'abord make eve-ng-run pour l'installation."; exit 1; fi
 	@if [ -r /dev/kvm ] 2>/dev/null; then \
 	  qemu-system-x86_64 -enable-kvm -machine accel=kvm -vga std -m 8192 -smp 4 \
-	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 -boot order=c -nic user; \
+	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 -boot order=c \
+	    -nic user,hostfwd=tcp::$(EVE_NG_HTTPS_PORT)-:443,hostfwd=tcp::$(EVE_NG_SSH_PORT)-:22; \
 	else \
 	  qemu-system-x86_64 -vga std -m 8192 -smp 4 \
-	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 -boot order=c -nic user; \
+	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 -boot order=c \
+	    -nic user,hostfwd=tcp::$(EVE_NG_HTTPS_PORT)-:443,hostfwd=tcp::$(EVE_NG_SSH_PORT)-:22; \
 	fi
 
 # Nettoyage : arrêter les conteneurs, reconstruire la plateforme (--no-cache). Ne supprime PAS les volumes.

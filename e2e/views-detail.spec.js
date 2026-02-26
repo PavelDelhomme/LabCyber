@@ -162,15 +162,18 @@ test.describe('Simulateur réseau – éléments', () => {
   });
 
   test('boutons types appareils étendus (Pare-feu, Point d’accès, Cloud) présents', async ({ page }) => {
-    const firewall = page.getByRole('button', { name: /Pare-feu|Firewall/i }).first();
-    const ap = page.getByRole('button', { name: /Point d'accès|AP|WiFi/i }).first();
-    const cloud = page.getByRole('button', { name: /Cloud/i }).first();
     await page.locator('#view-network-sim').waitFor({ state: 'visible', timeout: 8000 });
     const toolbar = page.getByTestId('sim-toolbar-devices');
     await toolbar.scrollIntoViewIfNeeded().catch(() => {});
-    await expect(firewall).toBeVisible({ timeout: 8000 });
-    await expect(ap).toBeVisible({ timeout: 8000 });
-    await expect(cloud).toBeVisible({ timeout: 8000 });
+    const deviceRow = page.getByTestId('sim-toolbar-device-buttons');
+    await deviceRow.scrollIntoViewIfNeeded().catch(() => {});
+    await page.waitForTimeout(400);
+    const firewall = page.getByTestId('sim-btn-firewall').or(page.getByRole('button', { name: /Pare-feu|Firewall/i }));
+    const ap = page.getByTestId('sim-btn-ap').or(page.getByRole('button', { name: /Point d'accès|AP|WiFi/i }));
+    const cloud = page.getByTestId('sim-btn-cloud').or(page.getByRole('button', { name: /Cloud/i }));
+    await expect(firewall.first()).toBeVisible({ timeout: 8000 });
+    await expect(ap.first()).toBeVisible({ timeout: 8000 });
+    await expect(cloud.first()).toBeVisible({ timeout: 8000 });
   });
 
   test('boutons Routeur et Switch (commutateur) présents pour config L2/L3', async ({ page }) => {
@@ -314,8 +317,9 @@ test.describe('Parcours – Documentation projet (Docs)', () => {
 
   test('liste des entrées docs (index, usage, tests) cliquables', async ({ page }) => {
     await page.waitForTimeout(800);
-    const links = page.locator('a[href*="docs"], a[href*="#/docs"], .doc-entry');
-    await expect(links.first()).toBeVisible({ timeout: 6000 });
+    await page.locator('#view-docs').waitFor({ state: 'visible', timeout: 6000 });
+    const entries = page.locator('#docs-list button.docs-list-btn, .docs-list button');
+    await expect(entries.first()).toBeVisible({ timeout: 6000 });
   });
 });
 
