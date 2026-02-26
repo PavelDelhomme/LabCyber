@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start terminal-check
+.PHONY: help up down build rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start terminal-check eve-ng-check eve-ng-run eve-ng-disk eve-ng-boot
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -46,6 +46,10 @@ help:
 	@echo "  make tests           TOUT : up + test-report + test-full-report + test-e2e (rapports complets)"
 	@echo "  make up-minimal     Mode minimal  |  make proxy  Lab + Squid  |  make blue  Blue Team"
 	@echo "  make ports          Voir qui utilise 4080/7681"
+	@echo "  make eve-ng-check    Vérifier la présence et la taille de l'ISO EVE-NG (isos/)"
+	@echo "  make eve-ng-run      Lancer la VM EVE-NG (QEMU/KVM, 8G RAM, 4 vCPU, disque virtuel)"
+	@echo "  make eve-ng-disk     Créer le disque virtuel pour EVE-NG (50G) s'il n'existe pas"
+	@echo "  make eve-ng-boot     Démarrer EVE-NG depuis le disque (après 1ère installation)"
 	@echo ""
 
 # Démarrer sans rebuild (rapide si les images sont déjà à jour)
@@ -248,6 +252,61 @@ ports:
 	@echo "Qui utilise les ports du lab (4080, 7681) ?"
 	@ss -tlnp 2>/dev/null | grep -E ':4080|:7681' || true
 	@echo "Pour libérer : make down. Pour changer : .env (GATEWAY_PORT, TTYD_PORT) puis make up."
+
+# --- EVE-NG : ISO dans isos/ (override : make eve-ng-check EVE_NG_ISO=/chemin/iso)
+-include $(ROOT).env
+EVE_NG_ISO ?= $(EVE_NG_ISO_PATH)
+ifeq ($(EVE_NG_ISO),)
+  EVE_NG_ISO := $(ROOT)isos/eve-ce-prod-6.2.0-4-full.iso
+endif
+# Disque virtuel pour l'installation EVE-NG (doc officielle : 50 Go min, 100 Go recommandé)
+EVE_NG_DISK ?= $(ROOT)isos/eve-ng-disk.qcow2
+EVE_NG_DISK_SIZE ?= 50G
+
+eve-ng-disk:
+	@if [ ! -f "$(EVE_NG_DISK)" ]; then \
+	  echo "  Création du disque virtuel EVE-NG : $(EVE_NG_DISK) ($(EVE_NG_DISK_SIZE))"; \
+	  which qemu-img >/dev/null 2>&1 || (echo "  Erreur : qemu-img non trouvé (paquet qemu-utils)."; exit 1); \
+	  qemu-img create -f qcow2 "$(EVE_NG_DISK)" $(EVE_NG_DISK_SIZE); \
+	  echo "  Disque créé. Lancez : make eve-ng-run"; \
+	else \
+	  echo "  Disque virtuel déjà présent : $(EVE_NG_DISK)"; \
+	  ls -lh "$(EVE_NG_DISK)"; \
+	fi
+
+eve-ng-check:
+	@echo "  Vérification ISO EVE-NG CE..."
+	@if [ -f "$(EVE_NG_ISO)" ]; then echo "  OK : ISO trouvée."; echo "  Fichier : $(EVE_NG_ISO)"; ls -lh "$(EVE_NG_ISO)" | awk '{ print "  Taille : " $$5 }'; echo "  Pour lancer une VM de test : make eve-ng-run"; else echo "  Erreur : ISO introuvable : $(EVE_NG_ISO)"; echo "  Placez eve-ce-prod-6.2.0-4-full.iso dans isos/ ou utilisez make eve-ng-check EVE_NG_ISO=/chemin/iso"; exit 1; fi
+
+eve-ng-run: eve-ng-check eve-ng-disk
+	@echo "  Lancement VM EVE-NG (RAM 8G, 4 vCPU, disque virtuel, réseau)"
+	@echo "  INSTALLATION : une fois l'installateur terminé, FERMEZ la fenêtre (ne laissez pas redémarrer), puis lancez : make eve-ng-boot"
+	@which qemu-system-x86_64 >/dev/null 2>&1 || (echo "  Erreur : qemu-system-x86_64 non trouvé. Installez qemu-system-x86."; exit 1)
+	@if [ -r /dev/kvm ] 2>/dev/null; then \
+	  qemu-system-x86_64 -enable-kvm -machine accel=kvm -vga std \
+	    -m 8192 -smp 4 \
+	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 \
+	    -cdrom "$(EVE_NG_ISO)" -boot order=dc \
+	    -nic user; \
+	else \
+	  echo "  KVM non disponible, utilisation de l'émulation logicielle (plus lent)."; \
+	  qemu-system-x86_64 -vga std -m 8192 -smp 4 \
+	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 \
+	    -cdrom "$(EVE_NG_ISO)" -boot order=dc \
+	    -nic user; \
+	fi
+
+eve-ng-boot: eve-ng-disk
+	@echo "  Démarrage EVE-NG depuis le disque (sans ISO) — fermez la fenêtre pour arrêter."
+	@which qemu-system-x86_64 >/dev/null 2>&1 || (echo "  Erreur : qemu-system-x86_64 non trouvé."; exit 1)
+	@if [ ! -f "$(EVE_NG_DISK)" ]; then echo "  Erreur : disque absent. Lancez d'abord make eve-ng-run pour l'installation."; exit 1; fi
+	@if [ -r /dev/kvm ] 2>/dev/null; then \
+	  qemu-system-x86_64 -enable-kvm -machine accel=kvm -vga std -m 8192 -smp 4 \
+	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 -boot order=c -nic user; \
+	else \
+	  qemu-system-x86_64 -vga std -m 8192 -smp 4 \
+	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 -boot order=c -nic user; \
+	fi
 
 # Nettoyage : arrêter les conteneurs, reconstruire la plateforme (--no-cache). Ne supprime PAS les volumes.
 clean:

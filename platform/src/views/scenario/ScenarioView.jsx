@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import { escapeHtml, getTerminalUrl, getMachineUrl } from '../lib/store';
+import { escapeHtml, getTerminalUrl, getMachineUrl } from '../../lib/store';
 
 export default function ScenarioView({ scenarios, config, currentScenarioId, currentLabId, storage, onOpenTerminalInPanel, onOpenTerminalPip, onStartScenario, onResumeScenario, onScenarioStatusChange, onAbandonScenario, docSources }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;

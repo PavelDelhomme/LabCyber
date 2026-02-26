@@ -91,6 +91,15 @@
       "description": "Depuis l’attaquant, en Python avec Scapy, envoie un paquet ICMP (ping) vers vuln-network et affiche la réponse.",
       "hint": "from scapy.all import *; sr1(IP(dst=\"vuln-network\")/ICMP())",
       "validation": "Tu reçois une réponse ICMP (type 0)."
+    },
+    {
+      "id": "chall-11-cve-2025-7783-form-data",
+      "title": "CVE-2025-7783 : form-data HPP",
+      "category": "web",
+      "difficulty": "Facile",
+      "description": "Consulter la fiche CVE-2025-7783 (form-data, valeurs insuffisamment aléatoires, HPP). Noter les versions affectées et la recommandation de correctif.",
+      "hint": "Bouton CVE > CVE-2025-7783 ou NVD. Versions : <2.5.4, 3.0.0-3.0.3, 4.0.0-4.0.3. Correctif : 2.5.4, 3.0.4, 4.0.4.",
+      "validation": "Tu as ouvert la CVE, noté les plages de versions et la mise à jour recommandée."
     }
   ]
 }

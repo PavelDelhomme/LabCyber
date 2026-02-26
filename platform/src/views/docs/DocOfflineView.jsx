@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'preact/hooks';
-import { escapeHtml } from '../lib/store';
+import { escapeHtml } from '../../lib/store';
 
 const FILTER_ALL = 'all';
 const FILTER_CACHED = 'cached';

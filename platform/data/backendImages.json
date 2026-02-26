@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "description": "Catalogue d'images pour le lab type EVE-NG (Docker, Dynamips, IOL). Mettre de côté les images à utiliser.",
+  "byBackend": {
+    "docker": [
+      {
+        "id": "network-multitool",
+        "name": "network-multitool",
+        "image": "praqma/network-multitool",
+        "nodeTypes": ["pc", "server"],
+        "description": "Outils réseau (curl, dig, nslookup, ping, etc.)"
+      },
+      {
+        "id": "alpine",
+        "name": "Alpine Linux",
+        "image": "alpine:latest",
+        "nodeTypes": ["pc", "server"],
+        "description": "Image légère pour PC/serveur minimal"
+      },
+      {
+        "id": "ubuntu-minimal",
+        "name": "Ubuntu minimal",
+        "image": "ubuntu:22.04",
+        "nodeTypes": ["pc", "server"],
+        "description": "Ubuntu pour postes ou serveurs"
+      },
+      {
+        "id": "debian",
+        "name": "Debian",
+        "image": "debian:bookworm-slim",
+        "nodeTypes": ["pc", "server"],
+        "description": "Debian slim pour lab"
+      }
+    ],
+    "dynamips": [
+      {
+        "id": "c7200",
+        "name": "Cisco 7200",
+        "image": "c7200-adventerprisek9-mz.124-25d.image",
+        "nodeTypes": ["router"],
+        "description": "IOS Cisco 7200 (image .image à fournir)"
+      },
+      {
+        "id": "c3700",
+        "name": "Cisco 3700",
+        "image": "c3700-adventerprisek9-mz.124-25d.image",
+        "nodeTypes": ["router"],
+        "description": "IOS Cisco 3700"
+      },
+      {
+        "id": "c2691",
+        "name": "Cisco 2691",
+        "image": "c2691-adventerprisek9-mz.124-25d.image",
+        "nodeTypes": ["router"],
+        "description": "IOS Cisco 2691"
+      }
+    ],
+    "iol": [
+      {
+        "id": "l2",
+        "name": "IOL L2",
+        "image": "L2-ADVENTERPRISEK9-M-15.2-4.0.58-E2.bin",
+        "nodeTypes": ["switch"],
+        "description": "Cisco IOL L2 (switch)"
+      },
+      {
+        "id": "l3",
+        "name": "IOL L3",
+        "image": "L3-ADVENTERPRISEK9-M-15.4-2.0.55-E3.bin",
+        "nodeTypes": ["switch"],
+        "description": "Cisco IOL L3 (switch multi-couches)"
+      }
+    ]
+  }
+}

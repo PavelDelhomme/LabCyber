@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import { escapeHtml } from '../lib/store';
+import { escapeHtml } from '../../lib/store';
 
 const PROXY_TYPES = [
   { value: 'http', label: 'HTTP' },

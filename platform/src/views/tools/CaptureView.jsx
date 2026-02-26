@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { escapeHtml } from '../lib/store';
+import { escapeHtml } from '../../lib/store';
 
 function readU32LE(arr, off) {
   return arr[off] | (arr[off + 1] << 8) | (arr[off + 2] << 16) | (arr[off + 3] << 24);

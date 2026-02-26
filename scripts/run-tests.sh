@@ -69,9 +69,19 @@ done
 for path in platform/data/rooms.json platform/data/scenarios.json platform/data/config.json; do
   if [ ! -e "$path" ]; then echo "  MANQUANT: $path"; STRUCTURE_FAIL=1; fi
 done
-# Toutes les vues (16)
+# Toutes les vues (16) — certaines dans sous-dossiers term/, docs/, scenario/, tools/
+view_path() {
+  case "$1" in
+    TerminalFullView) echo "platform/src/views/term/TerminalFullView.jsx" ;;
+    DocsView|DocOfflineView|LearningView) echo "platform/src/views/docs/$1.jsx" ;;
+    ScenarioView|RoomView) echo "platform/src/views/scenario/$1.jsx" ;;
+    NetworkSimulatorView|ProxyConfigView|ApiClientView|CaptureView) echo "platform/src/views/tools/$1.jsx" ;;
+    *) echo "platform/src/views/$1.jsx" ;;
+  esac
+}
 for v in Dashboard ScenarioView LabsView NetworkSimulatorView CaptureView LearningView DocOfflineView DocsView OptionsView RoomView ProxyToolsView ApiClientView EngagementsView ProgressionView ProxyConfigView TerminalFullView; do
-  if [ ! -f "platform/src/views/${v}.jsx" ]; then echo "  MANQUANT: platform/src/views/${v}.jsx"; STRUCTURE_FAIL=1; fi
+  p=$(view_path "$v")
+  if [ ! -f "$p" ]; then echo "  MANQUANT: $p"; STRUCTURE_FAIL=1; fi
 done
 # Tous les composants (11)
 for c in Sidebar Topbar TerminalPipPanel PipPanel CvePanel LabButtonDropdown OpenInPageDropdown ScenarioBottomBar JournalCompletModal StatsModal LogPanel; do
@@ -405,8 +415,9 @@ print('  OK scenarios avec machines cibles (urlKey)')
 # Attaquant : build depuis racine pour inclure lab-terminal (shell = Kali)
 grep -q "context: \." docker-compose.yml 2>/dev/null && grep -q "dockerfile: attacker" docker-compose.yml 2>/dev/null && echo "  OK attaquant build (context . pour lab-terminal)" || { echo "  WARN attaquant doit être buildé avec context . et dockerfile attacker/Dockerfile"; }
 # Abandon scénario : ne doit pas réinitialiser le lab (pas d'appel onLabChange/default dans abandonScenario)
-if grep -q "abandonScenario" platform/src/views/ScenarioView.jsx 2>/dev/null; then
-  if grep -A1 "abandonScenario = " platform/src/views/ScenarioView.jsx 2>/dev/null | grep -qE "onLabChange|setCurrentLabId|'default'"; then
+ScenarioViewPath=$(view_path "ScenarioView")
+if grep -q "abandonScenario" "$ScenarioViewPath" 2>/dev/null; then
+  if grep -A1 "abandonScenario = " "$ScenarioViewPath" 2>/dev/null | grep -qE "onLabChange|setCurrentLabId|'default'"; then
     echo "  WARN abandon scénario ne doit pas changer le lab (vérifier ScenarioView)"
   else
     echo "  OK abandon scénario ne réinitialise pas le lab"
@@ -415,7 +426,7 @@ fi
 # Vues clés (simulateur, capture, labs, progression)
 VIEWS_OK=1
 for v in NetworkSimulatorView CaptureView LabsView ProgressionView Dashboard ScenarioView; do
-  [ -f "platform/src/views/${v}.jsx" ] || { echo "  WARN vue manquante: ${v}.jsx"; VIEWS_OK=0; }
+  [ -f "$(view_path "$v")" ] || { echo "  WARN vue manquante: ${v}.jsx"; VIEWS_OK=0; }
 done
 [ "$VIEWS_OK" -eq 1 ] && echo "  OK vues clés (Dashboard, Scenario, Labs, Capture, Simulateur, Progression)"
 [ $DOC_FAIL -eq 1 ] && FAIL=1
@@ -444,31 +455,31 @@ with open('platform/data/learning.json') as f: d = json.load(f)
 print('  OK learning.json' if d.get('topics') or d.get('categories') or isinstance(d, list) else '  WARN learning.json structure')
 " 2>/dev/null || echo "  WARN learning.json"
 [ -f "platform/src/components/TerminalPipPanel.jsx" ] && echo "  OK TerminalPipPanel (PiP)" || { echo "  WARN TerminalPipPanel"; PLAT_FAIL=1; }
-[ -f "platform/src/views/ApiClientView.jsx" ] && echo "  OK ApiClientView (requêtes API/Postman)" || true
+[ -f "$(view_path "ApiClientView")" ] && echo "  OK ApiClientView (requêtes API/Postman)" || true
 [ -f "platform/src/views/EngagementsView.jsx" ] && echo "  OK EngagementsView (engagements/cibles)" || true
-[ -f "platform/src/views/ProgressionView.jsx" ] && echo "  OK ProgressionView (progression)" || true
-[ -f "platform/src/views/NetworkSimulatorView.jsx" ] && grep -q "setNetworkSimulations\|getNetworkSimulations" platform/src/views/NetworkSimulatorView.jsx 2>/dev/null && echo "  OK Simulateur réseau (persistance par lab)" || echo "  OK NetworkSimulatorView"
-[ -f "platform/src/views/CaptureView.jsx" ] && echo "  OK CaptureView (pcap)" || true
-[ -f "platform/src/views/ProxyConfigView.jsx" ] && echo "  OK ProxyConfigView" || true
+[ -f "$(view_path "ProgressionView")" ] && echo "  OK ProgressionView (progression)" || true
+[ -f "$(view_path "NetworkSimulatorView")" ] && grep -q "setNetworkSimulations\|getNetworkSimulations" "$(view_path "NetworkSimulatorView")" 2>/dev/null && echo "  OK Simulateur réseau (persistance par lab)" || echo "  OK NetworkSimulatorView"
+[ -f "$(view_path "CaptureView")" ] && echo "  OK CaptureView (pcap)" || true
+[ -f "$(view_path "ProxyConfigView")" ] && echo "  OK ProxyConfigView" || true
 grep -q "CvePanel\|cvePanelOpen" platform/src/App.jsx 2>/dev/null && echo "  OK CVE (panneau)" || true
 # Données doc / challenges (Bibliothèque doc, Learning)
 for j in platform/data/docSources.json platform/data/challenges.json; do
   [ -f "$j" ] && python3 -c "import json; json.load(open('$j'))" 2>/dev/null && echo "  OK $(basename $j)" || true
 done
 # Vues et composants critiques supplémentaires (présence fichier)
-[ -f "platform/src/views/LearningView.jsx" ] && echo "  OK LearningView (Doc/Cours)" || true
-[ -f "platform/src/views/DocOfflineView.jsx" ] && echo "  OK DocOfflineView (Bibliothèque doc)" || true
+[ -f "$(view_path "LearningView")" ] && echo "  OK LearningView (Doc/Cours)" || true
+[ -f "$(view_path "DocOfflineView")" ] && echo "  OK DocOfflineView (Bibliothèque doc)" || true
 [ -f "platform/src/components/Sidebar.jsx" ] && echo "  OK Sidebar" || true
 [ -f "platform/src/components/Topbar.jsx" ] && echo "  OK Topbar" || true
 [ -f "platform/src/components/ScenarioBottomBar.jsx" ] && echo "  OK ScenarioBottomBar" || true
 [ -f "platform/src/components/JournalCompletModal.jsx" ] && echo "  OK JournalCompletModal" || true
 [ -f "platform/src/components/StatsModal.jsx" ] && echo "  OK StatsModal" || true
 [ -f "platform/src/components/LogPanel.jsx" ] && echo "  OK LogPanel" || true
-[ -f "platform/src/views/DocsView.jsx" ] && echo "  OK DocsView" || true
+[ -f "$(view_path "DocsView")" ] && echo "  OK DocsView" || true
 [ -f "platform/src/views/OptionsView.jsx" ] && echo "  OK OptionsView" || true
-[ -f "platform/src/views/RoomView.jsx" ] && echo "  OK RoomView" || true
+[ -f "$(view_path "RoomView")" ] && echo "  OK RoomView" || true
 [ -f "platform/src/views/ProxyToolsView.jsx" ] && echo "  OK ProxyToolsView" || true
-[ -f "platform/src/views/TerminalFullView.jsx" ] && echo "  OK TerminalFullView" || true
+[ -f "$(view_path "TerminalFullView")" ] && echo "  OK TerminalFullView" || true
 [ -f "platform/src/components/OpenInPageDropdown.jsx" ] && echo "  OK OpenInPageDropdown" || true
 [ -f "platform/src/components/LabButtonDropdown.jsx" ] && echo "  OK LabButtonDropdown" || true
 [ -f "platform/src/components/PipPanel.jsx" ] && echo "  OK PipPanel" || true
@@ -549,16 +560,16 @@ fi
 grep -qE '^  proxy:' docker-compose.yml 2>/dev/null && echo "  OK docker-compose proxy (Squid)" || echo "  WARN docker-compose proxy"
 grep -q "getProxies\|setProxies" platform/src/lib/store.js 2>/dev/null && echo "  OK store proxy (getProxies/setProxies)" || true
 # Capture pcap : vue + contrat store
-[ -f "platform/src/views/CaptureView.jsx" ] && grep -qiE "pcap|capture|upload|fichier" platform/src/views/CaptureView.jsx 2>/dev/null && echo "  OK CaptureView (pcap/capture/upload)" || echo "  OK CaptureView"
+[ -f "$(view_path "CaptureView")" ] && grep -qiE "pcap|capture|upload|fichier" "$(view_path "CaptureView")" 2>/dev/null && echo "  OK CaptureView (pcap/capture/upload)" || echo "  OK CaptureView"
 grep -q "getCaptureState\|setCaptureState" platform/src/lib/store.js 2>/dev/null && echo "  OK store capture (getCaptureState/setCaptureState)" || true
 # Simulateur réseau : vue + contrat store (déjà en 13), accessibilité données
-[ -f "platform/src/views/NetworkSimulatorView.jsx" ] && grep -qiE "simulation|carte|topology|getNetworkSimulations" platform/src/views/NetworkSimulatorView.jsx 2>/dev/null && echo "  OK Simulateur réseau (carte/simulation/topology)" || echo "  OK NetworkSimulatorView"
+[ -f "$(view_path "NetworkSimulatorView")" ] && grep -qiE "simulation|carte|topology|getNetworkSimulations" "$(view_path "NetworkSimulatorView")" 2>/dev/null && echo "  OK Simulateur réseau (carte/simulation/topology)" || echo "  OK NetworkSimulatorView"
 grep -q "getNetworkSimulations\|setNetworkSimulations" platform/src/lib/store.js 2>/dev/null && echo "  OK store simulateur (get/setNetworkSimulations)" || true
 # Progression : vue + store
-[ -f "platform/src/views/ProgressionView.jsx" ] && grep -qiE "task|progression|scenario|getTaskDone|getScenarioStatus" platform/src/views/ProgressionView.jsx 2>/dev/null && echo "  OK ProgressionView (tâches/progression)" || echo "  OK ProgressionView"
+[ -f "$(view_path "ProgressionView")" ] && grep -qiE "task|progression|scenario|getTaskDone|getScenarioStatus" "$(view_path "ProgressionView")" 2>/dev/null && echo "  OK ProgressionView (tâches/progression)" || echo "  OK ProgressionView"
 grep -q "getTaskDone\|getScenarioStatus" platform/src/lib/store.js 2>/dev/null && echo "  OK store progression (getTaskDone/getScenarioStatus)" || true
 # Cours / Learning : vue + données
-[ -f "platform/src/views/LearningView.jsx" ] && grep -qiE "topic|course|learning|doc" platform/src/views/LearningView.jsx 2>/dev/null && echo "  OK LearningView (cours/topics)" || echo "  OK LearningView"
+[ -f "$(view_path "LearningView")" ] && grep -qiE "topic|course|learning|doc" "$(view_path "LearningView")" 2>/dev/null && echo "  OK LearningView (cours/topics)" || echo "  OK LearningView"
 [ -f "platform/data/learning.json" ] && python3 -c "
 import json
 with open('platform/data/learning.json') as f: d = json.load(f)
@@ -567,8 +578,8 @@ n = len(t) if isinstance(t, list) else len(t.keys()) if isinstance(t, dict) else
 print('  OK learning.json (cours, %s entrées)' % n)
 " 2>/dev/null || echo "  OK learning.json (cours)"
 # Docs / Bibliothèque : vues + données
-[ -f "platform/src/views/DocOfflineView.jsx" ] && grep -qiE "doc|source|offline" platform/src/views/DocOfflineView.jsx 2>/dev/null && echo "  OK DocOfflineView (doc/offline)" || echo "  OK DocOfflineView"
-[ -f "platform/src/views/DocsView.jsx" ] && echo "  OK DocsView" || true
+[ -f "$(view_path "DocOfflineView")" ] && grep -qiE "doc|source|offline" "$(view_path "DocOfflineView")" 2>/dev/null && echo "  OK DocOfflineView (doc/offline)" || echo "  OK DocOfflineView"
+[ -f "$(view_path "DocsView")" ] && echo "  OK DocsView" || true
 [ -f "platform/data/docSources.json" ] && echo "  OK docSources.json (docs)" || true
 # Cibles : targets + gateway /cible/* (déjà en 12/13)
 [ -f "platform/data/targets.json" ] && echo "  OK targets.json (cibles)" || true

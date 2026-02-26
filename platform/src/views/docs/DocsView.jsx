@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
-import { escapeHtml } from '../lib/store';
-import { EMBEDDED_DOCS } from '../lib/defaultData';
+import { escapeHtml } from '../../lib/store';
+import { EMBEDDED_DOCS } from '../../lib/defaultData';
 
 export default function DocsView({ docs }) {
   const [viewerContent, setViewerContent] = useState(null);

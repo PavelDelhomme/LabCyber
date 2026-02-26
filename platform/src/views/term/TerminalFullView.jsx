@@ -1,4 +1,4 @@
-import { getTerminalUrl } from '../lib/store';
+import { getTerminalUrl } from '../../lib/store';
 
 export default function TerminalFullView() {
   const url = getTerminalUrl();

@@ -12,19 +12,20 @@ import TerminalPipPanel from './components/TerminalPipPanel';
 import StatsModal from './components/StatsModal';
 import Dashboard from './views/Dashboard';
 import OptionsView from './views/OptionsView';
-import DocsView from './views/DocsView';
-import LearningView from './views/LearningView';
+import DocsView from './views/docs/DocsView';
+import LearningView from './views/docs/LearningView';
 import EngagementsView from './views/EngagementsView';
-import ScenarioView from './views/ScenarioView';
-import RoomView from './views/RoomView';
+import ScenarioView from './views/scenario/ScenarioView';
+import RoomView from './views/scenario/RoomView';
 import ProgressionView from './views/ProgressionView';
 import LabsView from './views/LabsView';
-import NetworkSimulatorView from './views/NetworkSimulatorView';
-import ProxyConfigView from './views/ProxyConfigView';
-import ApiClientView from './views/ApiClientView';
-import CaptureView from './views/CaptureView';
-import TerminalFullView from './views/TerminalFullView';
-import DocOfflineView from './views/DocOfflineView';
+import NetworkSimulatorView from './views/tools/NetworkSimulatorView';
+import EveNgSimulatorView from './views/tools/EveNgSimulatorView';
+import ProxyConfigView from './views/tools/ProxyConfigView';
+import ApiClientView from './views/tools/ApiClientView';
+import CaptureView from './views/tools/CaptureView';
+import TerminalFullView from './views/term/TerminalFullView';
+import DocOfflineView from './views/docs/DocOfflineView';
 import CvePanel from './components/CvePanel';
 import JournalCompletModal from './components/JournalCompletModal';
 
@@ -37,6 +38,7 @@ const VIEWS = {
   progression: ProgressionView,
   labs: LabsView,
   'network-sim': NetworkSimulatorView,
+  'eve-ng-sim': EveNgSimulatorView,
   'proxy-tools': ApiClientView,
   'proxy-config': ProxyConfigView,
   'api-client': ApiClientView,
@@ -699,8 +701,9 @@ export default function App() {
   const ViewComponent = VIEWS[view] || Dashboard;
 
   const rightPanelWidth = terminalPanelOpen ? (terminalPanelMinimized ? 48 : terminalPanelWidth) : (capturePanelOpen && capturePanelPosition === 'right' ? 360 : 0);
+  const hasScenarioBar = !!(activeScenarioId || activeRoomId);
   return (
-    <div class={`app ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${rightPanelWidth ? 'has-right-panel' : ''}`} style={rightPanelWidth ? { '--right-panel-width': `${rightPanelWidth}px` } : {}}>
+    <div class={`app ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${rightPanelWidth ? 'has-right-panel' : ''} ${hasScenarioBar ? 'has-scenario-bar' + (scenarioBarCollapsed ? ' scenario-bar-collapsed' : '') : ''}`} style={rightPanelWidth ? { '--right-panel-width': `${rightPanelWidth}px` } : {}}>
       <Sidebar
         view={view}
         currentScenarioId={currentScenarioId}
@@ -758,7 +761,7 @@ export default function App() {
             ? `Scénario : ${currentScenario.title}`
             : view === 'room' && currentRoomId
               ? (data?.rooms?.find(r => r.id === currentRoomId)?.title || 'Room')
-              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', 'doc-offline': 'Bibliothèque doc', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', options: 'Options', 'network-sim': 'Simulateur réseau', 'proxy-tools': 'Requêtes API', 'proxy-config': 'Proxy (config)', 'api-client': 'Requêtes API (Postman)', capture: 'Capture pcap' }[view] || view)}
+              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', 'doc-offline': 'Bibliothèque doc', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', options: 'Options', 'network-sim': 'Simulateur réseau', 'eve-ng-sim': 'Simulateur EVE-NG (lab)', 'proxy-tools': 'Requêtes API', 'proxy-config': 'Proxy (config)', 'api-client': 'Requêtes API (Postman)', capture: 'Capture pcap' }[view] || view)}
         </div>
         {loaded && (
           <div class="view active" key={view}>

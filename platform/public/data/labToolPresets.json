@@ -22,7 +22,8 @@
     "scenario-19-burp-curl": ["base", "web"],
     "scenario-20-dns-enum": ["base", "network"],
     "scenario-21-sniffing-trafic": ["base", "network"],
-    "scenario-22-creer-ses-labs": ["base"]
+    "scenario-22-creer-ses-labs": ["base"],
+    "scenario-cve-2025-7783-form-data": ["base", "web"]
   },
   "byLab": {}
 }

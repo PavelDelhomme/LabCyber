@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'preact/hooks';
-import { escapeHtml } from '../lib/store';
-import { EMBEDDED_LEARNING } from '../lib/defaultData';
+import { escapeHtml } from '../../lib/store';
+import { EMBEDDED_LEARNING } from '../../lib/defaultData';
 
 const OWASP_2021_ORDER = ['owasp-top10', 'owasp-top10-intro', 'owasp-a01', 'owasp-a02', 'owasp-a03', 'owasp-a04', 'owasp-a05', 'owasp-a06', 'owasp-a07', 'owasp-a08', 'owasp-a09', 'owasp-a10'];
 

@@ -861,6 +861,50 @@
           "learn": "Traçabilité et preuves sont essentielles en pentest et en forensique."
         }
       ]
+    },
+    {
+      "id": "scenario-cve-2025-7783-form-data",
+      "cveId": "CVE-2025-7783",
+      "title": "Lab CVE : form-data – HPP (HTTP Parameter Pollution)",
+      "description": "La bibliothèque Node.js form-data utilise des valeurs insuffisamment aléatoires (Math.random()) pour le boundary des requêtes multipart. Un attaquant peut prédire le boundary et injecter des paramètres (HPP). Ce lab te fait comprendre la CVE, les versions affectées et les bonnes pratiques.",
+      "difficulty": "Easy",
+      "category": "web",
+      "tags": ["CVE", "HPP", "form-data", "Node.js"],
+      "time": "25 min",
+      "machines": [
+        { "name": "Bouton CVE (plateforme)", "url": "#", "note": "Ouvre le panneau CVE et recherche CVE-2025-7783" },
+        { "name": "NVD", "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-7783", "note": "Fiche officielle NVD" }
+      ],
+      "tasks": [
+        {
+          "title": "1. Ouvrir la fiche CVE",
+          "content": "Clique sur le bouton CVE puis entre CVE-2025-7783 dans Ouvrir par ID. Ou ouvre https://nvd.nist.gov/vuln/detail/CVE-2025-7783.",
+          "command": null,
+          "tip": "Le panneau CVE affiche le résumé et le score CVSS.",
+          "learn": "Chaque CVE a un identifiant, un résumé, les versions affectées (CPE) et des références."
+        },
+        {
+          "title": "2. Comprendre le type de vulnérabilité",
+          "content": "Type : Use of Insufficiently Random Values et HTTP Parameter Pollution (HPP). Fichier : lib/form_data.js. Le boundary multipart est généré avec Math.random(), donc prévisible.",
+          "command": null,
+          "tip": "Math.random() n'est pas cryptographiquement sûr ; utiliser crypto.randomBytes() ou équivalent.",
+          "learn": "HPP = injecter des paramètres en devinant ou contrôlant le boundary multipart."
+        },
+        {
+          "title": "3. Versions affectées",
+          "content": "Versions : form-data < 2.5.4 ; 3.0.0 à 3.0.3 ; 4.0.0 à 4.0.3. Mission : vérifier si un projet utilise une de ces versions (npm ls form-data ou package-lock.json).",
+          "command": "npm ls form-data",
+          "tip": "npm audit ou Snyk pour lister les CVE des dépendances.",
+          "learn": "Gestion des dépendances : npm audit, Dependabot, Snyk."
+        },
+        {
+          "title": "4. Mission : recommandation de correctif",
+          "content": "Rédige une recommandation : Mettre à jour form-data vers 2.5.4, 3.0.4 ou 4.0.4 selon la branche. Note-la dans les notes du lab.",
+          "command": null,
+          "tip": "En pentest chaque CVE doit avoir une recommandation et un statut.",
+          "learn": "Correctif = mise à jour mineure ; tester la non-régression après mise à jour."
+        }
+      ]
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { useEffect } from 'preact/hooks';
-import { escapeHtml, getTerminalUrl, getDesktopUrl, getMachineUrl } from '../lib/store';
+import { escapeHtml, getTerminalUrl, getDesktopUrl, getMachineUrl } from '../../lib/store';
 
 function byCategory(categories, categoryId) {
   return (categories || []).find(c => c.id === categoryId) || {};

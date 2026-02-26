@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import { escapeHtml } from '../lib/store';
+import { escapeHtml, getTerminalUrl } from '../../lib/store';
 
 const NODE_TYPES = [
   { type: 'pc', label: 'PC', color: '#60a5fa', w: 56, h: 36, layer: 'L3' },
@@ -19,6 +19,37 @@ const NODE_TYPES = [
   { type: 'camera', label: 'Caméra IP', color: '#475569', w: 48, h: 30, layer: 'L3' },
 ];
 
+/** Types d'appareils proposés dans l'interface (base : PC, routeur, switch, serveur — vrais ISO Cisco/HP). Les autres types restent définis pour afficher les anciennes cartes. */
+const BASE_NODE_TYPES = ['pc', 'router', 'switch', 'server'];
+const NODE_TYPES_BASE = NODE_TYPES.filter((t) => BASE_NODE_TYPES.includes(t.type));
+
+/** Logique type EVE-NG : mapping type nœud → backend réel (PC/serveur = Docker, routeur = Dynamips, switch = IOL). */
+const BACKEND_TYPES = { docker: 'Docker', dynamips: 'Dynamips (Cisco)', iol: 'IOL (Cisco)', qemu: 'QEMU (VM)' };
+const NODE_TYPE_TO_BACKEND = { pc: 'docker', server: 'docker', router: 'dynamips', switch: 'iol' };
+const DEFAULT_BACKEND_IMAGE = { pc: 'network-multitool', server: 'network-multitool', router: 'c7200', switch: 'l2' };
+const EVE_NG_SAVED_IMAGES_KEY = 'lab-cyber-eve-ng-saved-images';
+
+/** Utilise les images mises de côté (page EVE-NG) comme images par défaut pour l'export si présentes. */
+function getDefaultImagesFromSaved() {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(EVE_NG_SAVED_IMAGES_KEY) : null;
+    if (!raw) return {};
+    const list = JSON.parse(raw);
+    if (!Array.isArray(list)) return {};
+    const byBackend = {};
+    for (const key of list) {
+      const idx = key.indexOf(':');
+      if (idx <= 0) continue;
+      const backend = key.slice(0, idx);
+      const imageId = key.slice(idx + 1);
+      if (!byBackend[backend]) byBackend[backend] = imageId;
+    }
+    return byBackend;
+  } catch {
+    return {};
+  }
+}
+
 /** Modèles par type : spécificités et interface adaptée (sélection type Packet Tracer : catégorie → modèle) */
 const DEVICE_MODELS = {
   pc: [
@@ -29,14 +60,14 @@ const DEVICE_MODELS = {
     { value: 'cisco', label: 'PC Cisco', vendor: 'Cisco', layer: 'L3' },
   ],
   router: [
-    { value: 'generic', label: 'Routeur générique', vendor: 'Generic', layer: 'L3' },
-    { value: 'cisco-1941', label: 'Cisco 1941', vendor: 'Cisco', layer: 'L3' },
-    { value: 'cisco-4321', label: 'Cisco 4321 ISR', vendor: 'Cisco', layer: 'L3' },
-    { value: 'cisco-2911', label: 'Cisco 2911', vendor: 'Cisco', layer: 'L3' },
-    { value: 'cisco-2901', label: 'Cisco 2901', vendor: 'Cisco', layer: 'L3' },
-    { value: 'hp-msr', label: 'HP MSR', vendor: 'HP', layer: 'L3' },
-    { value: 'juniper-mx', label: 'Juniper MX', vendor: 'Juniper', layer: 'L3' },
-    { value: 'mikrotik', label: 'MikroTik RouterOS', vendor: 'MikroTik', layer: 'L3' },
+    { value: 'generic', label: 'Routeur générique', vendor: 'Generic', layer: 'L3', hasWifi: false },
+    { value: 'cisco-1941', label: 'Cisco 1941', vendor: 'Cisco', layer: 'L3', hasWifi: true },
+    { value: 'cisco-4321', label: 'Cisco 4321 ISR', vendor: 'Cisco', layer: 'L3', hasWifi: true },
+    { value: 'cisco-2911', label: 'Cisco 2911', vendor: 'Cisco', layer: 'L3', hasWifi: false },
+    { value: 'cisco-2901', label: 'Cisco 2901', vendor: 'Cisco', layer: 'L3', hasWifi: false },
+    { value: 'hp-msr', label: 'HP MSR', vendor: 'HP', layer: 'L3', hasWifi: false },
+    { value: 'juniper-mx', label: 'Juniper MX', vendor: 'Juniper', layer: 'L3', hasWifi: false },
+    { value: 'mikrotik', label: 'MikroTik RouterOS', vendor: 'MikroTik', layer: 'L3', hasWifi: true },
   ],
   switch: [
     { value: 'generic-l2', label: 'Switch L2 générique', vendor: 'Generic', layer: 'L2' },
@@ -302,7 +333,7 @@ function defaultNodeConfig(type) {
   const model = models && models[0] ? models[0].value : 'generic';
   if (type === 'server') return { ...base, serverType: 'web', deviceModel: 'generic', dnsServer: '' };
   if (type === 'switch') return { ...base, switchType: 'layer2', deviceModel: 'generic-l2' };
-  if (type === 'router') return { ...base, deviceModel: 'cisco-1941', routerLayer: 'L3' };
+  if (type === 'router') return { ...base, deviceModel: 'generic', routerLayer: 'L3', routerWifi: false };
   if (type === 'firewall') return { ...base, deviceModel: 'generic' };
   if (type === 'ap') return { ...base, deviceModel: 'generic', ssid: '' };
   if (type === 'cloud' || type === 'backbone') return { ...base, deviceModel: 'generic', cloudRole: 'wan' };
@@ -335,8 +366,28 @@ function getNodeLayer(node) {
   return def?.layer || '';
 }
 
-/** Commandes simulées pour le terminal par appareil */
-function runSimulatedCommand(node, nodes, edges, cmdLine) {
+/** Commandes type par type d'appareil (aide pour le terminal réel — Cisco, Linux, etc.) */
+function getDeviceCommandsHelp(type) {
+  const byType = {
+    router: 'show ip route, show running-config, show interfaces, ping <ip>, enable, configure terminal, interface fa0/0, ip address …, no shutdown, exit',
+    switch: 'show mac address-table, show vlan brief, show running-config, show interfaces status, show interfaces trunk, vlan 10, interface range fa0/1-4, switchport mode access, switchport access vlan 10, exit',
+    server: 'ip a, ip route, ping <ip>, curl …, nslookup <host>, systemctl status …, ss -tlnp',
+    firewall: 'show access-list, show config, show interface, ping <ip>',
+    ap: 'show dot11 associations, show running-config, show interface dot11Radio0',
+    cloud: 'show ip route, show interfaces, ping (équipement cœur réseau)',
+    backbone: 'show ip route, show running-config, show interfaces',
+    phone: 'ipconfig, ping <ip>, show sip',
+    printer: 'ipconfig, ping <ip>',
+    modem: 'show interfaces (équipement L1/L2), ping <ip>',
+    hub: 'show interfaces (L1), ping <ip>',
+    bridge: 'show mac address-table, show spanning-tree, show interfaces',
+    pc: 'ip a, ip route, ping <ip>, curl …, nslookup <host>',
+  };
+  return byType[type] || 'ip a, ping <ip>, curl …, nslookup <host>';
+}
+
+/** Anciennes commandes simulées — conservées pour référence uniquement (non utilisées). */
+function _runSimulatedCommand(node, nodes, edges, cmdLine) {
   const line = (cmdLine || '').trim().toLowerCase();
   const label = node?.label || 'Device';
   const ip = node?.ip || '(non configuré)';
@@ -466,9 +517,6 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
   const [dragId, setDragId] = useState(null);
   const [dragOff, setDragOff] = useState({ x: 0, y: 0 });
-  const [terminalHistory, setTerminalHistory] = useState([]);
-  const [terminalInput, setTerminalInput] = useState('');
-  const terminalEndRef = useRef(null);
   const [simulationMode, setSimulationMode] = useState(false);
   const [simulationPaused, setSimulationPaused] = useState(false);
   const [placeMode, setPlaceMode] = useState(null);
@@ -477,6 +525,8 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [panelWidth, setPanelWidth] = useState(320);
+  const [canvasWidth, setCanvasWidth] = useState(800);
+  const [canvasHeight, setCanvasHeight] = useState(520);
   const GRID_SIZE = 20;
   const panStartRef = useRef(null);
   const nodeDragMovedRef = useRef(false);
@@ -549,10 +599,6 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     setSelectedEdgeId(null);
   }, [currentSimId, effectiveLabId]);
 
-  useEffect(() => {
-    setTerminalHistory([]);
-    setTerminalInput('');
-  }, [selectedId]);
 
   const panelResizeStartRef = useRef({ x: 0 });
   const handlePanelResizeStart = (e) => {
@@ -583,6 +629,33 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     );
     setSimulations(updated);
     storage?.setNetworkSimulations?.(effectiveLabId, { simulations: updated, currentId: currentSimId });
+  };
+
+  /** Export topologie au format backend lab (EVE-NG-like) : chaque nœud a un backend (docker/dynamips/iol), les liens décrivent les connexions. Utilise les images mises de côté (EVE-NG) si disponibles. */
+  const getTopologyExportForBackend = () => {
+    const savedImages = getDefaultImagesFromSaved();
+    const labNodes = nodes.map((n) => {
+      const backend = NODE_TYPE_TO_BACKEND[n.type] || 'docker';
+      const image = savedImages[backend] || DEFAULT_BACKEND_IMAGE[n.type] || 'generic';
+      return {
+        id: n.id,
+        label: n.label || n.id,
+        type: n.type,
+        backend,
+        image,
+        deviceModel: n.deviceModel,
+        config: { ip: n.ip, gateway: n.gateway, subnetMask: n.subnetMask },
+      };
+    });
+    const labLinks = edges.map((e, i) => ({
+      id: e.id || 'link_' + i,
+      from: e.from,
+      to: e.to,
+      fromPort: e.fromPort,
+      toPort: e.toPort,
+      linkType: e.linkType,
+    }));
+    return { version: '1.0', format: 'eve-ng-lab', nodes: labNodes, links: labLinks, labId: effectiveLabId, simId: currentSimId };
   };
 
   const addBuilding = () => {
@@ -719,8 +792,8 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     const def = NODE_TYPES.find((t) => t.type === type) || NODE_TYPES[0];
     const w = def?.w || 56;
     const h = def?.h || 36;
-    const x = Math.max(0, Math.min(800 - w, svgX - w / 2));
-    const y = Math.max(0, Math.min(520 - h, svgY - h / 2));
+    const x = Math.max(0, Math.min(canvasWidth - w, svgX - w / 2));
+    const y = Math.max(0, Math.min(canvasHeight - h, svgY - h / 2));
     const id = 'n' + Date.now();
     const count = nodes.filter((n) => n.type === type).length + 1;
     const config = defaultNodeConfig(type);
@@ -786,6 +859,10 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     const isNode = e.target.closest && e.target.closest('[data-node-id]');
     const insideSvg = svgRef.current && svgRef.current.contains(e.target);
     if (placeMode && !isNode && insideSvg) {
+      if (nodeDragMovedRef.current) {
+        nodeDragMovedRef.current = false;
+        return;
+      }
       const pt = clientToSvg(e.clientX, e.clientY);
       addNodeAt(placeMode, pt.x, pt.y, placeModel);
       return;
@@ -813,8 +890,8 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       const rect = wrap.getBoundingClientRect();
       const dx = e.clientX - panStartRef.current.clientX;
       const dy = e.clientY - panStartRef.current.clientY;
-      const w = 800 / zoom;
-      const h = 520 / zoom;
+      const w = canvasWidth / zoom;
+      const h = canvasHeight / zoom;
       const newPanX = panStartRef.current.panX - (dx / rect.width) * w;
       const newPanY = panStartRef.current.panY - (dy / rect.height) * h;
       setPan({ x: newPanX, y: newPanY });
@@ -870,6 +947,17 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     setConnectFrom(null);
   };
 
+  /** Type de câble par défaut selon les deux appareils (PC–Switch → droit, PC–PC → croisé, AP → WiFi). */
+  const getDefaultLinkType = (fromNode, toNode) => {
+    const a = nodes.find((n) => n.id === fromNode?.id || n.id === fromNode);
+    const b = nodes.find((n) => n.id === toNode?.id || n.id === toNode);
+    const tA = a?.type || '';
+    const tB = b?.type || '';
+    if (tA === 'ap' || tB === 'ap') return 'wireless-24';
+    if ((tA === 'pc' && tB === 'pc') || (tA === 'switch' && tB === 'switch')) return 'ethernet-crossover';
+    return 'ethernet-straight';
+  };
+
   const handleNodeClick = (id, e) => {
     e.stopPropagation();
     if (nodeDragMovedRef.current) {
@@ -881,15 +969,18 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
         setConnectFrom(null);
         return;
       }
+      const fromNode = nodes.find((n) => n.id === connectFrom);
+      const toNode = nodes.find((n) => n.id === id);
       const fromPort = getNextPort(connectFrom);
       const toPort = getNextPort(id);
+      const defaultLt = getDefaultLinkType(fromNode, toNode);
       setEdges((ed) => [
         ...ed,
         {
           id: 'e' + Date.now(),
           from: connectFrom,
           to: id,
-          linkType: connectLinkType,
+          linkType: connectLinkType || defaultLt,
           fromPort,
           toPort,
         },
@@ -906,14 +997,27 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
   };
 
   const svgWrapRef = useRef(null);
+  /** Conversion coordonnées écran → SVG via getScreenCTM pour un placement précis (préserveAspectRatio). */
   const clientToSvg = (clientX, clientY) => {
-    const wrap = svgWrapRef.current;
-    if (!wrap) return { x: clientX, y: clientY };
+    const svg = svgRef.current;
+    if (!svg || !svg.createSVGPoint) {
+      const wrap = svgWrapRef.current;
+      if (!wrap) return { x: clientX, y: clientY };
     const rect = wrap.getBoundingClientRect();
-    const w = 800 / zoom;
-    const h = 520 / zoom;
+    const w = canvasWidth / zoom;
+    const h = canvasHeight / zoom;
     let x = pan.x + (clientX - rect.left) / rect.width * w;
-    let y = pan.y + (clientY - rect.top) / rect.height * h;
+      let y = pan.y + (clientY - rect.top) / rect.height * h;
+      if (snapToGrid) { x = Math.round(x / GRID_SIZE) * GRID_SIZE; y = Math.round(y / GRID_SIZE) * GRID_SIZE; }
+      return { x, y };
+    }
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: clientX, y: clientY };
+    const svgPt = pt.matrixTransform(ctm.inverse());
+    let x = svgPt.x, y = svgPt.y;
     if (snapToGrid) {
       x = Math.round(x / GRID_SIZE) * GRID_SIZE;
       y = Math.round(y / GRID_SIZE) * GRID_SIZE;
@@ -928,6 +1032,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     e.stopPropagation();
     if (typeof getSelection === 'function') getSelection().removeAllRanges();
     nodeDragMovedRef.current = false;
+    if (placeMode) setPlaceMode(null);
     const n = nodes.find((x) => x.id === id);
     if (!n) return;
     const pt = clientToSvg(e.clientX, e.clientY);
@@ -1105,8 +1210,10 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
 
       <div class="network-sim-section network-sim-section-toolbar">
         <h3 class="network-sim-section-title">Appareils et liaisons</h3>
+        <p class="network-sim-section-desc text-muted" style="font-size:0.85rem; margin:0 0 0.5rem">Pour l’instant : PC, routeur, switch, serveur, <strong>Pare-feu, Point d'accès, Cloud</strong>, modem, hub, bridge, téléphone IP, imprimante, tablette, caméra. Export EVE-NG : PC/routeur/switch/serveur uniquement.</p>
       <div class="network-sim-toolbar" data-testid="sim-toolbar-devices">
-        <span class="network-sim-toolbar-label">Appareils — Catégorie :</span>
+        <div class="network-sim-toolbar-row" data-testid="sim-toolbar-device-buttons">
+          <span class="network-sim-toolbar-label">Appareils — Catégorie :</span>
         {placeMode && (
           <span class="network-sim-toolbar-hint" style="font-size:0.8rem; color:var(--text-muted)">Clique sur la carte pour placer. Pour modifier ou supprimer un appareil, clique sur l'appareil sur la carte.</span>
         )}
@@ -1115,6 +1222,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
             key={t.type}
             type="button"
             class={`btn btn-secondary ${placeMode === t.type ? 'active' : ''}`}
+            data-testid={t.type === 'firewall' ? 'sim-btn-firewall' : t.type === 'ap' ? 'sim-btn-ap' : t.type === 'cloud' ? 'sim-btn-cloud' : undefined}
             onClick={() => { setPlaceMode(placeMode === t.type ? null : t.type); setPlaceModel(DEVICE_MODELS[t.type]?.[0]?.value ?? null); setLinkMode(false); }}
             style={{ borderColor: t.color }}
             title={`Choisir modèle puis cliquer sur la carte`}
@@ -1126,7 +1234,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
           <>
             <span class="network-sim-toolbar-sep">→</span>
             <span class="network-sim-toolbar-label">Modèle :</span>
-            {(DEVICE_MODELS[placeMode] || []).map((m) => (
+            {(DEVICE_MODELS[placeMode] || []).map((m, idx) => (
               <button
                 key={m.value}
                 type="button"
@@ -1134,15 +1242,19 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 onClick={() => setPlaceModel(m.value)}
                 title={m.label}
               >
-                {m.label}
+                {m.label}{idx === 0 ? ' (défaut)' : ''}
               </button>
             ))}
-            <span class="network-sim-toolbar-hint">Puis cliquez sur la carte</span>
+            <span class="network-sim-toolbar-hint">Modèle actuel : {(DEVICE_MODELS[placeMode] || []).find((m) => m.value === placeModel)?.label || placeModel || '—'}. Puis cliquez sur la carte.</span>
             <button type="button" class="btn btn-secondary" onClick={() => { setPlaceMode(null); setPlaceModel(null); }}>Annuler</button>
           </>
         )}
-        <div style="flex-basis:100%; height:0; margin:0; padding:0" aria-hidden="true" />
-        <span class="network-sim-toolbar-label" style="font-weight:600">Liaisons — Type de câble :</span>
+        {selectedId && !linkMode && (
+          <button type="button" class="topbar-btn danger" onClick={deleteSelected}>Supprimer le nœud</button>
+        )}
+        </div>
+        <div class="network-sim-toolbar-row">
+          <span class="network-sim-toolbar-label" style="font-weight:600">Liaisons — Type de câble :</span>
         <button
           type="button"
           class={`btn ${linkMode ? 'btn-primary' : 'btn-secondary'}`}
@@ -1177,11 +1289,9 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
             <button type="button" class="btn btn-secondary" onClick={cancelLinkMode}>Annuler</button>
           </>
         )}
-        {selectedId && !linkMode && (
-          <button type="button" class="topbar-btn danger" onClick={deleteSelected}>Supprimer le nœud</button>
-        )}
-        <span class="network-sim-toolbar-sep">|</span>
-        <span class="network-sim-toolbar-label">Simulation :</span>
+        </div>
+        <div class="network-sim-toolbar-row">
+          <span class="network-sim-toolbar-label">Simulation :</span>
         {!simulationMode ? (
           <button
             type="button"
@@ -1212,12 +1322,33 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
           </>
         )}
         <button type="button" class="btn btn-secondary" onClick={clearTopology}>Effacer cette carte</button>
-        <span class="network-sim-toolbar-sep">|</span>
+        </div>
+        <div class="network-sim-toolbar-row">
+          <label class="network-sim-toolbar-label" style="display:inline-flex;align-items:center;gap:0.35rem">
+          Zone :
+          <select
+            value={`${canvasWidth}x${canvasHeight}`}
+            onInput={(e) => {
+              const v = e.target.value;
+              if (v === '1200x800') { setCanvasWidth(1200); setCanvasHeight(800); }
+              else if (v === '1600x900') { setCanvasWidth(1600); setCanvasHeight(900); }
+              else { setCanvasWidth(800); setCanvasHeight(520); }
+            }}
+            class="api-client-select"
+            style={{ width: 'auto', padding: '0.25rem 0.5rem', marginLeft: '0.25rem' }}
+            title="Taille de la zone posable"
+          >
+            <option value="800x520">800×520</option>
+            <option value="1200x800">1200×800</option>
+            <option value="1600x900">1600×900</option>
+          </select>
+        </label>
         <label class="network-sim-toolbar-label" style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer">
           <input type="checkbox" checked={snapToGrid} onChange={(e) => setSnapToGrid(e.target.checked)} />
           Aligner à la grille
         </label>
         <span class="network-sim-toolbar-hint" style="font-size:0.8rem">Molette: zoom · Glisser fond: pan · Échap: annuler · Suppr: supprimer</span>
+        </div>
       </div>
       </div>
 
@@ -1244,7 +1375,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
             class="network-sim-canvas"
             width="100%"
             height="520"
-            viewBox={`${pan.x} ${pan.y} ${800 / zoom} ${520 / zoom}`}
+            viewBox={`${pan.x} ${pan.y} ${canvasWidth / zoom} ${canvasHeight / zoom}`}
             preserveAspectRatio="xMidYMid meet"
             onClick={handleSvgClick}
             style={{ display: (nodes.length || placeMode) ? 'block' : 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
@@ -1256,7 +1387,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 </pattern>
               </defs>
             )}
-            {snapToGrid && <rect width="800" height="520" fill="url(#network-sim-grid)" />}
+            {snapToGrid && <rect width={canvasWidth} height={canvasHeight} fill="url(#network-sim-grid)" />}
             <defs>
               {LINK_TYPES.map((lt) => (
                 <marker key={lt.id} id={`arrow-${lt.id}`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
@@ -1415,7 +1546,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 onInput={(e) => changeNodeType(selectedNode.id, e.target.value)}
                 title="Changer le type de l'appareil (comme Packet Tracer)"
               >
-                {NODE_TYPES.map((t) => (
+                {NODE_TYPES_BASE.map((t) => (
                   <option key={t.type} value={t.type}>{t.label}</option>
                 ))}
               </select>
@@ -1487,6 +1618,16 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                       <option key={l.value} value={l.value}>{l.label}</option>
                     ))}
                   </select>
+                  {(DEVICE_MODELS.router || []).find((m) => m.value === (selectedNode.deviceModel || ''))?.hasWifi && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={!!selectedNode.routerWifi}
+                        onChange={(e) => updateNodeConfig(selectedNode.id, { routerWifi: e.target.checked })}
+                      />
+                      WiFi intégré (ce modèle le supporte)
+                    </label>
+                  )}
                 </>
               )}
               {['pc', 'server', 'router'].includes(selectedNode.type) && (
@@ -1545,7 +1686,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 </>
               )}
               {selectedNode.type === 'firewall' && (
-                <p class="text-muted" style="fontSize:0.85rem; margin:0">Règles (liste / ACL) — à venir.</p>
+                <p class="text-muted" style={{ fontSize: '0.85rem', margin: 0 }}>Règles (liste / ACL) — à venir. Terminal du lab : show access-list, show config.</p>
               )}
               {selectedNode.type === 'switch' && (
                 <>
@@ -1631,56 +1772,36 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 </label>
               )}
               {selectedNode.type === 'bridge' && (
-                <p class="text-muted" style="fontSize:0.85rem; margin:0">Pont L2 — commutation par MAC. Spanning-tree à venir.</p>
+                <p class="text-muted" style={{ fontSize: '0.85rem', margin: 0 }}>Pont L2 — commutation par MAC. Spanning-tree à venir. Commandes type : show mac address-table, show spanning-tree.</p>
               )}
               </div>
             </section>
 
             <section class="network-sim-panel-section">
-              <h5 class="network-sim-panel-section-title">Terminal (CLI simulé)</h5>
-              <p class="section-desc text-muted" style="font-size:0.8rem; margin:0 0 0.35rem">
-                {selectedNode?.type === 'router' || selectedNode?.type === 'backbone' ? 'show ip route, show interfaces, show running-config, ping' : selectedNode?.type === 'cloud' ? 'show ip route, show interfaces, ping (cœur réseau)' : selectedNode?.type === 'switch' ? 'show mac address-table, show interfaces, ping' : selectedNode?.type === 'firewall' ? 'show access-list, show config, ping' : selectedNode?.type === 'ap' ? 'show dot11 associations, ping' : selectedNode?.type === 'phone' ? 'ipconfig, ping, show sip' : selectedNode?.type === 'printer' ? 'ipconfig, ping' : selectedNode?.type === 'modem' || selectedNode?.type === 'hub' || selectedNode?.type === 'bridge' ? 'show interfaces, ping' : selectedNode?.type === 'server' ? 'ipconfig, ping, nslookup, dig' : 'ipconfig, ping, nslookup'} — tapez <strong>help</strong> pour la liste.
+              <h5 class="network-sim-panel-section-title">Terminal du lab (réel)</h5>
+              <p class="section-desc text-muted" style="font-size:0.8rem; margin:0 0 0.5rem">
+                Pour exécuter de <strong>vraies commandes</strong> (Cisco IOS, switch, routeur, Linux, etc.), utilise le terminal réel du lab — conteneur attaquant (Kali). Ci‑dessous : terminal intégré ou ouvre en plein écran.
               </p>
-              <div class="network-sim-terminal-wrap">
-                <div class="network-sim-terminal-output" ref={terminalEndRef}>
-                  {terminalHistory.map((entry, i) => (
-                    <div key={i} class="network-sim-terminal-line">
-                      <span class="network-sim-terminal-prompt">{entry.prompt}</span>
-                      {entry.input && <span class="network-sim-terminal-cmd">{escapeHtml(entry.input)}</span>}
-                      {entry.output && <pre class="network-sim-terminal-out">{escapeHtml(entry.output)}</pre>}
-                    </div>
-                  ))}
-                </div>
-                <form
-                  class="network-sim-terminal-input-row"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const cmd = terminalInput.trim();
-                    const prompt = selectedNode.type === 'router' || selectedNode.type === 'switch' || selectedNode.type === 'backbone' || selectedNode.type === 'cloud'
-                      ? (escapeHtml(selectedNode.label || 'Device').replace(/\s/g, '') + '#')
-                      : (escapeHtml(selectedNode.label || 'Device').replace(/\s/g, '') + '>');
-                    const output = runSimulatedCommand(selectedNode, nodes, edges, cmd);
-                    setTerminalHistory((h) => [...h, { prompt, input: cmd, output }]);
-                    setTerminalInput('');
-                    setTimeout(() => terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-                  }}
-                >
-                  <span class="network-sim-terminal-prompt">
-                    {selectedNode.type === 'router' || selectedNode.type === 'switch' || selectedNode.type === 'backbone' || selectedNode.type === 'cloud'
-                      ? (selectedNode.label || 'Device').replace(/\s/g, '') + '#'
-                      : (selectedNode.label || 'Device').replace(/\s/g, '') + '>'}
-                  </span>
-                  <input
-                    type="text"
-                    class="network-sim-terminal-input"
-                    value={terminalInput}
-                    onInput={(e) => setTerminalInput(e.target.value)}
-                    placeholder="commande..."
-                    spellcheck={false}
-                    autocomplete="off"
-                  />
-                </form>
+              <div class="network-sim-real-terminal-actions">
+                <a href={getTerminalUrl()} target="_blank" rel="noopener" class="btn btn-primary" style={{ fontSize: '0.85rem' }}>
+                  Ouvrir le terminal dans un nouvel onglet
+                </a>
+                <a href="#/terminal-full" class="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
+                  Terminal plein écran
+                </a>
               </div>
+              <div class="network-sim-terminal-iframe-wrap">
+                <iframe
+                  title="Terminal du lab (réel)"
+                  src={getTerminalUrl()}
+                  class="network-sim-terminal-iframe"
+                />
+              </div>
+              <details class="network-sim-commands-help">
+                <summary>Commandes utiles pour cet appareil ({selectedNode.type})</summary>
+                <pre class="network-sim-commands-help-pre">{getDeviceCommandsHelp(selectedNode.type)}</pre>
+                <p class="text-muted" style={{ fontSize: '0.75rem', margin: '0.35rem 0 0' }}>Référence uniquement — exécute-les dans le terminal ci‑dessus ou dans un vrai équipement (GNS3, Packet Tracer, lab physique).</p>
+              </details>
             </section>
 
             <section class="network-sim-panel-section">
@@ -1723,7 +1844,19 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                   <dt>Vers</dt>
                   <dd>{escapeHtml(toNode?.label || ed.to)}</dd>
                   <dt>Type de câble</dt>
-                  <dd>{lt.label}</dd>
+                  <dd>
+                    <select
+                      value={ed.linkType || 'ethernet-straight'}
+                      onInput={(e) => setEdges((es) => es.map((x) => (x.id === ed.id ? { ...x, linkType: e.target.value || 'ethernet-straight' } : x)))}
+                      class="api-client-select"
+                      style={{ width: '100%', marginTop: '0.25rem' }}
+                      title="Changer le type de câble"
+                    >
+                      {LINK_TYPES.map((lt) => (
+                        <option key={lt.id} value={lt.id}>{lt.label}</option>
+                      ))}
+                    </select>
+                  </dd>
                   {(ed.fromPort != null && ed.toPort != null) && (
                     <>
                       <dt>Ports</dt>
@@ -1769,7 +1902,35 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       </div>
 
       <p class="section-desc" style="margin-top:0.75rem">
-        Pour du trafic réel : <strong>Terminal</strong> (tcpdump, tshark) et <strong>Capture pcap</strong>. Les cartes sont sauvegardées automatiquement pour le lab.
+        <strong>Mode lab (type EVE-NG)</strong> : PC et serveur = conteneurs <strong>Docker</strong>, routeurs = <strong>Dynamips</strong> (ISO Cisco), switchs = <strong>IOL</strong> (Cisco IOS on Linux). La topologie peut être exportée pour un futur backend qui lancera les vrais conteneurs/émulateurs.
+      </p>
+      <div class="network-sim-eve-export" style={{ marginTop: '0.5rem' }}>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onClick={() => {
+            const json = JSON.stringify(getTopologyExportForBackend(), null, 2);
+            if (navigator.clipboard?.writeText) {
+              navigator.clipboard.writeText(json);
+              alert('Topologie copiée dans le presse-papier (format backend lab).');
+            } else {
+              const a = document.createElement('a');
+              a.href = 'data:application/json,' + encodeURIComponent(json);
+              a.download = (currentSim?.name || 'topology') + '-eve-ng-lab.json';
+              a.click();
+            }
+          }}
+          title="Format : nœuds (backend docker/dynamips/iol) + liens"
+        >
+          Exporter la topologie (backend lab)
+        </button>
+        <a href="#/eve-ng-sim" class="btn btn-secondary" style={{ marginLeft: '0.5rem' }} title="Catalogue d’images et images mises de côté">
+          Gérer les images EVE-NG
+        </a>
+        <span class="network-sim-toolbar-hint" style={{ fontSize: '0.8rem', marginLeft: '0.5rem' }}>PC/serveur → Docker, routeur → Dynamips, switch → IOL. Les images mises de côté (page EVE-NG) sont utilisées à l’export si présentes.</span>
+      </div>
+      <p class="section-desc" style="margin-top:0.75rem">
+        Pour du trafic réel (tcpdump, capture pcap) : utilise le <a href="#/terminal-full" style="color:var(--accent)">Terminal</a> et la vue <a href="#/capture" style="color:var(--accent)">Capture pcap</a>. Les cartes sont sauvegardées automatiquement pour le lab.
       </p>
     </div>
   );

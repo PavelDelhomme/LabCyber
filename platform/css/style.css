@@ -102,6 +102,10 @@ body {
 
 .nav { flex: 1; padding: 0.5rem 0; overflow-y: auto; }
 
+/* Quand un lab (scénario ou room) est en cours, la barre en bas masque la fin de la sidebar : réserver un espace en bas de la nav pour pouvoir scroller jusqu'à la fin (rooms, etc.) */
+.app.has-scenario-bar .sidebar .nav { padding-bottom: 220px; }
+.app.has-scenario-bar.scenario-bar-collapsed .sidebar .nav { padding-bottom: 56px; }
+
 /* Séparation claire des blocs de navigation */
 .nav-block {
   border-bottom: 1px solid var(--border);
@@ -2199,42 +2203,69 @@ body {
 .lab-card.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 
 /* Simulateur réseau (Packet Tracer) */
+.network-sim-section { margin-bottom: 1.25rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.network-sim-section-title { margin: 0 0 0.25rem; font-size: 1rem; font-weight: 600; color: var(--text); }
+.network-sim-section-desc { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+.network-sim-buildings-row { display: flex; flex-direction: column; gap: 0.75rem; }
+.network-sim-buildings-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.network-sim-buildings-controls .network-sim-label { font-size: 0.9rem; color: var(--text-muted); margin-right: 0.25rem; }
+.network-sim-buildings-controls .network-sim-select { min-width: 180px; }
+.network-sim-how-it-works { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; padding: 0.6rem 0.75rem; background: var(--bg-hover); border-radius: var(--radius); border: 1px solid var(--border); }
+.network-sim-how-it-works strong { color: var(--text); }
+.network-sim-how-steps { margin: 0.35rem 0 0 1rem; padding-left: 1rem; }
+.network-sim-how-steps li { margin-bottom: 0.25rem; }
+.network-sim-building-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.network-sim-building-chip { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; padding: 0.5rem 0.75rem; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; }
+.network-sim-building-chip-name { font-weight: 600; color: var(--text); }
+.network-sim-building-chip-meta { font-size: 0.8rem; color: var(--text-muted); }
+.network-sim-building-chip-actions { display: inline-flex; align-items: center; gap: 0.2rem; margin-left: 0.25rem; }
+.network-sim-building-chip-actions .btn-icon { padding: 0.25rem 0.4rem; font-size: 0.8rem; min-width: auto; }
+.network-sim-building-chip-actions .btn-icon-danger { color: var(--red); }
+.network-sim-building-chip-actions .btn-icon-danger:hover { background: rgba(239, 68, 68, 0.15); border-color: var(--red); }
+.btn-icon { padding: 0.25rem 0.5rem; font-size: 0.85rem; }
 .network-sim-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.network-sim-toolbar-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background: var(--bg-hover);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
 }
-.network-sim-toolbar-label { font-size: 0.9rem; color: var(--text-muted); margin-right: 0.25rem; }
+.network-sim-toolbar-label { font-size: 0.9rem; color: var(--text-muted); margin-right: 0.25rem; font-weight: 500; }
 .network-sim-toolbar-sep { color: var(--border); margin: 0 0.35rem; }
 .network-sim-toolbar-hint { font-size: 0.85rem; color: var(--accent); margin-left: 0.35rem; }
-.network-sim-canvas-wrap { background: var(--bg-dark); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.network-sim-canvas-wrap { background: var(--bg-dark); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; user-select: none; -webkit-user-select: none; -moz-user-select: none; }
 .network-sim-canvas-wrap.network-sim-place-mode { cursor: crosshair; }
+.network-sim-canvas-wrap.network-sim-dragging,
+.network-sim-canvas-wrap.network-sim-dragging * { user-select: none !important; -webkit-user-select: none !important; -moz-user-select: none !important; }
 .network-sim-canvas-and-config { display: flex; gap: 0; align-items: stretch; flex-wrap: nowrap; }
-.network-sim-canvas-area { flex: 1 1 0; min-width: 280px; position: relative; }
+.network-sim-canvas-area { flex: 1 1 0; min-width: 280px; position: relative; user-select: none; -webkit-user-select: none; -moz-user-select: none; }
 .network-sim-canvas-area .network-sim-canvas-wrap { width: 100%; position: relative; }
 .network-sim-panel-resizer { width: 6px; min-width: 6px; cursor: col-resize; background: var(--border); flex-shrink: 0; }
 .network-sim-panel-resizer:hover { background: var(--accent); }
 .network-sim-zoom-overlay { position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
 .network-sim-config-panel { min-width: 220px; max-width: 560px; flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; max-height: 85vh; overflow-y: auto; }
-.network-sim-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem; }
-.network-sim-panel-header h4 { margin: 0; font-size: 0.95rem; }
+.network-sim-panel-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.network-sim-panel-header h4 { margin: 0; font-size: 0.95rem; flex: 1 1 100%; }
 .network-sim-panel-section { margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
 .network-sim-panel-section:last-of-type { border-bottom: none; }
-.network-sim-panel-section-title { margin: 0 0 0.35rem; font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+.network-sim-panel-section-title { margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--accent); font-weight: 600; }
 .network-sim-info-list { margin: 0; font-size: 0.85rem; }
 .network-sim-info-list dt { color: var(--text-muted); margin-top: 0.35rem; }
 .network-sim-info-list dt:first-child { margin-top: 0; }
 .network-sim-info-list dd { margin: 0 0 0 0.5rem; }
 .network-sim-config-panel h4 { margin: 0 0 0.75rem; font-size: 0.95rem; }
-.network-sim-config-form { display: flex; flex-direction: column; gap: 0.35rem; }
+.network-sim-config-form { display: flex; flex-direction: column; gap: 0.5rem; }
 .network-sim-config-form label { font-size: 0.85rem; color: var(--text-muted); }
-.network-sim-config-form input, .network-sim-config-form select { padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-dark); color: var(--text); }
+.network-sim-config-form input, .network-sim-config-form select { padding: 0.45rem 0.55rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-dark); color: var(--text); }
 .network-sim-ports-list { list-style: none; margin: 0; padding: 0; font-size: 0.85rem; font-family: var(--font-mono); }
 .network-sim-ports-list li { padding: 0.2rem 0; border-bottom: 1px solid var(--border); }
 .network-sim-layer-badge { display: inline-block; padding: 0.2rem 0.5rem; font-size: 0.75rem; font-weight: 600; background: var(--accent-soft); color: var(--accent); border-radius: 4px; }
@@ -2248,6 +2279,13 @@ body {
 .network-sim-terminal-input-row { display: flex; align-items: center; gap: 0.25rem; margin-top: 0.35rem; padding-top: 0.35rem; border-top: 1px solid var(--border); }
 .network-sim-terminal-input { flex: 1; padding: 0.3rem 0.4rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: var(--font-mono); font-size: 0.8rem; }
 .network-sim-terminal-input:focus { outline: none; border-color: var(--accent); }
+/* Terminal réel du lab (iframe) */
+.network-sim-real-terminal-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
+.network-sim-terminal-iframe-wrap { background: var(--bg-dark); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 0.5rem; min-height: 220px; }
+.network-sim-terminal-iframe { width: 100%; height: 220px; border: 0; display: block; }
+.network-sim-commands-help { margin-top: 0.5rem; padding: 0.5rem; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem; }
+.network-sim-commands-help summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.network-sim-commands-help-pre { margin: 0.35rem 0 0; padding: 0.5rem; background: var(--bg-dark); border-radius: 4px; font-size: 0.75rem; white-space: pre-wrap; word-break: break-all; color: var(--text-muted); }
 .proxy-config-form { margin-bottom: 0.75rem; }
 .proxy-config-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; margin-bottom: 0.5rem; }
 .proxy-config-grid input, .proxy-config-grid select { padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-dark); color: var(--text); }
@@ -2265,7 +2303,7 @@ body {
 .api-client-req-btn:hover { border-color: var(--accent); }
 .api-client-req-method { font-weight: 600; margin-right: 0.35rem; color: var(--accent); }
 .api-client-main { flex: 1; min-width: 320px; }
-.network-sim-canvas { display: block; background: var(--bg-dark); min-height: 400px; }
+.network-sim-canvas { display: block; background: var(--bg-dark); min-height: 400px; user-select: none; -webkit-user-select: none; }
 
 /* Proxy / Requêtes */
 .proxy-tools-form { max-width: 720px; }
@@ -2658,3 +2696,28 @@ body {
   html { font-size: 16px; -webkit-text-size-adjust: 100%; }
   .modal { display: flex !important; z-index: 9999; }
 }
+
+/* Simulateur EVE-NG (nouvelle page lab) */
+.eve-ng-sim-view .page-header { margin-bottom: 1.5rem; }
+.eve-ng-sim-view .page-title { font-size: 1.35rem; margin-bottom: 0.35rem; }
+.eve-ng-sim-view .page-desc { font-size: 0.9rem; max-width: 56rem; }
+.eve-ng-sim-section { margin-bottom: 2rem; }
+.eve-ng-sim-section-title { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.eve-ng-sim-section-desc { font-size: 0.88rem; margin-bottom: 1rem; }
+.eve-ng-sim-catalog { display: flex; flex-direction: column; gap: 1.25rem; }
+.eve-ng-sim-backend-block { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+.eve-ng-sim-backend-title { font-size: 1rem; margin: 0 0 0.75rem; color: var(--accent); }
+.eve-ng-sim-image-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.eve-ng-sim-image-card { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+.eve-ng-sim-image-card:last-child { border-bottom: none; }
+.eve-ng-sim-image-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.eve-ng-sim-image-desc { font-size: 0.85rem; color: var(--text-muted); }
+.eve-ng-sim-image-ref { font-size: 0.8rem; color: var(--text-muted); word-break: break-all; }
+.eve-ng-sim-saved-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.eve-ng-sim-saved-item { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.5rem 0.75rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.eve-ng-sim-saved-badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; background: var(--accent-soft); color: var(--accent); border-radius: 4px; }
+.eve-ng-sim-saved-name { flex: 1; min-width: 0; }
+.eve-ng-sim-section-list { margin: 0.5rem 0; padding-left: 1.25rem; }
+.eve-ng-sim-section-list li { margin-bottom: 0.35rem; }
+.btn-link { background: none; border: none; color: var(--accent); cursor: pointer; text-decoration: underline; font: inherit; padding: 0; }
+.btn-link:hover { color: var(--accent-hover); }

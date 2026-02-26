@@ -185,6 +185,13 @@
       "icon": "⚠️",
       "short": "Bases CVE, NVD, recherche",
       "content": "Les CVE identifient des vulnérabilités publiques. NVD (NIST) et CVE.mitre.org permettent de rechercher par logiciel ou identifiant. Utilise le bouton CVE flottant (en bas à droite) sur n'importe quelle page pour ouvrir un CVE sur NVD.",
+      "subcategories": [
+        {
+          "id": "cve-2025-7783-form-data",
+          "name": "CVE-2025-7783 : form-data (HPP)",
+          "content": "Use of Insufficiently Random Values dans form-data (lib/form_data.js) permet une HTTP Parameter Pollution (HPP). Le boundary multipart est généré avec Math.random(), donc prévisible ; un attaquant peut injecter des champs. Versions affectées : form-data < 2.5.4, 3.0.0–3.0.3, 4.0.0–4.0.3. Correctif : mettre à jour vers 2.5.4, 3.0.4 ou 4.0.4. Référence : NVD CVE-2025-7783."
+        }
+      ],
       "documentation": [
         { "label": "NVD (NIST)", "url": "https://nvd.nist.gov/vuln/search", "desc": "Recherche et fiches CVE" },
         { "label": "CVE.mitre.org", "url": "https://cve.mitre.org/", "desc": "Liste officielle CVE" }
