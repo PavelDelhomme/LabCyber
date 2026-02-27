@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start terminal-check eve-ng-check eve-ng-run eve-ng-disk eve-ng-boot
+.PHONY: help up down build lab-setup disk-report rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start terminal-check eve-ng-check eve-ng-run eve-ng-disk eve-ng-boot eve-ng-images-download eve-ng-images-help lab-images-dir lab-images-gns3a-dir lab-images-pull-docker lab-images-download-c7200 lab-images-check lab-images-verify lab-images-organize lab-images-organize-orphans lab-images-extract lab-images-gns3a lab-images-sync lab-images-gns3-registry lab-images-gns3-server lab-images-transfer-eve-ng lab-backup
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -50,6 +50,22 @@ help:
 	@echo "  make eve-ng-run      Lancer la VM EVE-NG (QEMU/KVM, 8G RAM, 4 vCPU, disque virtuel)"
 	@echo "  make eve-ng-disk     Créer le disque virtuel pour EVE-NG (50G) s'il n'existe pas"
 	@echo "  make eve-ng-boot     Démarrer EVE-NG depuis le disque (après 1ère installation)"
+	@echo "  make eve-ng-images-download  Télécharger des images Linux (linux-netem) pour EVE-NG"
+	@echo "  make eve-ng-images-help       Aide pour l'import d'images EVE-NG"
+	@echo "  make lab-images-dir           Créer isos/lab-images/ (qemu, dynamips, iol)"
+	@echo "  make lab-images-pull-docker   Pull wbitt/network-multitool + docker-dhcp"
+	@echo "  make lab-images-download-c7200  Info c7200 (placement manuel)"
+	@echo "  make lab-images-check           Vérifier les images installées"
+	@echo "  make lab-images-verify          Vérifier structure EVE-NG + identifiants de test"
+	@echo "  make lab-setup                  Tout-en-un : organiser + extraire + orphelins + vérifier"
+	@echo "  make lab-images-organize        Déplacer fichiers racine → isos/ (gns3a, qcow2, tgz, docs)"
+	@echo "  make lab-images-organize-orphans  Organiser qcow2 orphelins dans qemu/ (convention EVE-NG)"
+	@echo "  make lab-images-extract         Extraire les archives de isos/archives/"
+	@echo "  make lab-images-transfer-eve-ng Transférer toutes les images vers EVE-NG"
+	@echo "  make lab-backup              Sauvegarde complète du projet (tar.gz)"
+	@echo "  make disk-report             Rapport espace disque /home vs /data"
+	@echo "  make lab-images-gns3a         Importer les .gns3a depuis isos/gns3a/"
+	@echo "  make lab-images-gns3-server  Télécharger les .gns3a depuis GitHub GNS3"
 	@echo ""
 
 # Démarrer sans rebuild (rapide si les images sont déjà à jour)
@@ -300,24 +316,154 @@ eve-ng-run: eve-ng-check eve-ng-disk
 	    -nic user; \
 	fi
 
-# Ports EVE-NG : 9443 (HTTPS web), 9022 (SSH) — changer dans .env si conflit
+# Ports EVE-NG : 9080 (HTTP web, défaut CE), 9443 (HTTPS si configuré), 9022 (SSH)
+EVE_NG_HTTP_PORT ?= 9080
 EVE_NG_HTTPS_PORT ?= 9443
 EVE_NG_SSH_PORT ?= 9022
 
 eve-ng-boot: eve-ng-disk
 	@echo "  Démarrage EVE-NG depuis le disque (sans ISO) — fermez la fenêtre pour arrêter."
-	@echo "  Web : https://127.0.0.1:$(EVE_NG_HTTPS_PORT)  |  SSH : -p $(EVE_NG_SSH_PORT) root@127.0.0.1  |  Login : root / eve"
+	@echo "  Web (HTTP, défaut CE) : http://127.0.0.1:$(EVE_NG_HTTP_PORT)  |  HTTPS : https://127.0.0.1:$(EVE_NG_HTTPS_PORT)"
+	@echo "  SSH : -p $(EVE_NG_SSH_PORT) root@127.0.0.1  |  Login : admin/eve (web) ou root/eve (console)"
 	@which qemu-system-x86_64 >/dev/null 2>&1 || (echo "  Erreur : qemu-system-x86_64 non trouvé."; exit 1)
 	@if [ ! -f "$(EVE_NG_DISK)" ]; then echo "  Erreur : disque absent. Lancez d'abord make eve-ng-run pour l'installation."; exit 1; fi
 	@if [ -r /dev/kvm ] 2>/dev/null; then \
 	  qemu-system-x86_64 -enable-kvm -machine accel=kvm -vga std -m 8192 -smp 4 \
 	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 -boot order=c \
-	    -nic user,hostfwd=tcp::$(EVE_NG_HTTPS_PORT)-:443,hostfwd=tcp::$(EVE_NG_SSH_PORT)-:22; \
+	    -nic user,hostfwd=tcp::$(EVE_NG_HTTP_PORT)-:80,hostfwd=tcp::$(EVE_NG_HTTPS_PORT)-:443,hostfwd=tcp::$(EVE_NG_SSH_PORT)-:22; \
 	else \
 	  qemu-system-x86_64 -vga std -m 8192 -smp 4 \
 	    -drive file="$(EVE_NG_DISK)",if=virtio,format=qcow2 -boot order=c \
-	    -nic user,hostfwd=tcp::$(EVE_NG_HTTPS_PORT)-:443,hostfwd=tcp::$(EVE_NG_SSH_PORT)-:22; \
+	    -nic user,hostfwd=tcp::$(EVE_NG_HTTP_PORT)-:80,hostfwd=tcp::$(EVE_NG_HTTPS_PORT)-:443,hostfwd=tcp::$(EVE_NG_SSH_PORT)-:22; \
 	fi
+
+# Images lab : emplacement standard (isos/lab-images/) — détection à la demande
+LAB_IMAGES_DIR ?= $(ROOT)isos/lab-images
+GNS3A_DIR ?= $(ROOT)isos/gns3a
+
+lab-images-dir:
+	@mkdir -p "$(LAB_IMAGES_DIR)"/qemu "$(LAB_IMAGES_DIR)"/dynamips "$(LAB_IMAGES_DIR)"/iol
+	@echo "  Répertoire images : $(LAB_IMAGES_DIR)"
+	@echo "  Place tes images (fournies par admin, GNS3, etc.) dans qemu/, dynamips/, iol/"
+
+lab-images-pull-docker: lab-images-dir
+	@echo "  Pull des images Docker pour LabCyber : Network Multitool, DHCP ISC"
+	@docker pull wbitt/network-multitool 2>/dev/null || docker pull praqma/network-multitool
+	@docker pull networkop/docker-dhcp 2>/dev/null || true
+	@echo "  Terminé. Images utilisables par le lab Docker."
+
+lab-images-download-c7200: lab-images-dir
+	@echo "  c7200 : Internet Archive n'est plus accessible."
+	@echo "  Place manuellement ton image dans $(LAB_IMAGES_DIR)/dynamips/"
+	@echo "  Exemple : c7200-adventerprisek9-mz.124-25d.image ou c7200-adventerprisek9-mz.*.image"
+	@echo ""
+	@ls "$(LAB_IMAGES_DIR)/dynamips/c7200"*.image 2>/dev/null | head -1 | grep -q . && echo "  ✓ Image c7200 déjà présente." || echo "  Lance : make lab-images-check pour vérifier tes images."
+
+lab-images-check: lab-images-dir
+	@$(ROOT)scripts/lab-images-check.sh
+
+lab-images-verify: lab-images-dir
+	@$(ROOT)scripts/lab-images-verify.sh
+
+lab-images-organize: lab-images-dir
+	@$(ROOT)scripts/organize-lab-images.sh
+
+lab-images-organize-dry-run: lab-images-dir
+	@$(ROOT)scripts/organize-lab-images.sh --dry-run
+
+lab-images-organize-orphans: lab-images-dir
+	@$(ROOT)scripts/organize-qemu-orphans.sh
+
+lab-images-transfer-eve-ng: lab-images-dir
+	@$(ROOT)scripts/transfer-to-eve-ng.sh
+
+lab-backup:
+	@$(ROOT)scripts/backup-lab-complete.sh
+
+# Rapport espace disque (gros dossiers, suggestions /data)
+disk-report:
+	@$(ROOT)scripts/disk-usage-report.sh
+
+# Vérifier mémoire et ressources
+check-resources:
+	@$(ROOT)scripts/check-resources.sh
+
+lab-images-extract: lab-images-dir
+	@$(ROOT)scripts/extract-lab-archives.sh
+
+# Compresser lab-images (recommandé : par image, organisation préservée)
+lab-images-compress: lab-images-dir
+	@$(ROOT)scripts/lab-images-compress-per-item.sh
+
+# Compresser en 3 gros fichiers (alternatif)
+lab-images-compress-monolith: lab-images-dir
+	@$(ROOT)scripts/lab-images-compress-to-archives.sh
+
+# Extraire archives → lab-images (auto si vide avant transfert)
+lab-images-extract-compressed: lab-images-dir
+	@$(ROOT)scripts/lab-images-extract-compressed.sh
+
+# Tout-en-un : organiser (racine), extraire archives, orphelins, vérifier
+lab-setup: lab-images-dir
+	@$(ROOT)scripts/lab-setup-all.sh
+
+lab-images-gns3a-dir:
+	@mkdir -p "$(GNS3A_DIR)"
+	@echo "  Répertoire .gns3a : $(GNS3A_DIR)"
+	@echo "  Place tes fichiers .gns3a ici puis lance : make lab-images-gns3a"
+
+lab-images-gns3a: lab-images-dir
+	@total=0; for f in "$(GNS3A_DIR)"/*.gns3a; do [ -f "$$f" ] && total=$$((total+1)); done; \
+	count=0; \
+	for f in "$(GNS3A_DIR)"/*.gns3a; do \
+	  [ -f "$$f" ] || continue; \
+	  count=$$((count+1)); \
+	  echo ""; echo "  [$$count/$$total] $$(date +%H:%M:%S) — $$(basename "$$f" .gns3a)"; \
+	  $(ROOT)scripts/gns3a-import.sh "$$f" "$(LAB_IMAGES_DIR)"; \
+	done; \
+	if [ $$count -eq 0 ]; then \
+	  echo "  Aucun .gns3a dans $(GNS3A_DIR)"; \
+	else \
+	  echo ""; echo "  ✓ $$count/$$total .gns3a traités — Les échecs sont normaux (Alcatel, Aruba, Brocade… = pages d'inscription)"; \
+	fi
+
+lab-images-sync: lab-images-dir
+	@$(ROOT)scripts/custom-images-sync.sh
+
+lab-images-gns3-registry: lab-images-dir
+	@echo "  Synchronisation du registry GNS3 (peut prendre du temps)..."
+	@python3 $(ROOT)scripts/gns3-registry-sync.py
+
+lab-images-gns3-server: lab-images-gns3a-dir
+	@echo "  Téléchargement de TOUS les .gns3a depuis GitHub (gns3-server)..."
+	@$(ROOT)scripts/gns3-server-download.sh 0
+
+# Télécharger des images EVE-NG (Linux, etc.) dans isos/eve-ng-images/
+EVE_NG_IMAGES_DIR ?= $(ROOT)isos/eve-ng-images
+EVE_NG_IMAGES_URL ?= https://dl.nextadmin.net/dl/EVE-NG-image/qemu
+
+eve-ng-images-dir:
+	@mkdir -p "$(EVE_NG_IMAGES_DIR)"
+	@echo "  Répertoire : $(EVE_NG_IMAGES_DIR)"
+
+eve-ng-images-download: eve-ng-images-dir
+	@echo "  Téléchargement d'images EVE-NG (linux-netem ~23 Mo)..."
+	@cd "$(EVE_NG_IMAGES_DIR)" && \
+	  (test -f linux-netem.tar.gz || wget -q --show-progress "$(EVE_NG_IMAGES_URL)/linux-netem.tar.gz" -O linux-netem.tar.gz) && \
+	  tar xzf linux-netem.tar.gz 2>/dev/null || true
+	@echo "  Terminé. Pour transférer vers EVE-NG (VM démarrée) :"
+	@echo "    cd $(EVE_NG_IMAGES_DIR) && scp -P 9022 -r linux-netem-* root@127.0.0.1:/opt/unetlab/addons/qemu/"
+	@echo "  Puis sur EVE-NG : ssh -p 9022 root@127.0.0.1"
+	@echo "    /opt/unetlab/wrappers/unl_wrapper -a fixpermissions"
+
+eve-ng-images-help:
+	@echo "  === Import d'images EVE-NG ==="
+	@echo "  1. Télécharger : make eve-ng-images-download"
+	@echo "  2. Démarrer EVE-NG : make eve-ng-boot"
+	@echo "  3. Transférer : cd isos/eve-ng-images && scp -P 9022 -r linux-netem-* root@127.0.0.1:/opt/unetlab/addons/qemu/"
+	@echo "  4. SSH EVE-NG : ssh -p 9022 root@127.0.0.1"
+	@echo "  5. Permissions : /opt/unetlab/wrappers/unl_wrapper -a fixpermissions"
+	@echo "  Doc : platform/docs/18-EVE-NG-IMPORT-IMAGES.md"
 
 # Nettoyage : arrêter les conteneurs, reconstruire la plateforme (--no-cache). Ne supprime PAS les volumes.
 clean:
