@@ -59,6 +59,7 @@ test-results/
 e2e/test-results/
 
 # Images lab (gros binaires — ne pas versionner)
+isos/lab-images/
 isos/lab-images/qemu/
 isos/lab-images/dynamips/
 isos/lab-images/iol/
@@ -68,3 +69,9 @@ isos/archives/*.tgz
 isos/archives/*.tar.gz
 isos/eve-ng-disk.qcow2
 isos/*.iso
+# Images Cisco / binaires réseau (très lourds)
+*.image
+# Docs locaux isos (copies, exports)
+isos/docs/
+# Sauvegardes
+*.bak
