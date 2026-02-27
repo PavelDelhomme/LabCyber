@@ -26,7 +26,7 @@ const NODE_TYPES_BASE = NODE_TYPES.filter((t) => BASE_NODE_TYPES.includes(t.type
 /** Logique type EVE-NG : mapping type nœud → backend réel (PC/serveur = Docker, routeur = Dynamips, switch = IOL). */
 const BACKEND_TYPES = { docker: 'Docker', dynamips: 'Dynamips (Cisco)', iol: 'IOL (Cisco)', qemu: 'QEMU (VM)' };
 const NODE_TYPE_TO_BACKEND = { pc: 'docker', server: 'docker', router: 'dynamips', switch: 'iol' };
-const DEFAULT_BACKEND_IMAGE = { pc: 'network-multitool', server: 'network-multitool', router: 'c7200', switch: 'l2' };
+const DEFAULT_BACKEND_IMAGE = { pc: 'network-multitool', server: 'network-multitool', router: 'c7200', switch: 'iol-l2' };
 const EVE_NG_SAVED_IMAGES_KEY = 'lab-cyber-eve-ng-saved-images';
 
 /** Utilise les images mises de côté (page EVE-NG) comme images par défaut pour l'export si présentes. */
