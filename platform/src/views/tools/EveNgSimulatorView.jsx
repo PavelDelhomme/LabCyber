@@ -1,7 +1,20 @@
 import { useState, useEffect } from 'preact/hooks';
 
-const BACKEND_LABELS = { docker: 'Docker', dynamips: 'Dynamips (Cisco)', iol: 'IOL (Cisco)' };
+const BACKEND_LABELS = {
+  docker: 'Docker',
+  qemu: 'QEMU (Linux, Windows, appliances)',
+  dynamips: 'Dynamips (Cisco routeurs)',
+  iol: 'IOL (Cisco switchs)',
+  'qemu-network': 'QEMU (routeurs, switchs, WiFi)',
+};
 const STORAGE_KEY = 'lab-cyber-eve-ng-saved-images';
+const CUSTOM_IMAGES_KEY = 'lab-cyber-custom-images';
+
+const TYPE_OPTIONS = [
+  { value: 'qemu', label: 'QEMU (Linux, Windows, appliances)' },
+  { value: 'dynamips', label: 'Dynamips (Cisco routeurs)' },
+  { value: 'iol', label: 'IOL (Cisco switchs)' },
+];
 
 function loadSavedImages() {
   try {
@@ -20,11 +33,31 @@ function saveSavedImages(list) {
   } catch (_) {}
 }
 
+function loadCustomImages() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_IMAGES_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomImages(list) {
+  try {
+    localStorage.setItem(CUSTOM_IMAGES_KEY, JSON.stringify(list));
+  } catch (_) {}
+}
+
 export default function EveNgSimulatorView({ onNavigate }) {
   const [catalog, setCatalog] = useState(null);
   const [saved, setSaved] = useState(loadSavedImages);
+  const [customImages, setCustomImages] = useState(loadCustomImages);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [addForm, setAddForm] = useState({ name: '', url: '', type: 'qemu', filename: '' });
 
   useEffect(() => {
     fetch('/data/backendImages.json')
@@ -38,6 +71,24 @@ export default function EveNgSimulatorView({ onNavigate }) {
         setCatalog({ byBackend: {} });
       })
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch('/data/customImages.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const fromFile = data?.images || [];
+        if (fromFile.length > 0) {
+          setCustomImages((prev) => {
+            const byUrl = new Map(prev.map((i) => [i.url, i]));
+            fromFile.forEach((i) => { if (i.url) byUrl.set(i.url, { ...i, ...(byUrl.get(i.url) || {}) }); });
+            const next = Array.from(byUrl.values());
+            saveCustomImages(next);
+            return next;
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const addToSaved = (backend, id) => {
@@ -65,22 +116,76 @@ export default function EveNgSimulatorView({ onNavigate }) {
     return list.find((img) => img.id === id) || null;
   };
 
+  const getAllImages = () => {
+    if (!catalog?.byBackend) return [];
+    return Object.entries(catalog.byBackend || {}).flatMap(([backend, images]) =>
+      (images || []).map((img) => ({ ...img, backend }))
+    );
+  };
+
+  const imagesByCategory = () => {
+    const all = getAllImages();
+    const byCat = {};
+    all.forEach((img) => {
+      const cat = img.category || 'other';
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push(img);
+    });
+    const filtered = categoryFilter
+      ? { [categoryFilter]: byCat[categoryFilter] || [] }
+      : byCat;
+    return filtered;
+  };
+
+  const categories = catalog?.categories || {};
+
   return (
     <div id="view-eve-ng-sim" class="view eve-ng-sim-view">
       <header class="page-header">
         <h1 class="page-title">Simulateur lab (type EVE-NG)</h1>
         <p class="page-desc text-muted">
-          Nouvelle page dédiée au lab type EVE-NG : catalogue d'images (Docker, Dynamips, IOL), images mises de côté, et préparation au démarrage du lab. L'interface classique du simulateur reste disponible séparément.
+          Catalogue complet d'images intégrées : PC, serveurs, routeurs Cisco, commutateurs, Linux, Windows (7/10/11), Windows Server, attaquant (Kali), DHCP, DNS, WiFi, pare-feu, Android, etc. Toutes disponibles pour l'export et le lab.
         </p>
-        <div class="eve-ng-sim-links" style={{ marginTop: '0.75rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div class="eve-ng-sim-links" style={{ marginTop: '0.75rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <a
+            href="http://127.0.0.1:9080"
+            class="btn btn-primary"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Ouvrir EVE-NG dans un nouvel onglet (si l'iframe ne charge pas)"
+          >
+            🌐 Ouvrir EVE-NG en nouvel onglet
+          </a>
           <button type="button" class="btn btn-secondary" onClick={() => onNavigate('network-sim')}>
             Ouvrir le simulateur réseau (carte, topologie)
           </button>
           <a href="/docs/15-SIMULATEUR-EVE-NG.md" class="btn btn-secondary" target="_blank" rel="noopener">
-            Doc : 15-SIMULATEUR-EVE-NG.md
+            Doc : 15-SIMULATEUR-EVE-NG
+          </a>
+          <a href="/docs/18-EVE-NG-IMPORT-IMAGES.md" class="btn btn-secondary" target="_blank" rel="noopener">
+            Import images (18)
           </a>
         </div>
+        <p class="text-muted" style={{ marginTop: '0.35rem', fontSize: '0.85rem' }}>
+          L’interface EVE-NG nécessite <code>make eve-ng-boot</code>. Login web : <strong>admin</strong> / <strong>eve</strong>.
+        </p>
       </header>
+
+      <section class="eve-ng-sim-iframe-section" aria-labelledby="eve-ng-iframe-heading" style={{ marginTop: '1rem' }}>
+        <h2 id="eve-ng-iframe-heading" class="eve-ng-sim-section-title">Interface EVE-NG (accès direct)</h2>
+        <p class="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+          L'interface apparaît ci-dessous lorsque la VM EVE-NG est démarrée (<code>make eve-ng-boot</code>). Sinon : page vide. <code>make status</code> affiche les conteneurs Docker, pas la VM EVE-NG (QEMU).
+        </p>
+        <div class="eve-ng-sim-iframe-wrap" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden', minHeight: '500px', background: 'var(--bg-secondary)' }}>
+          <iframe
+            src="http://127.0.0.1:9080"
+            title="Interface EVE-NG"
+            class="eve-ng-sim-iframe"
+            style={{ width: '100%', height: '600px', border: 'none', display: 'block' }}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          />
+        </div>
+      </section>
 
       {loading && <p class="text-muted">Chargement du catalogue d'images…</p>}
       {error && <p class="eve-ng-sim-error" style={{ color: 'var(--red)' }}>{error}</p>}
@@ -88,47 +193,189 @@ export default function EveNgSimulatorView({ onNavigate }) {
       {catalog && (
         <>
           <section class="eve-ng-sim-section" aria-labelledby="eve-ng-catalog-heading">
-            <h2 id="eve-ng-catalog-heading" class="eve-ng-sim-section-title">Catalogue d'images</h2>
+            <h2 id="eve-ng-catalog-heading" class="eve-ng-sim-section-title">Catalogue complet — toutes les images intégrées</h2>
             <p class="eve-ng-sim-section-desc text-muted">
-              Images disponibles par backend (PC/serveur → Docker, routeur → Dynamips, switch → IOL). Utilisez « Mettre de côté » pour garder les images à utiliser dans le lab.
+              PC, serveurs, routeurs Cisco, commutateurs, Linux, Windows, attaquant, DHCP, WiFi, pare-feu… Filtrer par catégorie. Option « Favori » pour prioriser à l'export.
             </p>
-            <div class="eve-ng-sim-catalog">
-              {Object.entries(catalog.byBackend || {}).map(([backend, images]) => (
-                <div key={backend} class="eve-ng-sim-backend-block" data-backend={backend}>
-                  <h3 class="eve-ng-sim-backend-title">{BACKEND_LABELS[backend] || backend}</h3>
-                  <ul class="eve-ng-sim-image-list">
-                    {(images || []).map((img) => {
-                      const key = `${backend}:${img.id}`;
-                      const isSaved = saved.includes(key);
-                      return (
-                        <li key={img.id} class="eve-ng-sim-image-card">
-                          <div class="eve-ng-sim-image-info">
-                            <strong>{img.name || img.id}</strong>
-                            {img.description && <span class="eve-ng-sim-image-desc">{img.description}</span>}
-                            <code class="eve-ng-sim-image-ref">{img.image}</code>
-                          </div>
-                          <button
-                            type="button"
-                            class={`btn ${isSaved ? 'btn-secondary' : 'btn-primary'}`}
-                            disabled={isSaved}
-                            onClick={() => addToSaved(backend, img.id)}
-                            title={isSaved ? 'Déjà mise de côté' : 'Mettre de côté'}
-                          >
-                            {isSaved ? '✓ Mise de côté' : 'Mettre de côté'}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
+            <div class="eve-ng-sim-catalog-filters" style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                class={`btn btn-secondary ${!categoryFilter ? 'btn-primary' : ''}`}
+                onClick={() => setCategoryFilter('')}
+              >
+                Toutes
+              </button>
+              {Object.entries(categories).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  class={`btn btn-secondary ${categoryFilter === id ? 'btn-primary' : ''}`}
+                  onClick={() => setCategoryFilter(id)}
+                >
+                  {label}
+                </button>
               ))}
+            </div>
+            <div class="eve-ng-sim-catalog">
+              {Object.entries(imagesByCategory()).map(([catId, images]) =>
+                images.length > 0 ? (
+                  <div key={catId} class="eve-ng-sim-backend-block" data-category={catId}>
+                    <h3 class="eve-ng-sim-backend-title">{categories[catId] || catId}</h3>
+                    <ul class="eve-ng-sim-image-list">
+                      {images.map((img) => {
+                        const key = `${img.backend}:${img.id}`;
+                        const isSaved = saved.includes(key);
+                        return (
+                          <li key={key} class="eve-ng-sim-image-card">
+                            <div class="eve-ng-sim-image-info">
+                              <strong>{img.name || img.id}</strong>
+                              <span class="eve-ng-sim-backend-badge" style={{ fontSize: '0.7rem', opacity: 0.8 }}>{BACKEND_LABELS[img.backend] || img.backend}</span>
+                              {img.description && <span class="eve-ng-sim-image-desc">{img.description}</span>}
+                              <code class="eve-ng-sim-image-ref">{img.image}</code>
+                            </div>
+                            <button
+                              type="button"
+                              class={`btn ${isSaved ? 'btn-primary' : 'btn-secondary'}`}
+                              onClick={() => (isSaved ? removeFromSaved(key) : addToSaved(img.backend, img.id))}
+                              title={isSaved ? 'Retirer des favoris' : 'Ajouter aux favoris (priorité export)'}
+                            >
+                              {isSaved ? '★ Favori' : '☆ Favori'}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ) : null
+              )}
             </div>
           </section>
 
-          <section class="eve-ng-sim-section" aria-labelledby="eve-ng-saved-heading">
-            <h2 id="eve-ng-saved-heading" class="eve-ng-sim-section-title">Images mises de côté</h2>
+          <section class="eve-ng-sim-section" aria-labelledby="eve-ng-custom-heading" style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
+            <h2 id="eve-ng-custom-heading" class="eve-ng-sim-section-title">Ajouter des images personnalisées</h2>
             <p class="eve-ng-sim-section-desc text-muted">
-              Liste des images que vous avez mises de côté pour ne pas les perdre. Elles pourront être utilisées comme images par défaut pour le lab.
+              Ajoute une image par nom et URL. L'image sera téléchargée automatiquement dans le projet quand tu lanceras <code>make lab-images-sync</code>.
+            </p>
+            <form
+              class="eve-ng-custom-form"
+              style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem' }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!addForm.url?.trim()) return;
+                const entry = {
+                  name: addForm.name?.trim() || addForm.url.split('/').pop().split('?')[0],
+                  url: addForm.url.trim(),
+                  type: addForm.type || 'qemu',
+                  filename: addForm.filename?.trim() || undefined,
+                };
+                setCustomImages((prev) => {
+                  const next = [...prev, entry];
+                  saveCustomImages(next);
+                  return next;
+                });
+                setAddForm({ name: '', url: '', type: 'qemu', filename: '' });
+              }}
+            >
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 0.85 }}>Nom</span>
+                <input
+                  type="text"
+                  placeholder="ex: Alpine Linux"
+                  value={addForm.name}
+                  onInput={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
+                  style={{ padding: '0.35rem 0.5rem', minWidth: 140 }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 200 }}>
+                <span style={{ fontSize: 0.85 }}>URL (téléchargement direct)</span>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  required
+                  value={addForm.url}
+                  onInput={(e) => setAddForm((f) => ({ ...f, url: e.target.value }))}
+                  style={{ padding: '0.35rem 0.5rem' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 0.85 }}>Type</span>
+                <select
+                  value={addForm.type}
+                  onChange={(e) => setAddForm((f) => ({ ...f, type: e.target.value }))}
+                  style={{ padding: '0.35rem 0.5rem' }}
+                >
+                  {TYPE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 0.85 }}>Fichier (optionnel)</span>
+                <input
+                  type="text"
+                  placeholder="nom.qcow2"
+                  value={addForm.filename}
+                  onInput={(e) => setAddForm((f) => ({ ...f, filename: e.target.value }))}
+                  style={{ padding: '0.35rem 0.5rem', minWidth: 120 }}
+                />
+              </label>
+              <button type="submit" class="btn btn-primary">Ajouter</button>
+            </form>
+            {customImages.length > 0 && (
+              <>
+                <ul class="eve-ng-sim-saved-list" style={{ marginBottom: '0.75rem' }}>
+                  {customImages.map((img, i) => (
+                    <li key={i} class="eve-ng-sim-saved-item">
+                      <span class="eve-ng-sim-saved-badge">{img.type}</span>
+                      <span class="eve-ng-sim-saved-name">{img.name}</span>
+                      <code style={{ fontSize: 0.75, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }} title={img.url}>{img.url}</code>
+                      <button
+                        type="button"
+                        class="btn btn-secondary eve-ng-sim-remove"
+                        onClick={() => {
+                          setCustomImages((prev) => {
+                            const next = prev.filter((_, j) => j !== i);
+                            saveCustomImages(next);
+                            return next;
+                          });
+                        }}
+                      >
+                        Retirer
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onClick={() => {
+                      const blob = new Blob(
+                        [JSON.stringify({ description: 'Images personnalisées LabCyber', images: customImages }, null, 2)],
+                        { type: 'application/json' }
+                      );
+                      const a = document.createElement('a');
+                      a.href = URL.createObjectURL(blob);
+                      a.download = 'customImages.json';
+                      a.click();
+                      URL.revokeObjectURL(a.href);
+                    }}
+                  >
+                    Exporter customImages.json
+                  </button>
+                  <span class="text-muted" style={{ fontSize: 0.85, alignSelf: 'center' }}>
+                    Place le fichier dans <code>platform/data/customImages.json</code> puis lance <code>make lab-images-sync</code>
+                  </span>
+                </div>
+              </>
+            )}
+
+          </section>
+
+          <section class="eve-ng-sim-section" aria-labelledby="eve-ng-saved-heading">
+            <h2 id="eve-ng-saved-heading" class="eve-ng-sim-section-title">Favoris pour l'export</h2>
+            <p class="eve-ng-sim-section-desc text-muted">
+              Images sélectionnées comme prioritaires pour l'export de topologie (PC, routeur, switch par défaut).
             </p>
             {saved.length === 0 ? (
               <p class="text-muted">Aucune image mise de côté. Utilisez le catalogue ci-dessus.</p>
@@ -164,7 +411,7 @@ export default function EveNgSimulatorView({ onNavigate }) {
             <ul class="eve-ng-sim-section-list">
               <li>Construisez votre topologie dans le <button type="button" class="btn-link" onClick={() => onNavigate('network-sim')}>simulateur réseau</button>.</li>
               <li>Utilisez le bouton « Exporter la topologie (backend lab) » sur le simulateur pour obtenir le JSON au format EVE-NG.</li>
-              <li>Les images mises de côté ci-dessus pourront être utilisées comme images par défaut (PC/serveur, routeur, switch) lors de l'export ou du démarrage futur.</li>
+              <li>Les favoris ci-dessus servent d'images par défaut (PC, routeur, switch) lors de l'export.</li>
             </ul>
             <p class="text-muted" style={{ marginTop: '0.5rem' }}>
               Prochaine étape prévue : API ou script backend qui lit le JSON exporté, crée les réseaux et lance les conteneurs/processus. Voir <code>platform/docs/15-SIMULATEUR-EVE-NG.md</code>.
