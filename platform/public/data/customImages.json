@@ -1,0 +1,4 @@
+{
+  "description": "Images personnalisées : ajoutées via l'interface ou manuellement. Lance make lab-images-sync pour télécharger.",
+  "images": []
+}
