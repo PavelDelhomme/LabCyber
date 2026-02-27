@@ -1,14 +1,19 @@
 # Lab Cyber – Gateway (plateforme + cibles) + Terminal (ttyd) sur port dédié
 # Plateforme : GATEWAY_PORT (défaut 4080) → http://127.0.0.1:4080
+# Plateforme HTTPS : GATEWAY_HTTPS_PORT (défaut 4443) → https://127.0.0.1:4443
 # Terminal   : 7681 → http://localhost:7681 (lancer le terminal direct)
-# /etc/hosts optionnel : 127.0.0.1 lab.local dvwa.lab juice.lab api.lab bwapp.lab terminal.lab
+# /etc/hosts optionnel : 127.0.0.1 lab.local dvwa.lab juice.lab api.lab bwapp.lab terminal.lab eve-ng.lab
 
 services:
   # ========== GATEWAY (plateforme + cibles sur ce port) ==========
   gateway:
     build: ./gateway
     container_name: lab-gateway
-    ports: ["${GATEWAY_PORT:-4080}:80"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${GATEWAY_PORT:-4080}:80"
+      - "${GATEWAY_HTTPS_PORT:-4443}:443"
     networks: [lab-network]
     depends_on:
       platform: { condition: service_started }

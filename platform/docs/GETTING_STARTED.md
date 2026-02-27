@@ -4,10 +4,10 @@
 
 ## 0. Plateforme web (interface du lab)
 
-Une fois le lab démarré, ouvre **http://lab.local:4080** (ou http://localhost:4080) dans ton navigateur. **Prérequis** : avoir ajouté dans `/etc/hosts` la ligne :
+Une fois le lab démarré, ouvre **http://lab.local:4080** (ou http://localhost:4080) dans ton navigateur. Pour une connexion sécurisée (recommandé si mode HTTPS-Only) : **https://127.0.0.1:4443** (certificat auto-signé ; le navigateur affichera un avertissement — clic « Avancé » → « Continuer »). **Prérequis** : avoir ajouté dans `/etc/hosts` la ligne :
 ```text
-127.0.0.1   lab.local dvwa.lab juice.lab api.lab bwapp.lab terminal.lab
-```
+127.0.0.1   lab.local dvwa.lab juice.lab api.lab bwapp.lab terminal.lab eve-ng.lab
+**Mode HTTPS-Only** : utilise uniquement **https://127.0.0.1:4443**.
 
 - **Tableau de bord** : scénarios guidés et rooms par catégorie (Web, Réseau, API, Red Team, Blue Team, Forensique, OSINT, Stéganographie, Cryptographie, Phishing / Spam / Social Engineering).
 - **Scénarios guidés** (style TryHackMe / HackTheBox) : parcours pas à pas avec tâches à cocher, commandes à copier, tips et « ce que tu apprends ».

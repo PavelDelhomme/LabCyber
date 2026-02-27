@@ -62,7 +62,11 @@
       {"id": "nxosv", "name": "Cisco NX-OSv", "image": "nxosv9k", "nodeTypes": ["switch"], "category": "switch", "description": "Switch Cisco NX-OS virtuel"},
       {"id": "vsrx", "name": "Juniper vSRX", "image": "vsrxng-18", "nodeTypes": ["firewall", "router"], "category": "router", "description": "Firewall/routeur Juniper vSRX"},
       {"id": "vqfx", "name": "Juniper vQFX", "image": "vqfxpfe-18", "nodeTypes": ["switch"], "category": "switch", "description": "Switch Juniper vQFX"},
-      {"id": "veos", "name": "Arista vEOS", "image": "veos-4.28", "nodeTypes": ["switch"], "category": "switch", "description": "Switch Arista vEOS"}
+      {"id": "veos", "name": "Arista vEOS", "image": "veos-4.28", "nodeTypes": ["switch"], "category": "switch", "description": "Switch Arista vEOS"},
+      {"id": "a10-vthunder", "name": "A10 vThunder", "image": "a10-vthunder", "nodeTypes": ["firewall", "router"], "category": "firewall", "description": "ADC / pare-feu A10 vThunder (EVE-NG)"},
+      {"id": "bigip-ltm", "name": "F5 BIG-IP LTM VE", "image": "bigip-ltm", "nodeTypes": ["server", "firewall"], "category": "server", "description": "Load Balancer F5 BIG-IP LTM (EVE-NG)"},
+      {"id": "ctxsdw", "name": "Citrix SD-WAN", "image": "ctxsdw", "nodeTypes": ["router"], "category": "router", "description": "SD-WAN Citrix (EVE-NG)"},
+      {"id": "nexus-dashboard", "name": "Cisco Nexus Dashboard", "image": "nexus-dashboard", "nodeTypes": ["server"], "category": "server", "description": "Cisco Nexus Dashboard (ND) - gestion DC"}
     ]
   },
   "categories": {

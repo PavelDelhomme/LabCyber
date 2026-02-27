@@ -9,6 +9,7 @@ const BACKEND_LABELS = {
 };
 const STORAGE_KEY = 'lab-cyber-eve-ng-saved-images';
 const CUSTOM_IMAGES_KEY = 'lab-cyber-custom-images';
+const WORKFLOW_NOTES_KEY = 'lab-cyber-eve-ng-workflow-notes';
 
 const TYPE_OPTIONS = [
   { value: 'qemu', label: 'QEMU (Linux, Windows, appliances)' },
@@ -58,6 +59,9 @@ export default function EveNgSimulatorView({ onNavigate }) {
   const [error, setError] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [addForm, setAddForm] = useState({ name: '', url: '', type: 'qemu', filename: '' });
+  const [workflowNotes, setWorkflowNotes] = useState(() => {
+    try { return localStorage.getItem(WORKFLOW_NOTES_KEY) || ''; } catch { return ''; }
+  });
 
   useEffect(() => {
     fetch('/data/backendImages.json')
@@ -138,6 +142,17 @@ export default function EveNgSimulatorView({ onNavigate }) {
   };
 
   const categories = catalog?.categories || {};
+  // Toujours HTTPS sur 4443 : mode HTTPS-Only du navigateur exige HTTPS.
+  // http://127.0.0.1:4080 → iframe eve-ng.lab:4080 = bloqué. On force https://eve-ng.lab:4443.
+  const EVE_NG_HTTPS_PORT = 4443;
+  const eveNgUrl = typeof window !== 'undefined'
+    ? `https://eve-ng.lab:${EVE_NG_HTTPS_PORT}/#!/login`
+    : 'http://127.0.0.1:9080/#!/login';
+
+  const saveWorkflowNotes = (v) => {
+    setWorkflowNotes(v);
+    try { localStorage.setItem(WORKFLOW_NOTES_KEY, v); } catch (_) {}
+  };
 
   return (
     <div id="view-eve-ng-sim" class="view eve-ng-sim-view">
@@ -148,11 +163,11 @@ export default function EveNgSimulatorView({ onNavigate }) {
         </p>
         <div class="eve-ng-sim-links" style={{ marginTop: '0.75rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <a
-            href="http://127.0.0.1:9080"
+            href={eveNgUrl}
             class="btn btn-primary"
             target="_blank"
             rel="noopener noreferrer"
-            title="Ouvrir EVE-NG dans un nouvel onglet (si l'iframe ne charge pas)"
+            title="Ouvrir EVE-NG (via proxy eve-ng.lab — évite CORS/mixed content)"
           >
             🌐 Ouvrir EVE-NG en nouvel onglet
           </a>
@@ -167,24 +182,40 @@ export default function EveNgSimulatorView({ onNavigate }) {
           </a>
         </div>
         <p class="text-muted" style={{ marginTop: '0.35rem', fontSize: '0.85rem' }}>
-          L’interface EVE-NG nécessite <code>make eve-ng-boot</code>. Login web : <strong>admin</strong> / <strong>eve</strong>.
+          L’interface EVE-NG nécessite <code>make eve-ng-boot</code>. Login web : <strong>admin</strong> / <strong>eve</strong>. Mode HTTPS-Only : <code>https://127.0.0.1:4443</code>. Ajoute <code>127.0.0.1 eve-ng.lab</code> dans <code>/etc/hosts</code>.
         </p>
       </header>
 
+      {/* Interface EVE-NG complète (login + labs) — rendu identique à 127.0.0.1:9080/#!/login */}
       <section class="eve-ng-sim-iframe-section" aria-labelledby="eve-ng-iframe-heading" style={{ marginTop: '1rem' }}>
-        <h2 id="eve-ng-iframe-heading" class="eve-ng-sim-section-title">Interface EVE-NG (accès direct)</h2>
+        <h2 id="eve-ng-iframe-heading" class="eve-ng-sim-section-title">Interface EVE-NG complète</h2>
         <p class="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-          L'interface apparaît ci-dessous lorsque la VM EVE-NG est démarrée (<code>make eve-ng-boot</code>). Sinon : page vide. <code>make status</code> affiche les conteneurs Docker, pas la VM EVE-NG (QEMU).
+          Rendu identique à <code>http://127.0.0.1:9080/#!/login</code>. VM démarrée : <code>make eve-ng-boot</code>. Login : <strong>admin</strong> / <strong>eve</strong>.
         </p>
-        <div class="eve-ng-sim-iframe-wrap" style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden', minHeight: '500px', background: 'var(--bg-secondary)' }}>
+        <div class="eve-ng-sim-iframe-wrap" style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', minHeight: '75vh', background: 'var(--bg-secondary)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
           <iframe
-            src="http://127.0.0.1:9080"
-            title="Interface EVE-NG"
+            src={eveNgUrl}
+            title="Interface EVE-NG — login et labs"
             class="eve-ng-sim-iframe"
-            style={{ width: '100%', height: '600px', border: 'none', display: 'block' }}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            style={{ width: '100%', height: '75vh', minHeight: '600px', border: 'none', display: 'block' }}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
           />
         </div>
+      </section>
+
+      {/* Notes workflow — ce que je veux dans mon simulateur */}
+      <section class="eve-ng-sim-section" aria-labelledby="eve-ng-notes-heading" style={{ marginTop: '1.5rem' }}>
+        <h2 id="eve-ng-notes-heading" class="eve-ng-sim-section-title">📝 Notes workflow — ce que je veux dans mon simulateur</h2>
+        <p class="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+          Note les fonctionnalités, le workflow de test, les idées pour ton propre simulateur type EVE-NG. Sauvegardé localement (localStorage).
+        </p>
+        <textarea
+          value={workflowNotes}
+          onInput={(e) => saveWorkflowNotes(e.target.value)}
+          placeholder="Ex: workflow login → créer lab → add node → start → console… Ce que je veux : topologie graphique, export JSON, intégration Docker…"
+          style={{ width: '100%', minHeight: '140px', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border)', fontFamily: 'inherit', fontSize: '0.9rem', resize: 'vertical' }}
+          class="eve-ng-workflow-notes"
+        />
       </section>
 
       {loading && <p class="text-muted">Chargement du catalogue d'images…</p>}

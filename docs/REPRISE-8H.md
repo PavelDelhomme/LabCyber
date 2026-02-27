@@ -26,9 +26,19 @@ make lab-images-gns3a   # relancer si besoin, ou vérifier les derniers .gns3a
 
 ---
 
-## 3. EVE-NG — Transférer les images
+## 3. EVE-NG — Libérer l'espace puis transférer
 
-Tu accèdes à EVE en web (http://127.0.0.1:9080).
+**Si "No space left on device"** (ssh-copy-id échoue) :
+```bash
+# 1. Installer sshpass si besoin
+sudo pacman -S sshpass
+
+# 2. Nettoyer le disque EVE-NG
+make eve-ng-free-space
+
+# 3. Réessayer ssh-copy-id
+ssh-copy-id -i ~/.ssh/eve-ng -p 9022 root@127.0.0.1
+```
 
 **Configurer la clé SSH (une seule fois) :**
 ```bash

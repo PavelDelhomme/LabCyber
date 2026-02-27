@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build lab-setup disk-report rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start terminal-check eve-ng-check eve-ng-run eve-ng-disk eve-ng-boot eve-ng-images-download eve-ng-images-help lab-images-dir lab-images-gns3a-dir lab-images-pull-docker lab-images-download-c7200 lab-images-check lab-images-verify lab-images-organize lab-images-organize-orphans lab-images-extract lab-images-gns3a lab-images-sync lab-images-gns3-registry lab-images-gns3-server lab-images-transfer-eve-ng lab-backup
+.PHONY: help up down build lab-setup disk-report rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start terminal-check eve-ng-check eve-ng-run eve-ng-disk eve-ng-disk-expand eve-ng-expand-fs eve-ng-boot eve-ng-free-space eve-ng-fix-api eve-ng-images-download eve-ng-images-help lab-images-dir lab-images-gns3a-dir lab-images-pull-docker lab-images-download-c7200 lab-images-check lab-images-verify lab-images-organize lab-images-organize-orphans lab-images-extract lab-images-gns3a lab-images-sync lab-images-gns3-registry lab-images-gns3-server lab-images-transfer-eve-ng lab-images-transfer-eve-ng-stream lab-isos-free-space lab-archives-dedup lab-backup eve-ng-verify
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -11,7 +11,7 @@ help:
 	@echo "Lab Cyber – Cibles Make"
 	@echo "================================"
 	@echo ""
-	@echo "  Interface web : http://127.0.0.1:4080   |   Terminal : http://127.0.0.1:4080/terminal/"
+	@echo "  Interface web : http://127.0.0.1:4080   |   HTTPS : https://127.0.0.1:4443   |   Terminal : http://127.0.0.1:4080/terminal/"
 	@echo ""
 	@echo "  Démarrer / arrêter"
 	@echo "  ------------------"
@@ -45,7 +45,7 @@ help:
 	@echo "  make test-report     Tests → test-results.txt  |  make test-full-report  → test-full-results.txt"
 	@echo "  make tests           TOUT : up + test-report + test-full-report + test-e2e (rapports complets)"
 	@echo "  make up-minimal     Mode minimal  |  make proxy  Lab + Squid  |  make blue  Blue Team"
-	@echo "  make ports          Voir qui utilise 4080/7681"
+	@echo "  make ports          Voir qui utilise 4080/7681/4443"
 	@echo "  make eve-ng-check    Vérifier la présence et la taille de l'ISO EVE-NG (isos/)"
 	@echo "  make eve-ng-run      Lancer la VM EVE-NG (QEMU/KVM, 8G RAM, 4 vCPU, disque virtuel)"
 	@echo "  make eve-ng-disk     Créer le disque virtuel pour EVE-NG (50G) s'il n'existe pas"
@@ -56,12 +56,20 @@ help:
 	@echo "  make lab-images-pull-docker   Pull wbitt/network-multitool + docker-dhcp"
 	@echo "  make lab-images-download-c7200  Info c7200 (placement manuel)"
 	@echo "  make lab-images-check           Vérifier les images installées"
-	@echo "  make lab-images-verify          Vérifier structure EVE-NG + identifiants de test"
+	@echo "  make lab-images-verify          Vérifier structure lab-images + identifiants"
+	@echo "  make eve-ng-verify              Vérifier accès EVE-NG (SSH + images dans la VM)"
 	@echo "  make lab-setup                  Tout-en-un : organiser + extraire + orphelins + vérifier"
 	@echo "  make lab-images-organize        Déplacer fichiers racine → isos/ (gns3a, qcow2, tgz, docs)"
 	@echo "  make lab-images-organize-orphans  Organiser qcow2 orphelins dans qemu/ (convention EVE-NG)"
 	@echo "  make lab-images-extract         Extraire les archives de isos/archives/"
 	@echo "  make lab-images-transfer-eve-ng Transférer toutes les images vers EVE-NG"
+	@echo "  make lab-images-transfer-eve-ng-stream  Transfert à la volée (sans extraction locale)"
+	@echo "  make lab-isos-free-space    Libérer l'espace isos/ (supprime lab-images si archives-compressed OK)"
+	@echo "  make lab-archives-dedup     Supprimer doublon lab-images-qemu.tar.zst si qemu/*.tar.zst OK (~95G)"
+	@echo "  make eve-ng-free-space      Libérer l'espace disque dans la VM EVE-NG (si 'no space')"
+	@echo "  make eve-ng-fix-api         Corriger erreurs 500 /api/auth (disque, DB, Apache)"
+	@echo "  make eve-ng-disk-expand     Agrandir disque EVE-NG (arrêter EVE avant, SIZE=80G)"
+	@echo "  make eve-ng-expand-fs      Étendre le FS dans EVE (après disk-expand, EVE démarré)"
 	@echo "  make lab-backup              Sauvegarde complète du projet (tar.gz)"
 	@echo "  make disk-report             Rapport espace disque /home vs /data"
 	@echo "  make lab-images-gns3a         Importer les .gns3a depuis isos/gns3a/"
@@ -72,7 +80,7 @@ help:
 up:
 	cd $(ROOT) && docker compose up -d
 	@echo ""
-	@echo "  Interface web (lab) : http://127.0.0.1:4080"
+	@echo "  Interface web (lab) : http://127.0.0.1:4080   |   HTTPS : https://127.0.0.1:4443"
 	@echo "  Terminal (navigateur) : http://127.0.0.1:4080/terminal/  |  CLI : make shell"
 	@echo ""
 
@@ -126,7 +134,7 @@ rebuild: down
 dev:
 	cd $(ROOT) && docker compose up -d --build
 	@echo ""
-	@echo "  Interface web (lab) : http://127.0.0.1:4080"
+	@echo "  Interface web (lab) : http://127.0.0.1:4080   |   HTTPS : https://127.0.0.1:4443"
 	@echo "  Terminal (navigateur) : http://127.0.0.1:4080/terminal/  |  CLI : make shell"
 	@echo "  (Tout le lab passe par le port 4080 ; le port 5000 est l'API vuln interne, pas l'interface.)"
 	@echo ""
@@ -376,6 +384,47 @@ lab-images-organize-orphans: lab-images-dir
 
 lab-images-transfer-eve-ng: lab-images-dir
 	@$(ROOT)scripts/transfer-to-eve-ng.sh
+
+lab-images-transfer-eve-ng-stream:
+	@$(ROOT)scripts/transfer-to-eve-ng-stream.sh
+
+lab-isos-free-space:
+	@$(ROOT)scripts/lab-isos-free-space.sh
+
+lab-archives-dedup:
+	@$(ROOT)scripts/lab-archives-remove-duplicate-monolith.sh
+
+eve-ng-verify:
+	@$(ROOT)scripts/eve-ng-verify.sh
+
+eve-ng-fix-api:
+	@$(ROOT)scripts/eve-ng-fix-api.sh
+
+eve-ng-disk-expand:
+	@$(ROOT)scripts/eve-ng-disk-expand.sh $(or $(SIZE),80G)
+
+eve-ng-expand-fs:
+	@$(ROOT)scripts/eve-ng-expand-fs.sh
+
+# Libère l'espace disque dans la VM EVE-NG (à faire si ssh-copy-id échoue avec "No space left on device")
+eve-ng-free-space:
+	@echo "  Nettoyage EVE-NG (ssh -p 9022 root@127.0.0.1)..."
+	@if command -v sshpass &>/dev/null; then \
+	  sshpass -p 'eve' ssh -o StrictHostKeyChecking=no -p 9022 root@127.0.0.1 ' \
+	    echo "=== Espace AVANT ==="; df -h /; \
+	    rm -rf /var/log/*.gz /var/log/*.1 /var/log/*.old 2>/dev/null; \
+	    > /var/log/syslog 2>/dev/null; \
+	    journalctl --vacuum-size=50M 2>/dev/null || true; \
+	    rm -rf /opt/unetlab/tmp/* 2>/dev/null; \
+	    apt-get clean 2>/dev/null; \
+	    rm -rf /var/cache/apt/archives/*.deb 2>/dev/null; \
+	    apt-get autoremove -y --purge 2>/dev/null || true; \
+	    echo "=== Espace APRÈS ==="; df -h /'; \
+	else \
+	  echo "  Installe sshpass : sudo pacman -S sshpass"; \
+	  echo "  Ou exécute manuellement dans EVE-NG : ssh -p 9022 root@127.0.0.1"; \
+	  echo "  Puis : rm -rf /var/log/*.gz /opt/unetlab/tmp/*; apt-get clean; apt-get autoremove -y"; \
+	fi
 
 lab-backup:
 	@$(ROOT)scripts/backup-lab-complete.sh

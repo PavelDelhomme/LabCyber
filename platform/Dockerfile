@@ -14,7 +14,9 @@ WORKDIR /app
 COPY platform/package*.json ./
 RUN npm ci
 COPY platform/ ./
-# Build : public/ est copié dans dist/ par Vite (donc dist/docs = public/docs, dist/data = public/data)
+# docs/ = source unique ; public/docs = copie pour le build (évite doublons)
+RUN rm -rf public/docs public/docs/docs 2>/dev/null; cp -r docs public/docs
+# Build : public/ → dist/ par Vite
 RUN npm run build
 
 # Stage 3: servir avec nginx

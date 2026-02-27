@@ -17,16 +17,17 @@ echo "=== Extraction archives → lab-images ==="
 [ -n "$ONLY" ] && echo "Image cible : $ONLY"
 echo ""
 
-# Mode 1 : archives globales (ancien format lab-images-qemu.tar.zst)
-for archive in "$COMPRESSED"/lab-images-qemu.tar.zst "$COMPRESSED"/lab-images-dynamips.tar.zst "$COMPRESSED"/lab-images-iol.tar.zst; do
+# Mode 1 : archives monolithes (dynamips, iol — pas de format par-image)
+for archive in "$COMPRESSED"/lab-images-dynamips.tar.zst "$COMPRESSED"/lab-images-iol.tar.zst; do
   [ -f "$archive" ] || continue
   echo "  $(basename "$archive")"
   zstd -dc "$archive" | tar -x -C "$LAB" -f -
   count=$((count+1))
 done
 
-# Mode 2 : archives par image (nouveau format)
-if [ -d "$COMPRESSED/qemu" ]; then
+# Mode 2 : qemu — format par image (prioritaire) ou monolithe si pas de qemu/*.tar.zst
+if [ -d "$COMPRESSED/qemu" ] && [ -n "$(ls "$COMPRESSED/qemu"/*.tar.zst 2>/dev/null)" ]; then
+  # Per-image : extraction ciblée possible
   for arch in "$COMPRESSED/qemu"/*.tar.zst; do
     [ -f "$arch" ] || continue
     name=$(basename "$arch" .tar.zst)
@@ -45,9 +46,14 @@ if [ -d "$COMPRESSED/qemu" ]; then
     zstd -dc "$arch" -o "$LAB/qemu/$base"
     count=$((count+1))
   done
+elif [ -f "$COMPRESSED/lab-images-qemu.tar.zst" ]; then
+  # Fallback : monolithe qemu si pas de format par-image
+  echo "  lab-images-qemu.tar.zst"
+  zstd -dc "$COMPRESSED/lab-images-qemu.tar.zst" | tar -x -C "$LAB" -f -
+  count=$((count+1))
 fi
 
-if [ -d "$COMPRESSED/dynamips" ]; then
+if [ -d "$COMPRESSED/dynamips" ] && [ -n "$(ls "$COMPRESSED/dynamips"/*.zst 2>/dev/null)" ]; then
   for arch in "$COMPRESSED/dynamips"/*.zst; do
     [ -f "$arch" ] || continue
     base=$(basename "$arch" .zst)
@@ -58,7 +64,7 @@ if [ -d "$COMPRESSED/dynamips" ]; then
   done
 fi
 
-if [ -d "$COMPRESSED/iol" ]; then
+if [ -d "$COMPRESSED/iol" ] && [ -n "$(ls "$COMPRESSED/iol"/*.zst 2>/dev/null)" ]; then
   for arch in "$COMPRESSED/iol"/*.zst; do
     [ -f "$arch" ] || continue
     base=$(basename "$arch" .zst)
