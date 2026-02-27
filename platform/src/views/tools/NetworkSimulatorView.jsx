@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect, useRef, useMemo } from 'preact/hooks';
 import { escapeHtml, getTerminalUrl } from '../../lib/store';
 
 const NODE_TYPES = [
@@ -13,6 +13,7 @@ const NODE_TYPES = [
   { type: 'hub', label: 'Concentrateur (hub)', color: '#84cc16', w: 52, h: 34, layer: 'L1' },
   { type: 'bridge', label: 'Pont (bridge)', color: '#22c55e', w: 52, h: 34, layer: 'L2' },
   { type: 'backbone', label: 'Backbone', color: '#dc2626', w: 60, h: 38, layer: 'L3' },
+  { type: 'antenna', label: 'Antenne', color: '#e879f9', w: 44, h: 44, layer: 'L2' },
   { type: 'phone', label: 'Téléphone IP', color: '#ec4899', w: 48, h: 32, layer: 'L3' },
   { type: 'printer', label: 'Imprimante', color: '#64748b', w: 50, h: 32, layer: 'L3' },
   { type: 'tablet', label: 'Tablette', color: '#a78bfa', w: 46, h: 30, layer: 'L3' },
@@ -117,6 +118,12 @@ const DEVICE_MODELS = {
     { value: 'generic', label: 'Backbone générique', vendor: 'Generic', layer: 'L3' },
     { value: 'cisco-core', label: 'Cisco Core', vendor: 'Cisco', layer: 'L3' },
   ],
+  antenna: [
+    { value: 'generic', label: 'Antenne générique', vendor: 'Generic', layer: 'L2' },
+    { value: 'wifi-omni', label: 'Antenne omnidirectionnelle WiFi', vendor: 'Generic', layer: 'L2' },
+    { value: 'wifi-directional', label: 'Antenne directionnelle', vendor: 'Generic', layer: 'L2' },
+    { value: 'cellular', label: 'Antenne cellulaire', vendor: 'Generic', layer: 'L2' },
+  ],
   phone: [
     { value: 'generic', label: 'IP Phone générique', vendor: 'Generic', layer: 'L3' },
     { value: 'cisco-ip', label: 'Cisco IP Phone', vendor: 'Cisco', layer: 'L3' },
@@ -195,6 +202,36 @@ function getNodeColor(type) {
   return NODE_TYPES.find((t) => t.type === type)?.color || '#9aa0a6';
 }
 
+/** Marge minimale entre appareils pour éviter chevauchement et faciliter sélection (collision). */
+const NODE_COLLISION_PADDING = 10;
+
+/** Échelle carte : pixels par mètre (pour portée WiFi / antennes). */
+const PIXELS_PER_METER = 2.5;
+/** Portée par défaut en mètres pour les appareils à ondes (affichée à la sélection). */
+const COVERAGE_RADIUS_METERS = { ap: 30, antenna: 100 };
+
+/** Retourne les bornes logiques d'un nœud (x,y = coin supérieur gauche), avec padding optionnel qui étend la boîte. */
+function getNodeLogicalBounds(n, def, padding = 0) {
+  const w = (def?.w || 56) + padding * 2;
+  const h = (def?.h || 36) + padding * 2;
+  return { x: n.x - padding, y: n.y - padding, w, h };
+}
+
+function rectsOverlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/** Nœuds dans la même zone (même bâtiment+étage ou tous deux sans bâtiment) pour collision. */
+function getPeersForCollision(nodes, buildingId, buildingFloorId) {
+  const bid = buildingId ?? '__unassigned__';
+  const fid = buildingFloorId ?? null;
+  return nodes.filter((nn) => {
+    const nbid = nn.buildingId ?? '__unassigned__';
+    const nfid = nn.buildingFloorId ?? null;
+    return nbid === bid && nfid === fid;
+  });
+}
+
 /** Formes SVG par type d'appareil (vue du dessus / schéma réseau) */
 function renderNodeShape(n, def, color, sel, conn) {
   const w = def.w || 56;
@@ -205,7 +242,10 @@ function renderNodeShape(n, def, color, sel, conn) {
   const label = n?.label || n?.id || '';
   const layer = getNodeLayer(n);
   const selHalo = sel ? (
-    <rect x={-4} y={-4} width={w + 8} height={h + 8} rx={r + 2} fill="none" stroke="#fbbf24" strokeWidth={2} strokeDasharray="5 4" opacity={0.95} />
+    <g class="network-sim-node-selected-ring">
+      <rect x={-6} y={-6} width={w + 12} height={h + 12} rx={r + 4} fill="none" stroke="#fbbf24" strokeWidth={3} opacity={1} />
+      <rect x={-4} y={-4} width={w + 8} height={h + 8} rx={r + 2} fill="rgba(251, 191, 36, 0.08)" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="5 4" opacity={0.95} />
+    </g>
   ) : null;
 
   switch (def.type) {
@@ -268,6 +308,16 @@ function renderNodeShape(n, def, color, sel, conn) {
           <circle cx={w / 2} cy={h / 2} r={Math.min(w, h) / 2 - 2} fill={color} stroke={stroke} strokeWidth={sw} opacity={0.9} />
           <path d={`M ${w/2} ${h/2-6} Q ${w/2+8} ${h/2} ${w/2} ${h/2+6} Q ${w/2-8} ${h/2} ${w/2} ${h/2-6}`} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1" />
           <text x={w / 2} y={h / 2 + 4} textAnchor="middle" fill="#fff" fontSize="8">{escapeHtml(label)}</text>
+        </g>
+      );
+    case 'antenna':
+      return (
+        <g>
+          {selHalo}
+          <line x1={w / 2} y1={h - 2} x2={w / 2} y2={4} stroke={color} strokeWidth={2} opacity={0.9} />
+          <circle cx={w / 2} cy={4} r={5} fill={color} stroke={stroke} strokeWidth={sw} opacity={0.9} />
+          <path d={`M ${w/2-6} ${10} L ${w/2+6} ${10} M ${w/2} ${8} L ${w/2} ${14}`} stroke="rgba(255,255,255,0.6)" strokeWidth="1" />
+          <text x={w / 2} y={h - 6} textAnchor="middle" fill="#fff" fontSize="8">{escapeHtml(label)}</text>
         </g>
       );
     case 'cloud':
@@ -337,6 +387,7 @@ function defaultNodeConfig(type) {
   if (type === 'firewall') return { ...base, deviceModel: 'generic' };
   if (type === 'ap') return { ...base, deviceModel: 'generic', ssid: '' };
   if (type === 'cloud' || type === 'backbone') return { ...base, deviceModel: 'generic', cloudRole: 'wan' };
+  if (type === 'antenna') return { ...base, deviceModel: 'generic' };
   if (type === 'hub' || type === 'bridge') return { ...base, deviceModel: 'generic', hubPorts: 8 };
   if (type === 'modem') return { ...base, deviceModel: model, modemType: 'dsl' };
   if (type === 'phone') return { ...base, deviceModel: model, sipServer: '' };
@@ -374,6 +425,7 @@ function getDeviceCommandsHelp(type) {
     server: 'ip a, ip route, ping <ip>, curl …, nslookup <host>, systemctl status …, ss -tlnp',
     firewall: 'show access-list, show config, show interface, ping <ip>',
     ap: 'show dot11 associations, show running-config, show interface dot11Radio0',
+    antenna: 'show interfaces (antenne / relais), ping <ip>',
     cloud: 'show ip route, show interfaces, ping (équipement cœur réseau)',
     backbone: 'show ip route, show running-config, show interfaces',
     phone: 'ipconfig, ping <ip>, show sip',
@@ -414,6 +466,9 @@ function _runSimulatedCommand(node, nodes, edges, cmdLine) {
     if (node?.type === 'ap') {
       return 'Commandes: show dot11 associations, show running-config, ping <ip>, exit';
     }
+    if (node?.type === 'antenna') {
+      return 'Commandes: show interfaces (antenne / relais), ping <ip>, exit';
+    }
     if (node?.type === 'cloud') {
       return 'Commandes: show ip route, show interfaces, ping <ip> (équipement cœur réseau), exit';
     }
@@ -444,7 +499,7 @@ function _runSimulatedCommand(node, nodes, edges, cmdLine) {
     return `C     ${ip} is directly connected, FastEthernet0/0`;
   }
   if (cmd === 'show' && (args[1] === 'interfaces' || args[1] === 'int')) {
-    if (['router', 'switch', 'firewall', 'backbone', 'cloud', 'modem', 'hub', 'bridge'].includes(node?.type)) {
+    if (['router', 'switch', 'firewall', 'backbone', 'cloud', 'modem', 'hub', 'bridge', 'antenna'].includes(node?.type)) {
       return `FastEthernet0/0 is up, line protocol is up\n  Hardware is FastEthernet, address is 0000.0c00.0001\n  Internet address is ${ip}/${mask.replace(/255\.255\.255\.0/, '24')}\n  MTU 1500 bytes`;
     }
     return `Commande non supportée sur ce type d'appareil.`;
@@ -510,13 +565,18 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
   const [edges, setEdges] = useState(currentSim?.edges || []);
   const buildings = currentSim?.buildings || [];
   const [currentBuildingId, setCurrentBuildingId] = useState(null);
+  /** Lieu de travail unique (comme Packet Tracer / outils d'archi) : contrôle à la fois l'affichage et le placement.
+   * null = toute la carte, '__unassigned__' = sans bâtiment, 'bId' = bâtiment, 'bId:fId' = pièce. */
+  const [workplace, setWorkplace] = useState(null);
   const [linkMode, setLinkMode] = useState(false);
   const [connectLinkType, setConnectLinkType] = useState('ethernet-straight');
   const [connectFrom, setConnectFrom] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
   const [dragId, setDragId] = useState(null);
   const [dragOff, setDragOff] = useState({ x: 0, y: 0 });
+  const [dragBuildingId, setDragBuildingId] = useState(null);
+  const buildingDropPosRef = useRef({ x: 0, y: 0 });
   const [simulationMode, setSimulationMode] = useState(false);
   const [simulationPaused, setSimulationPaused] = useState(false);
   const [placeMode, setPlaceMode] = useState(null);
@@ -525,11 +585,12 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [panelWidth, setPanelWidth] = useState(320);
-  const [canvasWidth, setCanvasWidth] = useState(800);
-  const [canvasHeight, setCanvasHeight] = useState(520);
+  const [minCanvasWidth, setMinCanvasWidth] = useState(800);
+  const [minCanvasHeight, setMinCanvasHeight] = useState(520);
   const GRID_SIZE = 20;
   const panStartRef = useRef(null);
   const nodeDragMovedRef = useRef(false);
+  const dragStartPosRef = useRef({ x: 0, y: 0 });
   const zoomPanRef = useRef({ zoom: 1, pan: { x: 0, y: 0 } });
   useEffect(() => { zoomPanRef.current = { zoom, pan }; }, [zoom, pan]);
   const svgRef = useRef(null);
@@ -569,15 +630,27 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     }
     const sims = data.simulations || [];
     let cur = data.currentId || (sims.length ? sims[0].id : null);
+    let migrated = sims;
     if (sims.length === 0) {
       const newId = 'sim' + Date.now();
-      const newSims = [{ id: newId, name: 'Carte 1', nodes: [], edges: [], buildings: [], createdAt: new Date().toISOString() }];
-      setSimulations(newSims);
-      setCurrentSimId(newId);
-      storage?.setNetworkSimulations?.(effectiveLabId, { simulations: newSims, currentId: newId });
-      return;
+      const ts = Date.now();
+      const defaultBuildings = [{ id: 'b' + ts, name: 'Bâtiment 1', floors: [{ id: 'f' + ts, name: 'RDC' }] }];
+      migrated = [{ id: newId, name: 'Carte 1', nodes: [], edges: [], buildings: defaultBuildings, createdAt: new Date().toISOString() }];
+      cur = newId;
+      storage?.setNetworkSimulations?.(effectiveLabId, { simulations: migrated, currentId: cur });
+    } else {
+      migrated = sims.map((s) => {
+        if (!s.buildings || s.buildings.length === 0) {
+          const ts = Date.now();
+          return { ...s, buildings: [{ id: 'b' + ts, name: 'Bâtiment 1', floors: [{ id: 'f' + ts, name: 'RDC' }] }] };
+        }
+        return s;
+      });
+      if (migrated.some((s, i) => s !== sims[i])) {
+        storage?.setNetworkSimulations?.(effectiveLabId, { simulations: migrated, currentId: cur });
+      }
     }
-    setSimulations(sims);
+    setSimulations(migrated);
     setCurrentSimId(cur);
   }, [effectiveLabId, storage]);
 
@@ -592,7 +665,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       setNodes([]);
       setEdges([]);
     }
-    setSelectedId(null);
+    setSelectedIds([]);
     setConnectFrom(null);
     setLinkMode(false);
     initialLoad.current = true;
@@ -665,7 +738,160 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     const next = [...buildings, { id, name: name.trim(), floors: [{ id: 'f' + Date.now(), name: 'RDC' }] }];
     persistCurrentSim(nodes, edges, next);
   };
+
+  /** Un bâtiment par défaut (Bâtiment 1 + RDC) pour chaque nouvelle carte. */
+  const getDefaultBuildingsForNewSim = () => {
+    const ts = Date.now();
+    return [{ id: 'b' + ts, name: 'Bâtiment 1', floors: [{ id: 'f' + ts, name: 'RDC' }] }];
+  };
   const getBuildingDeviceCount = (buildingId) => nodes.filter((n) => n.buildingId === buildingId).length;
+  /** Nombre d'appareils sur un étage donné (pour affichage plans de site). */
+  const getFloorDeviceCount = (buildingId, floorId) =>
+    nodes.filter((n) => n.buildingId === buildingId && n.buildingFloorId === floorId).length;
+  /** Nœuds visibles sur la carte selon le lieu de travail (workplace). En "Toute la carte" on affiche tous les nœuds (bâtiments + hors bâtiments). */
+  const visibleNodeIds = (() => {
+    if (workplace == null) return new Set(nodes.map((n) => n.id));
+    if (workplace === '__unassigned__') return new Set(nodes.filter((n) => !n.buildingId).map((n) => n.id));
+    if (workplace.includes(':')) {
+      const [bId, fId] = workplace.split(':');
+      return new Set(nodes.filter((n) => n.buildingId === bId && n.buildingFloorId === fId).map((n) => n.id));
+    }
+    return new Set(nodes.filter((n) => n.buildingId === workplace).map((n) => n.id));
+  })();
+  const visibleNodes = nodes.filter((n) => visibleNodeIds.has(n.id));
+  const visibleEdges = edges.filter((e) =>
+    visibleNodeIds.has(e.from) && visibleNodeIds.has(e.to));
+  /** Bâtiment et étage courants pour le placement (dérivés du lieu de travail). */
+  const workplaceBuildingId = workplace && workplace !== '__unassigned__' ? (workplace.includes(':') ? workplace.split(':')[0] : workplace) : null;
+  const workplaceFloorId = workplace && workplace.includes(':') ? workplace.split(':')[1] : null;
+  /** Liste des appareils dans un bâtiment (optionnellement un étage) pour affichage dans la carte bâtiment. */
+  const getDevicesInBuilding = (buildingId, floorId = null) =>
+    nodes.filter(
+      (n) =>
+        n.buildingId === buildingId &&
+        (floorId == null || n.buildingFloorId === floorId)
+    );
+  /** Niveau d'étage pour l'affichage : RDC = 0, Étage 1/2/3 = 1/2/3, Sous-sol/-1 = -1. Tri décroissant = haut du bâtiment en premier (Étage 3, 2, 1, RDC, Sous-sol). */
+  const getFloorLevel = (name) => {
+    if (!name || typeof name !== 'string') return 0;
+    const s = name.trim().toLowerCase();
+    if (/sous-sol|basement|-1\b|rez\s*de\s*chaussée\s*inf/.test(s)) return -1;
+    if (/rdc|rez|rez-de-chaussée|chaussée/.test(s)) return 0;
+    const m = s.match(/étage\s*(\d+)/i) || s.match(/(\d+)\s*er?\s*étage/i);
+    if (m) return parseInt(m[1], 10) || 0;
+    return 0;
+  };
+  const getFloorDisplayOrder = (floors) => {
+    if (!floors || !floors.length) return [];
+    return [...floors].sort((a, b) => getFloorLevel(b.name) - getFloorLevel(a.name));
+  };
+  /** Calcule les zones à dessiner pour chaque bâtiment/étage (vue "Toute la carte"). Grille fixe : une colonne par bâtiment, étages empilés (RDC en bas, Étage 1/2/3 au-dessus). */
+  const getBuildingFloorZones = () => {
+    const zones = [];
+    const MARGIN = 40;
+    const SLOT_W = 260;
+    const SLOT_H = 120;
+    const GAP = 24;
+    buildings.forEach((b, bi) => {
+      const floors = b.floors || [];
+      if (floors.length === 0) {
+        const x = MARGIN + bi * (SLOT_W + GAP);
+        const y = MARGIN;
+        zones.push({ buildingId: b.id, buildingName: b.name, floorId: null, floorName: null, x, y, w: SLOT_W, h: SLOT_H });
+        return;
+      }
+      const ordered = getFloorDisplayOrder(floors);
+      ordered.forEach((f, fi) => {
+        const x = MARGIN + bi * (SLOT_W + GAP);
+        const y = MARGIN + fi * (SLOT_H + GAP);
+        zones.push({ buildingId: b.id, buildingName: b.name, floorId: f.id, floorName: f.name, x, y, w: SLOT_W, h: SLOT_H });
+      });
+    });
+    const hasUnassigned = nodes.some((n) => !n.buildingId);
+    if (hasUnassigned) {
+      const x = MARGIN + buildings.length * (SLOT_W + GAP);
+      const y = MARGIN;
+      zones.push({ buildingId: '__unassigned__', buildingName: 'Hors bâtiments', floorId: null, floorName: null, x, y, w: SLOT_W, h: SLOT_H, isUnassigned: true });
+    }
+    return zones;
+  };
+  /** Contour global de chaque bâtiment (union des zones étages). Exclut la zone "Hors bâtiments" qui n'est pas un bâtiment. */
+  const getBuildingOuterBounds = () => {
+    const zones = getBuildingFloorZones().filter((z) => z.buildingId !== '__unassigned__');
+    const byBuilding = {};
+    zones.forEach((z) => {
+      const key = z.buildingId;
+      if (!byBuilding[key]) byBuilding[key] = { buildingId: z.buildingId, buildingName: z.buildingName, minX: z.x, minY: z.y, maxX: z.x + z.w, maxY: z.y + z.h };
+      else {
+        byBuilding[key].minX = Math.min(byBuilding[key].minX, z.x);
+        byBuilding[key].minY = Math.min(byBuilding[key].minY, z.y);
+        byBuilding[key].maxX = Math.max(byBuilding[key].maxX, z.x + z.w);
+        byBuilding[key].maxY = Math.max(byBuilding[key].maxY, z.y + z.h);
+      }
+    });
+    const OUTER_PAD = 8;
+    const OUTER_TOP_LABEL = 28;
+    return Object.values(byBuilding).map((b) => ({
+      buildingId: b.buildingId,
+      buildingName: b.buildingName,
+      x: b.minX - OUTER_PAD,
+      y: b.minY - OUTER_TOP_LABEL - OUTER_PAD,
+      w: b.maxX - b.minX + OUTER_PAD * 2,
+      h: b.maxY - b.minY + OUTER_TOP_LABEL + OUTER_PAD * 2,
+    }));
+  };
+  const ZONE_PAD = 16;
+  /** En vue "Toute la carte", position d'affichage d'un nœud (dans sa zone, sans chevauchement entre étages). Sinon retourne (n.x, n.y). */
+  const getNodeDrawPosition = (n) => {
+    if (workplace != null) return { x: n.x, y: n.y };
+    const zones = getBuildingFloorZones();
+    const bid = n.buildingId ?? '__unassigned__';
+    const fid = n.buildingFloorId ?? null;
+    const z = zones.find((zn) => zn.buildingId === bid && (zn.floorId === fid || (zn.floorId == null && fid == null)));
+    if (!z) return { x: n.x, y: n.y };
+    const nodesInZone = nodes.filter((nn) => (nn.buildingId ?? '__unassigned__') === bid && (nn.buildingFloorId ?? null) === fid);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodesInZone.forEach((nn) => {
+      const def = NODE_TYPES.find((t) => t.type === nn.type) || NODE_TYPES[0];
+      const w = def?.w || 56, h = def?.h || 36;
+      minX = Math.min(minX, nn.x); minY = Math.min(minY, nn.y);
+      maxX = Math.max(maxX, nn.x + w); maxY = Math.max(maxY, nn.y + h);
+    });
+    if (minX === Infinity) return { x: z.x + ZONE_PAD, y: z.y + ZONE_PAD };
+    const floorW = maxX - minX || 1, floorH = maxY - minY || 1;
+    const scale = Math.min((z.w - 2 * ZONE_PAD) / floorW, (z.h - 2 * ZONE_PAD) / floorH, 1);
+    const drawX = z.x + ZONE_PAD + (n.x - minX) * scale;
+    const drawY = z.y + ZONE_PAD + (n.y - minY) * scale;
+    return { x: drawX, y: drawY };
+  };
+  const CANVAS_PAD = 60;
+  /** Bounds du contenu (nœuds + zones) pour étendre la carte/grille comme draw.io. */
+  const contentBounds = useMemo(() => {
+    const zones = getBuildingFloorZones();
+    let left = 0, top = 0, right = minCanvasWidth, bottom = minCanvasHeight;
+    nodes.forEach((n) => {
+      const def = NODE_TYPES.find((t) => t.type === n.type) || NODE_TYPES[0];
+      const w = def?.w || 56, h = def?.h || 36;
+      left = Math.min(left, n.x);
+      top = Math.min(top, n.y);
+      right = Math.max(right, n.x + w);
+      bottom = Math.max(bottom, n.y + h);
+    });
+    zones.forEach((z) => {
+      left = Math.min(left, z.x);
+      top = Math.min(top, z.y);
+      right = Math.max(right, z.x + z.w);
+      bottom = Math.max(bottom, z.y + z.h);
+    });
+    right = Math.max(right, left + minCanvasWidth - CANVAS_PAD);
+    bottom = Math.max(bottom, top + minCanvasHeight - CANVAS_PAD);
+    const canvasWidth = right - left + 2 * CANVAS_PAD;
+    const canvasHeight = bottom - top + 2 * CANVAS_PAD;
+    return { left, top, right, bottom, canvasWidth, canvasHeight, gridX: left - CANVAS_PAD, gridY: top - CANVAS_PAD };
+  }, [nodes, buildings, minCanvasWidth, minCanvasHeight]);
+  const canvasWidth = contentBounds.canvasWidth;
+  const canvasHeight = contentBounds.canvasHeight;
+
   const renameBuilding = (id) => {
     const b = buildings.find((x) => x.id === id);
     const name = prompt('Nouveau nom ?', b?.name || '');
@@ -679,7 +905,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     const nextNodes = nodes.map((x) => (x.buildingId === id ? { ...x, buildingId: undefined, buildingFloorId: undefined } : x));
     setNodes(nextNodes);
     persistCurrentSim(nextNodes, edges, nextBuildings);
-    if (currentBuildingId === id) setCurrentBuildingId(null);
+    if (workplace === id || (workplace && workplace.startsWith(id + ':'))) setWorkplace(null);
   };
 
   const addBuildingFloor = (buildingId) => {
@@ -691,15 +917,40 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     persistCurrentSim(nodes, edges, next);
   };
 
+  const renameBuildingFloor = (buildingId, floorId) => {
+    const b = buildings.find((x) => x.id === buildingId);
+    const f = b?.floors?.find((x) => x.id === floorId);
+    const name = prompt('Nom de l\'étage / salle ?', f?.name || '');
+    if (name == null) return;
+    if (!name.trim()) return;
+    const next = buildings.map((x) =>
+      x.id === buildingId ? { ...x, floors: (x.floors || []).map((fl) => (fl.id === floorId ? { ...fl, name: name.trim() } : fl)) } : x
+    );
+    persistCurrentSim(nodes, edges, next);
+  };
+
+  const deleteBuildingFloor = (buildingId, floorId) => {
+    const count = getFloorDeviceCount(buildingId, floorId);
+    if (count > 0 && !confirm(`${count} appareil(s) sur cet étage seront mis « sans étage » dans ce bâtiment. Continuer ?`)) return;
+    const nextBuildings = buildings.map((x) =>
+      x.id === buildingId ? { ...x, floors: (x.floors || []).filter((fl) => fl.id !== floorId) } : x
+    );
+    const nextNodes = nodes.map((n) =>
+      n.buildingId === buildingId && n.buildingFloorId === floorId ? { ...n, buildingFloorId: undefined } : n
+    );
+    setNodes(nextNodes);
+    persistCurrentSim(nextNodes, edges, nextBuildings);
+  };
+
   const addSimulation = () => {
     const id = 'sim' + Date.now();
     const name = 'Carte ' + (simulations.length + 1);
-    const next = [...simulations, { id, name, nodes: [], edges: [], buildings: [], createdAt: new Date().toISOString() }];
+    const next = [...simulations, { id, name, nodes: [], edges: [], buildings: getDefaultBuildingsForNewSim(), createdAt: new Date().toISOString() }];
     setSimulations(next);
     setCurrentSimId(id);
     setNodes([]);
     setEdges([]);
-    setCurrentBuildingId(null);
+    setWorkplace(null);
     storage?.setNetworkSimulations?.(effectiveLabId, { simulations: next, currentId: id });
   };
 
@@ -747,6 +998,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     setNodes(newNodes);
     setEdges(newEdges);
     setCurrentBuildingId(null);
+    setWorkplace(null);
     storage?.setNetworkSimulations?.(effectiveLabId, { simulations: next, currentId: id });
   };
 
@@ -787,25 +1039,107 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     ]);
   };
 
-  /** Ajoute un nœud à la position (x,y) dans le repère SVG (modèle choisi avant placement, type Packet Tracer). */
+  /** Ajoute un nœud à la position (x,y) dans le repère SVG (modèle choisi avant placement, type Packet Tracer). Respecte une zone de collision minimale entre appareils. */
   const addNodeAt = (type, svgX, svgY, deviceModel) => {
     const def = NODE_TYPES.find((t) => t.type === type) || NODE_TYPES[0];
     const w = def?.w || 56;
     const h = def?.h || 36;
-    const x = Math.max(0, Math.min(canvasWidth - w, svgX - w / 2));
-    const y = Math.max(0, Math.min(canvasHeight - h, svgY - h / 2));
+    const gx = contentBounds.gridX;
+    const gy = contentBounds.gridY;
+    const maxX = contentBounds.right + CANVAS_PAD - w;
+    const maxY = contentBounds.bottom + CANVAS_PAD - h;
+    let x = Math.max(gx, Math.min(maxX, svgX - w / 2));
+    let y = Math.max(gy, Math.min(maxY, svgY - h / 2));
+
+    const bid = (type === 'antenna' || type === 'backbone') ? undefined : (workplaceBuildingId || undefined);
+    const fid = (type === 'antenna' || type === 'backbone') ? null : (workplaceFloorId ?? null);
+    const peers = getPeersForCollision(nodes, bid, fid);
+    const pad = NODE_COLLISION_PADDING;
+    const checkRect = { x: x - pad, y: y - pad, w: w + pad * 2, h: h + pad * 2 };
+    const collides = () => peers.some((nn) => {
+      if (!nn) return false;
+      const d = NODE_TYPES.find((t) => t.type === nn.type) || NODE_TYPES[0];
+      const other = getNodeLogicalBounds(nn, d, pad);
+      return rectsOverlap(checkRect, other);
+    });
+
+    if (collides()) {
+      const step = pad + 12;
+      const tries = [
+        [x + step, y], [x - step, y], [x, y + step], [x, y - step],
+        [x + step, y + step], [x - step, y - step], [x + step, y - step], [x - step, y + step],
+      ];
+      let placed = false;
+      for (const [nx, ny] of tries) {
+        const cx = Math.max(gx, Math.min(maxX, nx));
+        const cy = Math.max(gy, Math.min(maxY, ny));
+        checkRect.x = cx - pad;
+        checkRect.y = cy - pad;
+        if (!peers.some((nn) => {
+          const d = NODE_TYPES.find((t) => t.type === nn.type) || NODE_TYPES[0];
+          const other = getNodeLogicalBounds(nn, d, pad);
+          return rectsOverlap(checkRect, other);
+        })) {
+          x = cx;
+          y = cy;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) return;
+    }
+
     const id = 'n' + Date.now();
     const count = nodes.filter((n) => n.type === type).length + 1;
     const config = defaultNodeConfig(type);
     const model = deviceModel || placeModel || config.deviceModel;
-    setNodes((n) => [...n, { id, type, x, y, label: def.label + ' ' + count, buildingId: currentBuildingId || undefined, ...config, deviceModel: model }]);
+    const b = workplaceBuildingId && type !== 'antenna' && type !== 'backbone' ? buildings.find((x) => x.id === workplaceBuildingId) : null;
+    const floors = b?.floors || [];
+    const defaultFloorId = workplaceFloorId || (floors.length > 0 ? floors[0].id : undefined);
+    setNodes((n) => [
+      ...n,
+      {
+        id,
+        type,
+        x,
+        y,
+        label: def.label + ' ' + count,
+        buildingId: (type === 'antenna' || type === 'backbone') ? undefined : (workplaceBuildingId || undefined),
+        buildingFloorId: (type === 'antenna' || type === 'backbone') ? undefined : (workplaceBuildingId ? defaultFloorId : undefined),
+        ...config,
+        deviceModel: model,
+      },
+    ]);
   };
 
   const getNodePos = (id) => {
     const n = nodes.find((x) => x.id === id);
     if (!n) return { x: 0, y: 0 };
     const def = NODE_TYPES.find((t) => t.type === n.type);
-    return { x: n.x + (def?.w || 40) / 2, y: n.y + (def?.h || 30) / 2 };
+    const w = def?.w || 40, h = def?.h || 30;
+    const pos = getNodeDrawPosition(n);
+    return { x: pos.x + w / 2, y: pos.y + h / 2 };
+  };
+
+  /** Point de sortie/entrée sur le contour du nœud vers un point cible (pour que plusieurs liens ne partent pas du même centre). */
+  const getNodeEdgePoint = (id, toward) => {
+    const n = nodes.find((x) => x.id === id);
+    if (!n || !toward) return getNodePos(id);
+    const def = NODE_TYPES.find((t) => t.type === n.type);
+    const w = def?.w || 40;
+    const h = def?.h || 30;
+    const pos = getNodeDrawPosition(n);
+    const cx = pos.x + w / 2;
+    const cy = pos.y + h / 2;
+    let dx = toward.x - cx;
+    let dy = toward.y - cy;
+    if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) return { x: cx, y: cy };
+    const halfW = w / 2;
+    const halfH = h / 2;
+    const tx = Math.abs(dx) > 1e-6 ? halfW / Math.abs(dx) : Infinity;
+    const ty = Math.abs(dy) > 1e-6 ? halfH / Math.abs(dy) : Infinity;
+    const t = Math.min(tx, ty, 1);
+    return { x: cx + dx * t, y: cy + dy * t };
   };
 
   const getNextPort = (nodeId) => {
@@ -816,7 +1150,8 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     return max + 1;
   };
 
-  const selectedNode = selectedId ? nodes.find((x) => x.id === selectedId) : null;
+  const selectedNode = selectedIds.length === 1 ? nodes.find((x) => x.id === selectedIds[0]) : null;
+  const selectedNodes = nodes.filter((n) => selectedIds.includes(n.id));
 
   const updateNodeConfig = (id, patch) => {
     setNodes((n) => n.map((x) => (x.id === id ? { ...x, ...patch } : x)));
@@ -836,12 +1171,13 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
   };
 
   const deleteSelected = () => {
-    if (!selectedId) return;
-    const nextNodes = nodes.filter((x) => x.id !== selectedId);
-    const nextEdges = edges.filter((x) => x.from !== selectedId && x.to !== selectedId);
+    if (selectedIds.length === 0) return;
+    const ids = new Set(selectedIds);
+    const nextNodes = nodes.filter((x) => !ids.has(x.id));
+    const nextEdges = edges.filter((x) => !ids.has(x.from) && !ids.has(x.to));
     setNodes(nextNodes);
     setEdges(nextEdges);
-    setSelectedId(null);
+    setSelectedIds([]);
     persistCurrentSim(nextNodes, nextEdges);
   };
 
@@ -869,11 +1205,36 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     }
     if (e.target !== svgRef.current && e.target.getAttribute('data-node-id')) return;
     if (linkMode) setConnectFrom(null);
-    else setSelectedId(null);
+    else if (!e.shiftKey) setSelectedIds([]);
     setSelectedEdgeId(null);
   };
 
+  /** Clic droit sur la carte : sélectionner l'élément sous le curseur (nœud → sélection pour déplacer, zone bâtiment/étage → lieu de travail). */
+  const handleCanvasContextMenu = (e) => {
+    e.preventDefault();
+    const nodeEl = e.target.closest && e.target.closest('[data-node-id]');
+    if (nodeEl) {
+      const id = nodeEl.getAttribute('data-node-id');
+      if (id) setSelectedIds([id]);
+      setSelectedEdgeId(null);
+      return;
+    }
+    const pt = clientToSvg(e.clientX, e.clientY);
+    const zones = getBuildingFloorZones();
+    const z = zones.find((zn) => pt.x >= zn.x && pt.x <= zn.x + zn.w && pt.y >= zn.y && pt.y <= zn.y + zn.h);
+    if (z) {
+      const wp = z.floorId ? z.buildingId + ':' + z.floorId : z.buildingId;
+      setWorkplace(wp);
+    }
+  };
+
   const handleCanvasMouseDown = (e) => {
+    if (e.target && e.target.getAttribute && e.target.getAttribute('data-building-id')) {
+      setDragBuildingId(e.target.getAttribute('data-building-id'));
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if (e.target.closest && e.target.closest('[data-node-id]')) return;
     if (e.target === svgRef.current || e.target.tagName === 'svg') {
       e.preventDefault();
@@ -912,16 +1273,18 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       const rect = wrap.getBoundingClientRect();
       const factor = e.deltaY > 0 ? 1 / 1.15 : 1.15;
       const newZoom = Math.min(4, Math.max(0.2, z * factor));
-      const mx = p.x + (e.clientX - rect.left) / rect.width * (800 / z);
-      const my = p.y + (e.clientY - rect.top) / rect.height * (520 / z);
-      const newPanX = mx - (e.clientX - rect.left) / rect.width * (800 / newZoom);
-      const newPanY = my - (e.clientY - rect.top) / rect.height * (520 / newZoom);
+      const cw = contentBounds.canvasWidth;
+      const ch = contentBounds.canvasHeight;
+      const mx = p.x + (e.clientX - rect.left) / rect.width * (cw / z);
+      const my = p.y + (e.clientY - rect.top) / rect.height * (ch / z);
+      const newPanX = mx - (e.clientX - rect.left) / rect.width * (cw / newZoom);
+      const newPanY = my - (e.clientY - rect.top) / rect.height * (ch / newZoom);
       setZoom(newZoom);
       setPan({ x: newPanX, y: newPanY });
     };
     wrap.addEventListener('wheel', onWheel, { passive: false });
     return () => wrap.removeEventListener('wheel', onWheel);
-  }, []);
+  }, [contentBounds.canvasWidth, contentBounds.canvasHeight]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -929,10 +1292,11 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
         setPlaceMode(null);
         setLinkMode(false);
         setConnectFrom(null);
-        setSelectedId(null);
+        setSelectedIds([]);
+        setDragBuildingId(null);
       }
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedId && !e.target.closest('input') && !e.target.closest('textarea')) {
+        if (selectedIds.length > 0 && !e.target.closest('input') && !e.target.closest('textarea')) {
           e.preventDefault();
           deleteSelected();
         }
@@ -940,7 +1304,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedId]);
+  }, [selectedIds]);
 
   const cancelLinkMode = () => {
     setLinkMode(false);
@@ -974,13 +1338,14 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       const fromPort = getNextPort(connectFrom);
       const toPort = getNextPort(id);
       const defaultLt = getDefaultLinkType(fromNode, toNode);
+      setConnectLinkType(defaultLt);
       setEdges((ed) => [
         ...ed,
         {
           id: 'e' + Date.now(),
           from: connectFrom,
           to: id,
-          linkType: connectLinkType || defaultLt,
+          linkType: defaultLt,
           fromPort,
           toPort,
         },
@@ -992,7 +1357,14 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       setConnectFrom(id);
       return;
     }
-    setSelectedId(id);
+    if (e.shiftKey) {
+      setSelectedIds((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      );
+      setSelectedEdgeId(null);
+      return;
+    }
+    setSelectedIds([id]);
     setSelectedEdgeId(null);
   };
 
@@ -1035,6 +1407,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     if (placeMode) setPlaceMode(null);
     const n = nodes.find((x) => x.id === id);
     if (!n) return;
+    dragStartPosRef.current = { x: n.x, y: n.y };
     const pt = clientToSvg(e.clientX, e.clientY);
     setDragId(id);
     setDragOff({ x: pt.x - n.x, y: pt.y - n.y });
@@ -1050,7 +1423,25 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     setNodes((n) => n.map((x) => (x.id === dragId ? { ...x, x: nx, y: ny } : x)));
   };
 
-  const handleMouseUp = () => setDragId(null);
+  const handleMouseUp = () => {
+    if (dragId) {
+      const n = nodes.find((x) => x.id === dragId);
+      if (n) {
+        const def = NODE_TYPES.find((t) => t.type === n.type) || NODE_TYPES[0];
+        const pad = NODE_COLLISION_PADDING;
+        const peers = getPeersForCollision(nodes, n.buildingId, n.buildingFloorId).filter((nn) => nn.id !== dragId);
+        const checkRect = getNodeLogicalBounds({ ...n, x: n.x, y: n.y }, def, pad);
+        const collides = peers.some((nn) => {
+          const d = NODE_TYPES.find((t) => t.type === nn.type) || NODE_TYPES[0];
+          return rectsOverlap(checkRect, getNodeLogicalBounds(nn, d, pad));
+        });
+        if (collides) {
+          setNodes((prev) => prev.map((x) => (x.id === dragId ? { ...x, x: dragStartPosRef.current.x, y: dragStartPosRef.current.y } : x)));
+        }
+      }
+    }
+    setDragId(null);
+  };
 
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
@@ -1061,11 +1452,41 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     };
   }, [dragId, dragOff]);
 
+  /** Glisser-déposer d'un bâtiment (vue "Toute la carte") : réordonner les bâtiments pour éviter chevauchement. */
+  useEffect(() => {
+    if (!dragBuildingId) return;
+    const MARGIN = 40, SLOT_W = 260, GAP = 24;
+    const onMove = (e) => {
+      buildingDropPosRef.current = clientToSvg(e.clientX, e.clientY);
+    };
+    const onUp = (e) => {
+      const pt = clientToSvg(e.clientX, e.clientY);
+      let col = Math.floor((pt.x - MARGIN) / (SLOT_W + GAP));
+      col = Math.max(0, Math.min(buildings.length - 1, col));
+      const fromIndex = buildings.findIndex((b) => b.id === dragBuildingId);
+      if (fromIndex === -1 || fromIndex === col) {
+        setDragBuildingId(null);
+        return;
+      }
+      const newOrder = [...buildings];
+      const [dragged] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(col, 0, dragged);
+      persistCurrentSim(nodes, edges, newOrder);
+      setDragBuildingId(null);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [dragBuildingId]);
+
   const clearTopology = () => {
     if (!confirm('Effacer toute la topologie de cette carte ?')) return;
     setNodes([]);
     setEdges([]);
-    setSelectedId(null);
+    setSelectedIds([]);
     setConnectFrom(null);
     setLinkMode(false);
     persistCurrentSim([], [], buildings);
@@ -1081,7 +1502,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
 
   const [packetPosition, setPacketPosition] = useState({ edgeIndex: 0, t: 0 });
   useEffect(() => {
-    if (!simulationMode || simulationPaused || edges.length === 0) return;
+    if (!simulationMode || simulationPaused || visibleEdges.length === 0) return;
     const speed = 0.008;
     let raf;
     const tick = () => {
@@ -1090,7 +1511,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
         let idx = prev.edgeIndex;
         if (nextT >= 1) {
           nextT = 0;
-          idx = (idx + 1) % edges.length;
+          idx = (idx + 1) % visibleEdges.length;
         }
         return { edgeIndex: idx, t: nextT };
       });
@@ -1098,11 +1519,12 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [simulationMode, simulationPaused, edges.length]);
+  }, [simulationMode, simulationPaused, visibleEdges.length]);
 
   const packetCoords = (() => {
-    if (!simulationMode || edges.length === 0) return null;
-    const ed = edges[packetPosition.edgeIndex];
+    if (!simulationMode || simulationPaused || visibleEdges.length === 0) return null;
+    const idx = packetPosition.edgeIndex % visibleEdges.length;
+    const ed = visibleEdges[idx];
     if (!ed) return null;
     const a = getNodePos(ed.from);
     const b = getNodePos(ed.to);
@@ -1162,49 +1584,127 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
         </div>
       </div>
 
-      <div class="network-sim-section network-sim-section-buildings" data-testid="sim-buildings">
-        <h3 class="network-sim-section-title">Bâtiments / Zones</h3>
-        <div class="network-sim-how-it-works" role="region" aria-label="Comment utiliser les bâtiments">
-          <strong>Comment ça marche :</strong>
+      <div class="network-sim-section network-sim-section-buildings" data-testid="sim-buildings" style="display:none">
+        <h3 class="network-sim-section-title">Vue / Plan du site (déplacé à droite de la carte)</h3>
+        <p class="network-sim-section-desc text-muted" style="margin:0 0 0.75rem">
+          Structure type architecte : créez des bâtiments (ou zones), ajoutez des étages ou salles, puis assignez les appareils depuis la carte ou le panneau d’un nœud.
+        </p>
+        <details class="network-sim-how-it-works-details">
+          <summary>Comment ça marche</summary>
           <ol class="network-sim-how-steps">
-            <li>Créez un bâtiment (ou zone) avec le bouton <em>+ Nouveau bâtiment</em>.</li>
-            <li><em>Optionnel :</em> sur chaque carte de bâtiment ci‑dessous, ajoutez des étages avec <em>+ étage</em>.</li>
-            <li>Pour assigner un appareil à un bâtiment : sélectionnez l’appareil sur la carte, puis dans le panneau de droite choisissez <em>Bâtiment / Zone</em> et, si besoin, <em>Étage / Salle</em>. Vous pouvez aussi choisir un bâtiment dans la liste « Nouveaux appareils dans » avant d’ajouter un appareil pour qu’il soit assigné automatiquement.</li>
+            <li>Créez un bâtiment avec <strong>+ Bâtiment</strong>.</li>
+            <li>Dans chaque carte bâtiment, ajoutez des étages avec <strong>+ Ajouter un étage</strong>.</li>
+            <li><strong>Cliquez sur « Toute la carte »</strong>, sur un <strong>bâtiment</strong> (ligne avec 🏢) ou sur un <strong>étage</strong> (ligne avec ▫) pour afficher cette vue sur la carte. Les nouveaux appareils sont placés dans le lieu affiché.</li>
           </ol>
-        </div>
-        <div class="network-sim-buildings-row">
-          <div class="network-sim-buildings-controls">
-            <label class="network-sim-label">Nouveaux appareils dans :</label>
-            <select
-              class="api-client-select network-sim-select"
-              value={currentBuildingId || ''}
-              onInput={(e) => setCurrentBuildingId(e.target.value || null)}
-              title="Les appareils que vous ajoutez sur la carte seront assignés à ce bâtiment"
-            >
-              <option value="">Carte (aucun bâtiment)</option>
-              {buildings.map((b) => (
-                <option key={b.id} value={b.id}>{escapeHtml(b.name)} ({getBuildingDeviceCount(b.id)} app.)</option>
-              ))}
-            </select>
-            <button type="button" class="btn btn-primary" onClick={addBuilding}>+ Nouveau bâtiment</button>
+        </details>
+        <div class="network-sim-buildings-toolbar">
+          <div class="network-sim-buildings-toolbar-primary">
+            {workplace != null && (
+              <button type="button" class="btn btn-secondary" onClick={() => setWorkplace(null)} title="Afficher toute la carte">
+                Tout afficher
+              </button>
+            )}
+            <button type="button" class="btn btn-primary" onClick={addBuilding} title="Créer un nouveau bâtiment">
+              + Bâtiment
+            </button>
           </div>
-          <div class="network-sim-building-chips">
-            {buildings.map((b) => {
+        </div>
+        <div class="network-sim-building-cards">
+          <button
+            type="button"
+            class={`network-sim-building-card network-sim-view-all-card ${workplace == null ? 'network-sim-floor-item-active' : ''}`}
+            onClick={() => setWorkplace(null)}
+            title="Voir toute la carte avec tous les bâtiments"
+          >
+            <span class="network-sim-building-card-icon" aria-hidden="true">🗺</span>
+            <span class="network-sim-building-card-title">Toute la carte</span>
+            <span class="network-sim-building-card-meta">Tous les bâtiments et étages</span>
+          </button>
+          {nodes.some((n) => !n.buildingId) && (
+            <button
+              type="button"
+              class={`network-sim-building-card network-sim-hors-batiments-card ${workplace === '__unassigned__' ? 'network-sim-floor-item-active' : ''}`}
+              onClick={() => setWorkplace('__unassigned__')}
+              title="Appareils positionnés librement sur la carte (antennes, backbone, etc.)"
+            >
+              <span class="network-sim-building-card-icon" aria-hidden="true">📍</span>
+              <span class="network-sim-building-card-title">Hors bâtiments</span>
+              <span class="network-sim-building-card-meta">{nodes.filter((n) => !n.buildingId).length} appareil{nodes.filter((n) => !n.buildingId).length !== 1 ? 's' : ''} · position libre</span>
+            </button>
+          )}
+          {buildings.length === 0 ? (
+            <div class="network-sim-building-empty" role="status">
+              <span class="network-sim-building-empty-icon" aria-hidden="true">🏢</span>
+              <p>Aucun bâtiment. Cliquez sur <strong>+ Bâtiment</strong> pour créer un plan de site.</p>
+            </div>
+          ) : (
+            buildings.map((b) => {
               const count = getBuildingDeviceCount(b.id);
               const floors = b.floors || [];
+              const orderedFloors = getFloorDisplayOrder(floors);
+              const buildingActive = workplace === b.id;
               return (
-                <div key={b.id} class="network-sim-building-chip" title={floors.length ? `Étages: ${floors.map((f) => f.name).join(', ')}` : ''}>
-                  <span class="network-sim-building-chip-name">{escapeHtml(b.name)}</span>
-                  <span class="network-sim-building-chip-meta">{count} app. · {floors.length} étage(s)</span>
-                  <div class="network-sim-building-chip-actions">
-                    <button type="button" class="btn btn-secondary btn-icon" onClick={() => addBuildingFloor(b.id)} title="Ajouter un étage">+ étage</button>
-                    <button type="button" class="btn btn-secondary btn-icon" onClick={() => renameBuilding(b.id)} title="Renommer">✎</button>
-                    <button type="button" class="btn btn-secondary btn-icon btn-icon-danger" onClick={() => deleteBuilding(b.id)} title="Supprimer">×</button>
+                <article key={b.id} class="network-sim-building-card" data-building-id={b.id}>
+                  <div class="network-sim-building-floors">
+                    {floors.length === 0 ? (
+                      <p class="network-sim-building-floors-empty text-muted">Aucun étage. Ajoutez-en un ci-dessous.</p>
+                    ) : (
+                      <ul class="network-sim-floor-list">
+                        {orderedFloors.map((f) => {
+                          const floorCount = getFloorDeviceCount(b.id, f.id);
+                          const floorActive = workplace === `${b.id}:${f.id}`;
+                          return (
+                            <li
+                              key={f.id}
+                              class={`network-sim-floor-item ${floorActive ? 'network-sim-floor-item-active' : ''}`}
+                              onClick={(e) => { if (!e.target.closest('button')) setWorkplace(`${b.id}:${f.id}`); }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setWorkplace(`${b.id}:${f.id}`); } }}
+                              title={`Voir ${escapeHtml(f.name)} sur la carte`}
+                              style="cursor:pointer"
+                            >
+                              <span class="network-sim-floor-icon" aria-hidden="true">▫</span>
+                              <span class="network-sim-floor-name">{escapeHtml(f.name)}</span>
+                              <span class="network-sim-floor-count">{floorCount} app.</span>
+                              <div class="network-sim-floor-actions">
+                                <button type="button" class="btn btn-secondary btn-icon btn-icon-sm" onClick={(e) => { e.stopPropagation(); renameBuildingFloor(b.id, f.id); }} title="Renommer l'étage">✎</button>
+                                <button type="button" class="btn btn-secondary btn-icon btn-icon-sm btn-icon-danger" onClick={(e) => { e.stopPropagation(); deleteBuildingFloor(b.id, f.id); }} title="Supprimer l'étage">×</button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    <div class="network-sim-building-add-floor">
+                      <button type="button" class="btn btn-secondary btn-small" onClick={() => addBuildingFloor(b.id)} title="Ajouter un étage ou une salle">
+                        + Ajouter un étage
+                      </button>
+                    </div>
                   </div>
-                </div>
+                  <header
+                    class={`network-sim-building-card-header ${buildingActive ? 'network-sim-building-card-header-active' : ''}`}
+                    onClick={(e) => { if (!e.target.closest('.network-sim-building-card-actions')) setWorkplace(b.id); }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setWorkplace(b.id); } }}
+                    title={buildingActive ? 'Vue : tout ce bâtiment' : `Voir tout ${escapeHtml(b.name)} sur la carte`}
+                    style="cursor:pointer"
+                  >
+                    <span class="network-sim-building-card-icon" aria-hidden="true">🏢</span>
+                    <div class="network-sim-building-card-title-wrap">
+                      <h4 class="network-sim-building-card-title">{escapeHtml(b.name)}</h4>
+                      <span class="network-sim-building-card-meta">{count} appareil{count !== 1 ? 's' : ''} · {floors.length} étage{floors.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div class="network-sim-building-card-actions" onClick={(e) => e.stopPropagation()}>
+                      <button type="button" class="btn btn-secondary btn-icon" onClick={(e) => { e.stopPropagation(); renameBuilding(b.id); }} title="Renommer le bâtiment">✎</button>
+                      <button type="button" class="btn btn-secondary btn-icon btn-icon-danger" onClick={(e) => { e.stopPropagation(); deleteBuilding(b.id); }} title="Supprimer le bâtiment">×</button>
+                    </div>
+                  </header>
+                </article>
               );
-            })}
-          </div>
+            })
+          )}
         </div>
       </div>
 
@@ -1221,11 +1721,15 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
           <button
             key={t.type}
             type="button"
-            class={`btn btn-secondary ${placeMode === t.type ? 'active' : ''}`}
+            class={`btn btn-secondary ${placeMode === t.type ? 'network-sim-device-btn-active' : ''}`}
             data-testid={t.type === 'firewall' ? 'sim-btn-firewall' : t.type === 'ap' ? 'sim-btn-ap' : t.type === 'cloud' ? 'sim-btn-cloud' : undefined}
-            onClick={() => { setPlaceMode(placeMode === t.type ? null : t.type); setPlaceModel(DEVICE_MODELS[t.type]?.[0]?.value ?? null); setLinkMode(false); }}
+            onClick={() => {
+              setPlaceMode(placeMode === t.type ? null : t.type);
+              setPlaceModel(DEVICE_MODELS[t.type]?.[0]?.value ?? null);
+              setLinkMode(false);
+            }}
             style={{ borderColor: t.color }}
-            title={`Choisir modèle puis cliquer sur la carte`}
+            title={placeMode === t.type ? 'Sélectionné — cliquer sur la carte pour placer ici' : (['antenna', 'backbone'].includes(t.type) ? 'Placer hors bâtiment (carte) — cliquer sur la carte sans changer la vue' : `Choisir modèle puis cliquer sur la carte`)}
           >
             {t.label}
           </button>
@@ -1238,7 +1742,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
               <button
                 key={m.value}
                 type="button"
-                class={`btn btn-secondary ${placeModel === m.value ? 'active' : ''}`}
+                class={`btn btn-secondary ${placeModel === m.value ? 'network-sim-device-btn-active' : ''}`}
                 onClick={() => setPlaceModel(m.value)}
                 title={m.label}
               >
@@ -1246,10 +1750,15 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
               </button>
             ))}
             <span class="network-sim-toolbar-hint">Modèle actuel : {(DEVICE_MODELS[placeMode] || []).find((m) => m.value === placeModel)?.label || placeModel || '—'}. Puis cliquez sur la carte.</span>
+            {workplace != null && (() => {
+              const b = buildings.find((x) => x.id === (workplace.includes(':') ? workplace.split(':')[0] : workplace));
+              const f = b && workplace.includes(':') ? (b.floors || []).find((x) => x.id === workplace.split(':')[1]) : null;
+              return b ? <span class="network-sim-toolbar-hint" style={{ fontWeight: 600 }}>→ Nouvel appareil dans : {escapeHtml(b.name)}{f ? ' — ' + escapeHtml(f.name) : ''}</span> : null;
+            })()}
             <button type="button" class="btn btn-secondary" onClick={() => { setPlaceMode(null); setPlaceModel(null); }}>Annuler</button>
           </>
         )}
-        {selectedId && !linkMode && (
+        {selectedIds.length > 0 && !linkMode && (
           <button type="button" class="topbar-btn danger" onClick={deleteSelected}>Supprimer le nœud</button>
         )}
         </div>
@@ -1259,13 +1768,13 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
           type="button"
           class={`btn ${linkMode ? 'btn-primary' : 'btn-secondary'}`}
           onClick={() => { setPlaceMode(null); setPlaceModel(null); setLinkMode(!linkMode); if (linkMode) cancelLinkMode(); }}
-          title="Choisis le type de câble puis clique sur le 1er appareil, puis le 2ème"
+          title="Clique sur le 1er appareil puis le 2ᵉ : le type (Droit/Croisé/WiFi) est choisi automatiquement."
         >
           {linkMode ? 'Mode liaison actif' : 'Relier 2 appareils'}
         </button>
         {linkMode && (
           <>
-            <span class="network-sim-toolbar-label">Type de câble :</span>
+            <span class="network-sim-toolbar-label">Type :</span>
             {LINK_CATEGORIES.map((cat) => (
               <span key={cat.id} style="display:inline-flex;align-items:center;flex-wrap:wrap;gap:0.25rem">
                 <span class="network-sim-toolbar-label" style="font-size:0.8rem;color:var(--text-muted)">{cat.label} :</span>
@@ -1284,7 +1793,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
               </span>
             ))}
             <span class="network-sim-toolbar-hint">
-              {connectFrom ? `2ème appareil : ${(nodes.find((n) => n.id === connectFrom)?.label || connectFrom)} → ?` : 'Clique sur le 1er appareil'}
+              {connectFrom ? `2ᵉ appareil : ${(nodes.find((n) => n.id === connectFrom)?.label || connectFrom)} → ? (type auto)` : 'Clique sur le 1er appareil — type auto (Droit/Croisé/WiFi) au 2ᵉ clic'}
             </span>
             <button type="button" class="btn btn-secondary" onClick={cancelLinkMode}>Annuler</button>
           </>
@@ -1327,20 +1836,20 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
           <label class="network-sim-toolbar-label" style="display:inline-flex;align-items:center;gap:0.35rem">
           Zone :
           <select
-            value={`${canvasWidth}x${canvasHeight}`}
+            value={`${minCanvasWidth}x${minCanvasHeight}`}
             onInput={(e) => {
               const v = e.target.value;
-              if (v === '1200x800') { setCanvasWidth(1200); setCanvasHeight(800); }
-              else if (v === '1600x900') { setCanvasWidth(1600); setCanvasHeight(900); }
-              else { setCanvasWidth(800); setCanvasHeight(520); }
+              if (v === '1200x800') { setMinCanvasWidth(1200); setMinCanvasHeight(800); }
+              else if (v === '1600x900') { setMinCanvasWidth(1600); setMinCanvasHeight(900); }
+              else { setMinCanvasWidth(800); setMinCanvasHeight(520); }
             }}
             class="api-client-select"
             style={{ width: 'auto', padding: '0.25rem 0.5rem', marginLeft: '0.25rem' }}
-            title="Taille de la zone posable"
+            title="Taille minimale de la zone (la zone s'étend avec le contenu)"
           >
-            <option value="800x520">800×520</option>
-            <option value="1200x800">1200×800</option>
-            <option value="1600x900">1600×900</option>
+            <option value="800x520">Min. 800×520</option>
+            <option value="1200x800">Min. 1200×800</option>
+            <option value="1600x900">Min. 1600×900</option>
           </select>
         </label>
         <label class="network-sim-toolbar-label" style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer">
@@ -1353,10 +1862,28 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       </div>
 
       <div class="network-sim-canvas-and-config">
-        <div class="network-sim-canvas-area">
+        <div class={`network-sim-canvas-area ${workplace == null ? 'network-sim-canvas-area-global' : ''}`}>
+          <div class="network-sim-canvas-caption" role="status">
+            {workplace == null ? 'Vue : Toute la carte' : workplace === '__unassigned__' ? 'Vue : Hors bâtiments' : (() => {
+              const b = buildings.find((x) => x.id === (workplace.includes(':') ? workplace.split(':')[0] : workplace));
+              const f = b && workplace.includes(':') ? (b.floors || []).find((x) => x.id === workplace.split(':')[1]) : null;
+              return 'Vue : ' + (b ? escapeHtml(b.name) + (f ? ' — ' + escapeHtml(f.name) : ' (tout)') : workplace);
+            })()}
+            {workplace != null && (
+              <button type="button" class="btn btn-secondary btn-small" style={{ marginLeft: '0.5rem' }} onClick={() => setWorkplace(null)} title="Revenir à toute la carte">
+                Quitter · Tout afficher
+              </button>
+            )}
+            {selectedIds.length > 0 && !placeMode && (
+              <span class="network-sim-canvas-selected-hint" style={{ marginLeft: '0.75rem', fontWeight: 600, color: 'var(--accent)' }}>
+                {selectedIds.length === 1 ? 'Sélectionné — glisser pour déplacer, clic ailleurs pour désélectionner' : `${selectedIds.length} appareils — Shift+clic pour ajouter/retirer, Suppr pour supprimer`}
+              </span>
+            )}
+          </div>
           <div
-          class={`network-sim-canvas-wrap ${placeMode ? 'network-sim-place-mode' : ''} ${isPanning ? 'network-sim-panning' : ''} ${dragId ? 'network-sim-dragging' : ''}`}
+          class={`network-sim-canvas-wrap ${placeMode ? 'network-sim-place-mode' : ''} ${isPanning ? 'network-sim-panning' : ''} ${dragId ? 'network-sim-dragging' : ''} ${dragBuildingId ? 'network-sim-dragging-building' : ''}`}
           ref={svgWrapRef}
+          onContextMenu={handleCanvasContextMenu}
           onMouseDownCapture={(e) => {
             e.preventDefault();
             if (typeof getSelection === 'function') getSelection().removeAllRanges();
@@ -1370,15 +1897,20 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
           {nodes.length === 0 && currentSimId && !placeMode && (
             <p class="section-desc text-muted" style="padding:1rem">Aucun nœud. Ajoute des équipements (PC, routeur, switch, serveur), relie-les, puis clique sur un nœud pour configurer IP / type.</p>
           )}
+          {workplace != null && visibleNodes.length === 0 && !placeMode && (
+            <p class="section-desc text-muted network-sim-filter-empty" style="padding:1rem">
+              Aucun appareil dans ce lieu. Cliquez sur un <strong>bâtiment</strong> ou un <strong>étage</strong> dans la liste pour en afficher un, ou ajoutez un appareil sur la carte. <button type="button" class="btn btn-secondary" style="marginTop:0.5rem" onClick={() => setWorkplace(null)}>Tout afficher</button>
+            </p>
+          )}
           <svg
             ref={svgRef}
             class="network-sim-canvas"
             width="100%"
-            height="520"
+            height={workplace == null ? '65vh' : '520'}
             viewBox={`${pan.x} ${pan.y} ${canvasWidth / zoom} ${canvasHeight / zoom}`}
             preserveAspectRatio="xMidYMid meet"
             onClick={handleSvgClick}
-            style={{ display: (nodes.length || placeMode) ? 'block' : 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+            style={{ display: (visibleNodes.length || placeMode || (workplace == null && getBuildingFloorZones().length > 0)) ? 'block' : 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
           >
             {snapToGrid && (
               <defs>
@@ -1387,7 +1919,64 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 </pattern>
               </defs>
             )}
-            {snapToGrid && <rect width={canvasWidth} height={canvasHeight} fill="url(#network-sim-grid)" />}
+            {snapToGrid && <rect x={contentBounds.gridX} y={contentBounds.gridY} width={canvasWidth} height={canvasHeight} fill="url(#network-sim-grid)" />}
+            {workplace == null && getBuildingOuterBounds().map((b) => (
+              <g key={'outer-' + b.buildingId}>
+                <rect
+                  x={b.x}
+                  y={b.y}
+                  width={b.w}
+                  height={b.h}
+                  rx="12"
+                  ry="12"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.4)"
+                  strokeWidth="2.5"
+                  strokeDasharray="8 5"
+                  pointerEvents="none"
+                  class="network-sim-building-outer"
+                />
+                <rect
+                  x={b.x}
+                  y={b.y}
+                  width={b.w}
+                  height={b.h}
+                  rx="12"
+                  ry="12"
+                  fill="transparent"
+                  pointerEvents="all"
+                  data-building-id={b.buildingId}
+                  class="network-sim-building-outer-drag"
+                  style={{ cursor: dragBuildingId === b.buildingId ? 'grabbing' : 'grab' }}
+                  aria-label={`Déplacer ${escapeHtml(b.buildingName)}`}
+                />
+                <rect x={b.x + 4} y={b.y + 4} width={Math.min(b.w - 8, 160)} height="20" rx="4" fill="rgba(0, 0, 0, 0.8)" pointerEvents="none" />
+                <text x={b.x + 12} y={b.y + 18} fill="rgba(255, 255, 255, 0.95)" fontSize="12" fontWeight="700" pointerEvents="none">
+                  {escapeHtml(b.buildingName)}
+                </text>
+              </g>
+            ))}
+            {workplace == null && getBuildingFloorZones().map((z, idx) => (
+              <g key={z.buildingId + '-' + (z.floorId || 'all')} class={z.isUnassigned ? 'network-sim-zone-hors-batiments' : 'network-sim-building-zone'}>
+                <rect
+                  x={z.x}
+                  y={z.y}
+                  width={z.w}
+                  height={z.h}
+                  rx="8"
+                  ry="8"
+                  fill={z.isUnassigned ? 'rgba(120, 120, 180, 0.08)' : 'rgba(255, 255, 255, 0.05)'}
+                  stroke={z.isUnassigned ? 'rgba(147, 197, 253, 0.6)' : 'rgba(255, 255, 255, 0.55)'}
+                  strokeWidth="2"
+                  strokeDasharray={z.isUnassigned ? '4 6' : '6 4'}
+                  pointerEvents="none"
+                />
+                <rect x={z.x + 2} y={z.y + 2} width={Math.min(z.w - 4, 140)} height="16" rx="4" fill={z.isUnassigned ? 'rgba(30, 58, 138, 0.6)' : 'rgba(0, 0, 0, 0.7)'} pointerEvents="none" />
+                <text x={z.x + 10} y={z.y + 14} fill="rgba(255, 255, 255, 0.9)" fontSize="10" fontWeight="600" pointerEvents="none">
+                  {z.floorName ? escapeHtml(z.floorName) : escapeHtml(z.buildingName)}
+                </text>
+              </g>
+            ))}
             <defs>
               {LINK_TYPES.map((lt) => (
                 <marker key={lt.id} id={`arrow-${lt.id}`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
@@ -1395,15 +1984,17 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 </marker>
               ))}
             </defs>
-            {edges.map((ed) => {
-              const a = getNodePos(ed.from);
-              const b = getNodePos(ed.to);
+            {visibleEdges.map((ed) => {
+              const posTo = getNodePos(ed.to);
+              const posFrom = getNodePos(ed.from);
+              const a = getNodeEdgePoint(ed.from, posTo);
+              const b = getNodeEdgePoint(ed.to, posFrom);
               const lt = LINK_TYPES.find((l) => l.id === (ed.linkType || 'ethernet-straight')) || LINK_TYPES[0];
               const mx = (a.x + b.x) / 2;
               const my = (a.y + b.y) / 2;
               const sel = selectedEdgeId === ed.id;
               return (
-                <g key={ed.id} onClick={(e) => { e.stopPropagation(); setSelectedId(null); setSelectedEdgeId(ed.id); }}>
+                <g key={ed.id} onClick={(e) => { e.stopPropagation(); setSelectedIds([]); setSelectedEdgeId(ed.id); }}>
                   <line
                     x1={a.x}
                     y1={a.y}
@@ -1446,21 +2037,49 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 <circle cx={packetCoords.x} cy={packetCoords.y} r="6" fill="#fbbf24" stroke="#f59e0b" strokeWidth="2" opacity="0.95" />
               </g>
             )}
-            {nodes.map((n) => {
+            {visibleNodes.map((n) => {
               const def = NODE_TYPES.find((t) => t.type === n.type) || NODE_TYPES[0];
               const color = getNodeColor(n.type);
-              const sel = selectedId === n.id;
+              const sel = selectedIds.includes(n.id);
               const conn = connectFrom === n.id;
+              const pos = getNodeDrawPosition(n);
+              const nodeLabel = workplace == null ? (n.buildingId ? (() => {
+                const b = buildings.find((x) => x.id === n.buildingId);
+                const f = b && n.buildingFloorId ? (b.floors || []).find((x) => x.id === n.buildingFloorId) : null;
+                return b ? { building: b.name, floor: f ? f.name : null } : { building: '', floor: null };
+              })() : { building: 'Hors bâtiments', floor: null }) : null;
               return (
                 <g
                   key={n.id}
                   data-node-id={n.id}
-                  transform={`translate(${n.x},${n.y})`}
+                  transform={`translate(${pos.x},${pos.y})`}
                   onClick={(e) => handleNodeClick(n.id, e)}
                   onMouseDown={(e) => handleNodeMouseDown(n.id, e)}
                   style="cursor:pointer; user-select:none; -webkit-user-select:none"
                 >
                   {renderNodeShape(n, def, color, sel, conn)}
+                  {sel && (n.type === 'ap' || n.type === 'antenna') && (() => {
+                    const w = def?.w || 56, h = def?.h || 36;
+                    const radiusM = n.coverageRadiusMeters ?? (n.type === 'antenna' ? COVERAGE_RADIUS_METERS.antenna : COVERAGE_RADIUS_METERS.ap);
+                    const radiusPx = radiusM * PIXELS_PER_METER;
+                    return (
+                      <g class="network-sim-coverage-ring" pointerEvents="none">
+                        <circle cx={w / 2} cy={h / 2} r={radiusPx} fill="rgba(251, 191, 36, 0.06)" stroke="rgba(251, 191, 36, 0.55)" strokeWidth="1.5" strokeDasharray="6 4" />
+                      </g>
+                    );
+                  })()}
+                  {nodeLabel && nodeLabel.building && (
+                    <g class="network-sim-node-zone-label" pointerEvents="none">
+                      <text x={(def?.w || 56) / 2} y={(def?.h || 36) + 11} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize="8" fontWeight="600">
+                        {escapeHtml(nodeLabel.building)}
+                      </text>
+                      {nodeLabel.floor && (
+                        <text x={(def?.w || 56) / 2} y={(def?.h || 36) + 20} textAnchor="middle" fill="rgba(255,255,255,0.75)" fontSize="7">
+                          {escapeHtml(nodeLabel.floor)}
+                        </text>
+                      )}
+                    </g>
+                  )}
                 </g>
               );
             })}
@@ -1470,12 +2089,127 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
             <span style="font-size:0.9rem;min-width:3rem;text-align:center">{Math.round(zoom * 100)}%</span>
             <button type="button" class="btn btn-secondary" onClick={() => setZoom((z) => Math.max(0.25, Math.min(3, z + 0.25)))} title="Zoomer">+</button>
             <button type="button" class="btn btn-secondary" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} title="Réinitialiser">100%</button>
+            <span class="network-sim-scale-hint" style={{ fontSize: '0.75rem', opacity: 0.85 }} title="Échelle pour la portée (AP, antennes)">Échelle : {PIXELS_PER_METER} px/m</span>
           </div>
         </div>
         </div>
 
-        {(selectedNode || selectedEdgeId) && (
+        <aside class="network-sim-view-panel" aria-label="Vue et plan du site">
+          <h3 class="network-sim-view-panel-title">Vue / Plan du site</h3>
+          <div class="network-sim-buildings-toolbar">
+            <div class="network-sim-buildings-toolbar-primary">
+              {workplace != null && (
+                <button type="button" class="btn btn-secondary" onClick={() => setWorkplace(null)} title="Afficher toute la carte">Tout afficher</button>
+              )}
+              <button type="button" class="btn btn-primary" onClick={addBuilding} title="Créer un nouveau bâtiment">+ Bâtiment</button>
+            </div>
+          </div>
+          <div class="network-sim-building-cards">
+            <button type="button" class={`network-sim-building-card network-sim-view-all-card ${workplace == null ? 'network-sim-floor-item-active' : ''}`} onClick={() => setWorkplace(null)} title="Voir toute la carte">
+              <span class="network-sim-building-card-icon" aria-hidden="true">🗺</span>
+              <span class="network-sim-building-card-title">Toute la carte</span>
+              <span class="network-sim-building-card-meta">Tous les bâtiments et étages</span>
+            </button>
+            {nodes.some((n) => !n.buildingId) && (
+              <button type="button" class={`network-sim-building-card network-sim-hors-batiments-card ${workplace === '__unassigned__' ? 'network-sim-floor-item-active' : ''}`} onClick={() => setWorkplace('__unassigned__')} title="Appareils positionnés librement sur la carte">
+                <span class="network-sim-building-card-icon" aria-hidden="true">📍</span>
+                <span class="network-sim-building-card-title">Hors bâtiments</span>
+                <span class="network-sim-building-card-meta">{nodes.filter((n) => !n.buildingId).length} app. · position libre</span>
+              </button>
+            )}
+            {buildings.length === 0 ? (
+              <div class="network-sim-building-empty" role="status">
+                <span class="network-sim-building-empty-icon" aria-hidden="true">🏢</span>
+                <p>Aucun bâtiment. Cliquez sur <strong>+ Bâtiment</strong>.</p>
+              </div>
+            ) : (
+              buildings.map((b) => {
+                const count = getBuildingDeviceCount(b.id);
+                const floors = b.floors || [];
+                const orderedFloors = getFloorDisplayOrder(floors);
+                const buildingActive = workplace === b.id;
+                return (
+                  <article key={b.id} class={`network-sim-building-card ${buildingActive ? 'network-sim-building-card-selected' : ''}`} data-building-id={b.id}>
+                    <div class="network-sim-building-floors">
+                      {floors.length === 0 ? (
+                        <p class="network-sim-building-floors-empty text-muted">Aucun étage.</p>
+                      ) : (
+                        <ul class="network-sim-floor-list">
+                          {orderedFloors.map((f) => {
+                            const floorCount = getFloorDeviceCount(b.id, f.id);
+                            const floorActive = workplace === `${b.id}:${f.id}`;
+                            const devicesInFloor = nodes.filter((nn) => nn.buildingId === b.id && nn.buildingFloorId === f.id);
+                            return (
+                              <li key={f.id} class={`network-sim-floor-item ${floorActive ? 'network-sim-floor-item-active' : ''}`} onClick={(e) => { if (!e.target.closest('button') && !e.target.closest('details')) setWorkplace(`${b.id}:${f.id}`); }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setWorkplace(`${b.id}:${f.id}`); } }} title={`Voir ${escapeHtml(f.name)}`} style="cursor:pointer">
+                                <span class="network-sim-floor-icon" aria-hidden="true">▫</span>
+                                <span class="network-sim-floor-name">{escapeHtml(f.name)}</span>
+                                <span class="network-sim-floor-count">{floorCount} app.</span>
+                                <div class="network-sim-floor-actions">
+                                  <button type="button" class="btn btn-secondary btn-icon btn-icon-sm" onClick={(e) => { e.stopPropagation(); renameBuildingFloor(b.id, f.id); }} title="Renommer">✎</button>
+                                  <button type="button" class="btn btn-secondary btn-icon btn-icon-sm btn-icon-danger" onClick={(e) => { e.stopPropagation(); deleteBuildingFloor(b.id, f.id); }} title="Supprimer">×</button>
+                                </div>
+                                {devicesInFloor.length > 0 && (
+                                  <details class="network-sim-floor-devices-details" onClick={(e) => e.stopPropagation()}>
+                                    <summary class="network-sim-floor-devices-summary">Appareils ({devicesInFloor.length})</summary>
+                                    <ul class="network-sim-floor-devices-list">
+                                      {devicesInFloor.map((nn) => (
+                                        <li key={nn.id} class="network-sim-floor-device-item">{escapeHtml(nn.label || nn.id)}</li>
+                                      ))}
+                                    </ul>
+                                  </details>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                      <div class="network-sim-building-add-floor">
+                        <button type="button" class="btn btn-secondary btn-small" onClick={() => addBuildingFloor(b.id)} title="Ajouter un étage">+ Étage</button>
+                      </div>
+                    </div>
+                    <header class={`network-sim-building-card-header ${buildingActive ? 'network-sim-building-card-header-active' : ''}`} onClick={(e) => { if (!e.target.closest('.network-sim-building-card-actions')) setWorkplace(b.id); }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setWorkplace(b.id); } }} title={`Voir ${escapeHtml(b.name)}`} style="cursor:pointer">
+                      <span class="network-sim-building-card-icon" aria-hidden="true">🏢</span>
+                      <div class="network-sim-building-card-title-wrap">
+                        <h4 class="network-sim-building-card-title">{escapeHtml(b.name)}</h4>
+                        <span class="network-sim-building-card-meta">{count} app. · {floors.length} ét.</span>
+                      </div>
+                      <div class="network-sim-building-card-actions" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" class="btn btn-secondary btn-icon" onClick={(e) => { e.stopPropagation(); renameBuilding(b.id); }} title="Renommer">✎</button>
+                        <button type="button" class="btn btn-secondary btn-icon btn-icon-danger" onClick={(e) => { e.stopPropagation(); deleteBuilding(b.id); }} title="Supprimer">×</button>
+                      </div>
+                    </header>
+                  </article>
+                );
+              })
+            )}
+          </div>
+        </aside>
+
+        {(selectedNode || selectedEdgeId || selectedIds.length > 1) && (
           <div class="network-sim-panel-resizer" onMouseDown={handlePanelResizeStart} title="Redimensionner le panneau" role="separator" />
+        )}
+        {selectedIds.length > 1 && (
+          <aside class="network-sim-config-panel network-sim-multi-select-panel" style={{ width: panelWidth }}>
+            <div class="network-sim-panel-header">
+              <h4>{selectedIds.length} appareils sélectionnés</h4>
+              <p class="network-sim-panel-model" style={{ margin: '0.2rem 0 0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Shift+clic pour ajouter ou retirer de la sélection. Pas de configuration multiple.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button type="button" class="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} onClick={() => setSelectedIds([])} title="Fermer">✕</button>
+                <button type="button" class="btn danger" style={{ fontSize: '0.85rem', padding: '0.35rem 0.6rem' }} onClick={() => { if (confirm(`Supprimer les ${selectedIds.length} appareils sélectionnés ?`)) deleteSelected(); }} title="Supprimer tous les appareils sélectionnés">
+                  Supprimer la sélection
+                </button>
+              </div>
+            </div>
+            <ul class="network-sim-multi-select-list" style={{ listStyle: 'none', padding: '0.5rem 0', margin: 0 }}>
+              {selectedNodes.map((n) => (
+                <li key={n.id} style={{ padding: '0.25rem 0', fontSize: '0.9rem' }}>
+                  {escapeHtml(n.label || n.id)} — {NODE_TYPES.find((t) => t.type === n.type)?.label || n.type}
+                </li>
+              ))}
+            </ul>
+          </aside>
         )}
         {selectedNode && (
           <aside class="network-sim-config-panel" style={{ width: panelWidth }}>
@@ -1485,7 +2219,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 Modèle : {(DEVICE_MODELS[selectedNode.type]?.find((m) => m.value === (selectedNode.deviceModel || ''))?.label) || selectedNode.deviceModel || '—'}
               </p>
               <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-                <button type="button" class="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} onClick={() => setSelectedId(null)} title="Fermer le panneau">✕</button>
+                <button type="button" class="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem' }} onClick={() => setSelectedIds([])} title="Fermer le panneau">✕</button>
                 <button type="button" class="btn danger" style={{ fontSize: '0.85rem', padding: '0.35rem 0.6rem' }} onClick={() => { if (confirm('Supprimer cet appareil de la carte ?')) deleteSelected(); }} title="Supprimer l'appareil de la carte">
                   Supprimer cet appareil
                 </button>
@@ -1541,15 +2275,9 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
               <h5 class="network-sim-panel-section-title">Configuration</h5>
               <div class="network-sim-config-form">
               <label>Type d'appareil</label>
-              <select
-                value={selectedNode.type}
-                onInput={(e) => changeNodeType(selectedNode.id, e.target.value)}
-                title="Changer le type de l'appareil (comme Packet Tracer)"
-              >
-                {NODE_TYPES_BASE.map((t) => (
-                  <option key={t.type} value={t.type}>{t.label}</option>
-                ))}
-              </select>
+              <p class="network-sim-config-type-readonly" aria-readonly="true" title="Type défini à la pose, non modifiable">
+                {NODE_TYPES.find((t) => t.type === selectedNode.type)?.label || selectedNode.type}
+              </p>
               <label>Nom (comme Packet Tracer)</label>
               <input
                 type="text"
@@ -1570,7 +2298,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                 }}
                 title="Placer cet appareil dans un bâtiment ou zone"
               >
-                <option value="">Aucun (carte)</option>
+                <option value="">Hors bâtiments</option>
                 {buildings.map((b) => (
                   <option key={b.id} value={b.id}>{escapeHtml(b.name)}</option>
                 ))}
@@ -1682,6 +2410,28 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
                     value={selectedNode.ssid || ''}
                     onInput={(e) => updateNodeConfig(selectedNode.id, { ssid: e.target.value })}
                     placeholder="MonRéseau"
+                  />
+                  <label>Portée (m) — affichée à la sélection</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="500"
+                    value={selectedNode.coverageRadiusMeters ?? COVERAGE_RADIUS_METERS.ap}
+                    onInput={(e) => updateNodeConfig(selectedNode.id, { coverageRadiusMeters: parseInt(e.target.value, 10) || COVERAGE_RADIUS_METERS.ap })}
+                    style={{ width: '5rem' }}
+                  />
+                </>
+              )}
+              {(selectedNode.type === 'antenna') && (
+                <>
+                  <label>Portée (m) — affichée à la sélection</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="2000"
+                    value={selectedNode.coverageRadiusMeters ?? COVERAGE_RADIUS_METERS.antenna}
+                    onInput={(e) => updateNodeConfig(selectedNode.id, { coverageRadiusMeters: parseInt(e.target.value, 10) || COVERAGE_RADIUS_METERS.antenna })}
+                    style={{ width: '5rem' }}
                   />
                 </>
               )}
@@ -1824,7 +2574,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
           </aside>
         )}
 
-        {selectedEdgeId && !selectedId && (() => {
+        {selectedEdgeId && selectedIds.length === 0 && (() => {
           const ed = edges.find((e) => e.id === selectedEdgeId);
           if (!ed) return null;
           const fromNode = nodes.find((n) => n.id === ed.from);

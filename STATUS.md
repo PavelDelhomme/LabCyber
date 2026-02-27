@@ -6,6 +6,8 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 **Travail en cours** : **Review EVE-NG** → documenter ce qu'on veut récupérer dans le simulateur LabCyber. EVE-NG lancé avec `make eve-ng-boot`. Web UI : **http://127.0.0.1:9080** (login **admin** / **eve**). Console : **root** / **eve**. Fichier de review : [platform/docs/17-EVE-NG-REVIEW-SOUHAITS.md](platform/docs/17-EVE-NG-REVIEW-SOUHAITS.md). Simulateur actuel : [platform/src/views/tools/NetworkSimulatorView.jsx](platform/src/views/tools/NetworkSimulatorView.jsx). Doc architecture : [platform/docs/15-SIMULATEUR-EVE-NG.md](platform/docs/15-SIMULATEUR-EVE-NG.md).
 
+**À prévoir / backlog** : **CVE** — scénarios et panneau CVE à finaliser (voir [platform/docs/16-CVE-SCENARIOS.md](platform/docs/16-CVE-SCENARIOS.md), bouton CVE, NVD). **PVE** — à définir et intégrer (équivalent ou complément CVE pour le lab). **Simulateur** — types « hors bâtiment » (antennes, backbone) : en place ; déplacement des bâtiments par glisser-déposer : en place ; **échelle (px/m) et champs de couverture (AP, antennes)** : en place (portée affichée à la sélection, configurable en mètres). **À faire plus tard** : intégration ISOs / GNS3a (feuille de route : [platform/docs/22-SIMULATEUR-GNS3A-ISO.md](platform/docs/22-SIMULATEUR-GNS3A-ISO.md)) pour utiliser images et .gns3a avec EVE-NG ou le simulateur LabCyber.
+
 ---
 
 ## Ce que vous devez faire précisément

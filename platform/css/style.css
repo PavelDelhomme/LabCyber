@@ -2206,6 +2206,60 @@ body {
 .network-sim-section { margin-bottom: 1.25rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
 .network-sim-section-title { margin: 0 0 0.25rem; font-size: 1rem; font-weight: 600; color: var(--text); }
 .network-sim-section-desc { margin: 0 0 0.75rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+/* Plans de site — Bâtiments et étages (vue type architecte) */
+.network-sim-how-it-works-details { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; background: var(--bg-hover); border-radius: var(--radius); border: 1px solid var(--border); }
+.network-sim-how-it-works-details summary { cursor: pointer; font-weight: 600; color: var(--text); }
+.network-sim-how-it-works-details .network-sim-how-steps { margin: 0.35rem 0 0 1rem; padding-left: 1rem; }
+.network-sim-how-it-works-details .network-sim-how-steps li { margin-bottom: 0.25rem; }
+.network-sim-buildings-toolbar { margin-bottom: 1rem; }
+.network-sim-buildings-toolbar-primary { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.network-sim-buildings-toolbar-primary .network-sim-label { font-size: 0.9rem; color: var(--text-muted); margin-right: 0.25rem; }
+.network-sim-building-select { min-width: 200px; }
+.network-sim-btn-new-building { font-weight: 600; }
+.network-sim-building-cards { display: flex; flex-direction: column; gap: 0.75rem; }
+.network-sim-building-cards .network-sim-building-card:not(.network-sim-view-all-card) { max-width: 360px; }
+.network-sim-building-empty { text-align: center; padding: 2rem 1rem; background: var(--bg-hover); border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text-muted); }
+.network-sim-building-empty-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; opacity: 0.8; }
+.network-sim-building-empty p { margin: 0; font-size: 0.9rem; }
+.network-sim-view-all-card { background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; text-align: left; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; font: inherit; color: inherit; width: 100%; }
+.network-sim-view-all-card:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(0, 210, 106, 0.08); }
+.network-sim-view-all-card.network-sim-floor-item-active { background: var(--accent-soft); border-color: var(--accent); }
+.network-sim-hors-batiments-card { background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(147, 197, 253, 0.5); border-radius: var(--radius); padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; text-align: left; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; font: inherit; color: inherit; width: 100%; }
+.network-sim-hors-batiments-card:hover { border-color: rgba(96, 165, 250, 0.8); box-shadow: 0 2px 12px rgba(59, 130, 246, 0.12); }
+.network-sim-hors-batiments-card.network-sim-floor-item-active { background: rgba(59, 130, 246, 0.15); border-color: rgba(96, 165, 250, 0.9); }
+.network-sim-building-card { background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.2s, box-shadow 0.2s; }
+.network-sim-building-card:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(0, 210, 106, 0.08); }
+.network-sim-building-card-header { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.network-sim-building-card-header-active { background: var(--accent-soft); }
+.network-sim-building-card-icon { font-size: 1.25rem; line-height: 1; }
+.network-sim-building-card-title-wrap { flex: 1; min-width: 0; }
+.network-sim-building-card-title { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text); }
+.network-sim-building-card-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; display: block; }
+.network-sim-building-card-actions { display: flex; align-items: center; gap: 0.2rem; }
+.network-sim-building-floors { padding: 0.75rem 1rem; flex: 1; }
+.network-sim-building-floors-empty { font-size: 0.85rem; margin: 0 0 0.5rem; }
+.network-sim-floor-list { list-style: none; margin: 0; padding: 0; }
+.network-sim-floor-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; margin: 0 -0.5rem; border-radius: var(--radius); font-size: 0.9rem; flex-wrap: wrap; }
+.network-sim-floor-item:last-child { border-bottom: none; }
+.network-sim-floor-icon { color: var(--accent); font-size: 0.75rem; }
+.network-sim-floor-name { flex: 1; min-width: 0; color: var(--text); }
+.network-sim-floor-count { font-size: 0.8rem; color: var(--text-muted); }
+.network-sim-floor-actions { display: flex; gap: 0.15rem; }
+.network-sim-floor-devices-details { flex: 1 1 100%; margin-top: 0.35rem; font-size: 0.8rem; }
+.network-sim-floor-devices-summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.network-sim-floor-devices-list { list-style: none; margin: 0.25rem 0 0 1rem; padding: 0; }
+.network-sim-floor-device-item { padding: 0.15rem 0; color: var(--text-muted); }
+.network-sim-floor-devices { flex: 1 1 100%; display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; padding-left: 1.25rem; font-size: 0.8rem; flex-wrap: wrap; }
+.network-sim-floor-devices-list { color: var(--text-muted); max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.network-sim-filter-empty { max-width: 32rem; }
+.network-sim-building-add-floor { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+.network-sim-floor-item-active { background: var(--accent-soft); border-radius: var(--radius); }
+.network-sim-workplace-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+.network-sim-workplace-label { font-weight: 600; color: var(--text); }
+.network-sim-workplace-select { min-width: 220px; }
+.network-sim-canvas-caption { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.35rem; padding: 0.25rem 0; }
+.network-sim-building-zone text { font-family: var(--font-sans); }
+.btn-icon-sm { padding: 0.2rem 0.35rem; font-size: 0.75rem; min-width: auto; }
 .network-sim-buildings-row { display: flex; flex-direction: column; gap: 0.75rem; }
 .network-sim-buildings-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .network-sim-buildings-controls .network-sim-label { font-size: 0.9rem; color: var(--text-muted); margin-right: 0.25rem; }
@@ -2247,14 +2301,21 @@ body {
   padding-bottom: 0.25rem;
 }
 .network-sim-toolbar-label { font-size: 0.9rem; color: var(--text-muted); margin-right: 0.25rem; font-weight: 500; }
+.network-sim-device-btn-active { outline: 2px solid var(--accent) !important; outline-offset: 2px; background: var(--accent-soft) !important; }
 .network-sim-toolbar-sep { color: var(--border); margin: 0 0.35rem; }
 .network-sim-toolbar-hint { font-size: 0.85rem; color: var(--accent); margin-left: 0.35rem; }
+.network-sim-canvas-selected-hint { font-size: 0.85rem; }
 .network-sim-canvas-wrap { background: var(--bg-dark); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; user-select: none; -webkit-user-select: none; -moz-user-select: none; }
 .network-sim-canvas-wrap.network-sim-place-mode { cursor: crosshair; }
 .network-sim-canvas-wrap.network-sim-dragging,
 .network-sim-canvas-wrap.network-sim-dragging * { user-select: none !important; -webkit-user-select: none !important; -moz-user-select: none !important; }
 .network-sim-canvas-and-config { display: flex; gap: 0; align-items: stretch; flex-wrap: nowrap; }
 .network-sim-canvas-area { flex: 1 1 0; min-width: 280px; position: relative; user-select: none; -webkit-user-select: none; -moz-user-select: none; }
+.network-sim-canvas-area-global .network-sim-canvas-wrap { min-height: 62vh; }
+.network-sim-view-panel { width: 280px; min-width: 260px; max-width: 320px; flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 1rem; overflow-y: auto; max-height: 85vh; }
+.network-sim-building-card-selected { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(0, 210, 106, 0.35); background: var(--accent-soft) !important; }
+.network-sim-building-card-selected .network-sim-building-card-header { background: transparent; }
+.network-sim-view-panel-title { margin: 0 0 0.75rem; font-size: 0.95rem; font-weight: 600; color: var(--accent); }
 .network-sim-canvas-area .network-sim-canvas-wrap { width: 100%; position: relative; }
 .network-sim-panel-resizer { width: 6px; min-width: 6px; cursor: col-resize; background: var(--border); flex-shrink: 0; }
 .network-sim-panel-resizer:hover { background: var(--accent); }
