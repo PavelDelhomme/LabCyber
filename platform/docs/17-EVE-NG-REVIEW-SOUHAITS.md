@@ -8,7 +8,7 @@ Remplis les cases au fur et à mesure de tes tests. Tu peux cocher, ajouter des 
 
 | Accès | Lien / identifiants |
 |-------|---------------------|
-| **Web UI EVE-NG** | https://127.0.0.1:9443 — login **admin** / **eve**. Attendre 2–5 min après le boot. Accepter le certificat (avertissement navigateur). |
+| **Web UI EVE-NG** | **http://127.0.0.1:9080** (défaut CE) ou https://127.0.0.1:9443 — login **admin** / **eve**. Attendre 2–5 min après le boot. |
 | **Console EVE-NG** | `ssh -p 9022 root@127.0.0.1` — login **root** / **eve** |
 | **Simulateur LabCyber** | Vue : `platform/src/views/tools/NetworkSimulatorView.jsx` — URL app : `/#/network-sim` |
 | **Doc architecture simulateur** | [15-SIMULATEUR-EVE-NG.md](15-SIMULATEUR-EVE-NG.md) |
@@ -24,11 +24,27 @@ Remplis les cases au fur et à mesure de tes tests. Tu peux cocher, ajouter des 
 
 → Si EVE-NG est déjà installé, utilise toujours `make eve-ng-boot`. N'utilise `make eve-ng-run` que si tu repars de zéro (disque supprimé).
 
+### Flux réel observé (février 2026)
+
+1. **`make eve-ng-boot`** → fenêtre QEMU s'ouvre, la VM boot.
+2. **Console QEMU** : prompt `eve-ng login: admin` puis password `eve` → peut afficher « login incorrect » mais **ouvre automatiquement** le navigateur sur **http://127.0.0.1:9080/#!/login**.
+3. **Page web** : « Sign in to start session » → username **admin**, password **eve**. Choisir **HTML console** (recommandé) ou Native console.
+4. **HTML console** : File Manager, Manager, System, etc. → possibilité de démarrer un lab avec topologie.
+5. **`make status`** : affiche les conteneurs Docker (lab platform, attaquant, etc.), **pas** la VM EVE-NG (QEMU). C'est normal.
+6. **127.0.0.1:9080 ou localhost:9080 ne répond pas** : la VM EVE-NG n'est pas démarrée. Lancer `make eve-ng-boot` d'abord.
+7. **Add a new node** : par défaut, seul **Virtual PC (VPCS)** est disponible. Les autres types nécessitent d'importer des images → voir [18-EVE-NG-IMPORT-IMAGES.md](18-EVE-NG-IMPORT-IMAGES.md).
+
+8. **Images fournies par ton admin** : place-les dans `isos/lab-images/` (qemu/, dynamips/, iol/). Détection à la demande (pas au démarrage). Voir doc 18.
+
+### Accès direct depuis LabCyber
+
+La page **Simulateur EVE-NG (lab)** (`#/eve-ng-sim`) intègre l'interface EVE-NG dans une **iframe** : tu la vois directement sans ouvrir un nouvel onglet. Sinon : bouton « Ouvrir EVE-NG en nouvel onglet ».
+
 ---
 
 ## 1. Interface Web (ce que tu vois dans le navigateur)
 
-Explorer https://127.0.0.1:9443 (admin / eve). Noter ce qui te plaît ou manque.
+Explorer **http://127.0.0.1:9080** (admin / eve). Noter ce qui te plaît ou manque.
 
 - [ ] Création de lab / topologie (workflow, étapes)
 - [ ] Liste des labs existants
@@ -50,7 +66,7 @@ Explorer https://127.0.0.1:9443 (admin / eve). Noter ce qui te plaît ou manque.
 
 Quels types d’appareils propose EVE-NG ? Lesquels veux-tu avoir dans LabCyber ?
 
-- [ ] PC / workstation
+- [ ] PC / workstation (VPCS par défaut — seul type disponible sans images importées)
 - [ ] Routeur (Dynamips, IOL, etc.)
 - [ ] Switch (IOL, Open vSwitch)
 - [ ] Firewall (pfSense, etc.)
