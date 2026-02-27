@@ -1,75 +1,85 @@
 {
-  "version": 1,
-  "description": "Catalogue d'images pour le lab type EVE-NG (Docker, Dynamips, IOL). Mettre de côté les images à utiliser.",
+  "version": 2,
+  "description": "Catalogue complet d'images pour le lab (EVE-NG, Docker, LabCyber). Toutes les images sont intégrées : PC, serveurs, routeurs Cisco, switchs, Linux, Windows, attaquant, DHCP, WiFi, pare-feu, etc.",
   "byBackend": {
     "docker": [
-      {
-        "id": "network-multitool",
-        "name": "network-multitool",
-        "image": "praqma/network-multitool",
-        "nodeTypes": ["pc", "server"],
-        "description": "Outils réseau (curl, dig, nslookup, ping, etc.)"
-      },
-      {
-        "id": "alpine",
-        "name": "Alpine Linux",
-        "image": "alpine:latest",
-        "nodeTypes": ["pc", "server"],
-        "description": "Image légère pour PC/serveur minimal"
-      },
-      {
-        "id": "ubuntu-minimal",
-        "name": "Ubuntu minimal",
-        "image": "ubuntu:22.04",
-        "nodeTypes": ["pc", "server"],
-        "description": "Ubuntu pour postes ou serveurs"
-      },
-      {
-        "id": "debian",
-        "name": "Debian",
-        "image": "debian:bookworm-slim",
-        "nodeTypes": ["pc", "server"],
-        "description": "Debian slim pour lab"
-      }
+      {"id": "network-multitool", "name": "Network Multitool", "image": "wbitt/network-multitool", "nodeTypes": ["pc", "server"], "category": "pc", "description": "Outils réseau : curl, dig, nslookup, ping, tcpdump, nmap (nouveau: wbitt/network-multitool depuis 2022)"},
+      {"id": "alpine", "name": "Alpine Linux", "image": "alpine:latest", "nodeTypes": ["pc", "server"], "category": "linux", "description": "Linux minimal léger"},
+      {"id": "ubuntu-minimal", "name": "Ubuntu", "image": "ubuntu:22.04", "nodeTypes": ["pc", "server"], "category": "linux", "description": "Ubuntu LTS pour postes ou serveurs"},
+      {"id": "ubuntu-server", "name": "Ubuntu Server", "image": "ubuntu:22.04", "nodeTypes": ["server"], "category": "server", "description": "Ubuntu serveur"},
+      {"id": "debian", "name": "Debian", "image": "debian:bookworm-slim", "nodeTypes": ["pc", "server"], "category": "linux", "description": "Debian slim"},
+      {"id": "kali", "name": "Kali Linux (attaquant)", "image": "kalilinux/kali-rolling", "nodeTypes": ["pc"], "category": "attacker", "description": "Distribution pentest, outils d'attaque"},
+      {"id": "parrot", "name": "Parrot Security", "image": "parrotsec/security", "nodeTypes": ["pc"], "category": "attacker", "description": "Distribution sécurité et pentest"},
+      {"id": "dhcp-isc", "name": "Serveur DHCP (ISC)", "image": "networkop/docker-dhcp", "nodeTypes": ["server"], "category": "dhcp", "description": "Serveur DHCP ISC"},
+      {"id": "dns-bind", "name": "Serveur DNS (BIND)", "image": "internetsystemsconsortium/bind9", "nodeTypes": ["server"], "category": "dns", "description": "Serveur DNS BIND"},
+      {"id": "nginx", "name": "Nginx", "image": "nginx:alpine", "nodeTypes": ["server"], "category": "server", "description": "Serveur web Nginx"}
+    ],
+    "qemu": [
+      {"id": "vpcs", "name": "VPCS (Virtual PC)", "image": "vpcs", "nodeTypes": ["pc"], "category": "pc", "description": "Inclus par défaut dans EVE-NG"},
+      {"id": "alpine-qemu", "name": "Alpine Linux (QEMU)", "image": "alpine-3.18", "nodeTypes": ["pc", "server"], "category": "linux", "description": "Image QCOW2 Alpine pour EVE-NG"},
+      {"id": "ubuntu-desktop", "name": "Ubuntu Desktop", "image": "ubuntu-desktop-22.04", "nodeTypes": ["pc"], "category": "linux", "description": "Ubuntu avec environnement graphique"},
+      {"id": "ubuntu-server-qemu", "name": "Ubuntu Server (QEMU)", "image": "ubuntu-srv-22.04", "nodeTypes": ["server"], "category": "server", "description": "Ubuntu serveur pour EVE-NG"},
+      {"id": "debian-qemu", "name": "Debian (QEMU)", "image": "debian-12", "nodeTypes": ["pc", "server"], "category": "linux", "description": "Debian QEMU"},
+      {"id": "kali-qemu", "name": "Kali Linux (QEMU)", "image": "linux-kali-2024", "nodeTypes": ["pc"], "category": "attacker", "description": "Kali pour pentest dans EVE-NG"},
+      {"id": "linux-tinycore", "name": "Tiny Core Linux", "image": "linux-tinycore-6.4", "nodeTypes": ["pc"], "category": "linux", "description": "Linux minimal ~85 Mo"},
+      {"id": "linux-netem", "name": "Linux Netem", "image": "linux-netem", "nodeTypes": ["pc", "server"], "category": "network", "description": "Émulation réseau (latence, perte paquets)"},
+      {"id": "vyos", "name": "VyOS", "image": "vyos-1.4", "nodeTypes": ["router"], "category": "router", "description": "Routeur/firewall open source"},
+      {"id": "pfSense", "name": "pfSense", "image": "pfSense-2.7", "nodeTypes": ["firewall"], "category": "firewall", "description": "Pare-feu open source"},
+      {"id": "mikrotik", "name": "MikroTik RouterOS", "image": "mikrotik-7", "nodeTypes": ["router"], "category": "router", "description": "RouterOS MikroTik"},
+      {"id": "win7", "name": "Windows 7", "image": "win-7-x86", "nodeTypes": ["pc"], "category": "windows", "description": "Windows 7 édition classique"},
+      {"id": "win10", "name": "Windows 10", "image": "win-10-x64", "nodeTypes": ["pc"], "category": "windows", "description": "Windows 10"},
+      {"id": "win11", "name": "Windows 11", "image": "win-11-x64", "nodeTypes": ["pc"], "category": "windows", "description": "Windows 11"},
+      {"id": "winserver2016", "name": "Windows Server 2016", "image": "winserver-S2016", "nodeTypes": ["server"], "category": "windows", "description": "Windows Server 2016"},
+      {"id": "winserver2019", "name": "Windows Server 2019", "image": "winserver-S2019", "nodeTypes": ["server"], "category": "windows", "description": "Windows Server 2019"},
+      {"id": "winserver2022", "name": "Windows Server 2022", "image": "winserver-S2022", "nodeTypes": ["server"], "category": "windows", "description": "Windows Server 2022"},
+      {"id": "android-x86", "name": "Android x86", "image": "android-x86", "nodeTypes": ["pc"], "category": "mobile", "description": "Android pour x86 (émulateur)"},
+      {"id": "macos", "name": "macOS (Hackintosh)", "image": "macos-monterey", "nodeTypes": ["pc"], "category": "mobile", "description": "macOS en VM — configuration complexe, licence Apple requise"}
     ],
     "dynamips": [
-      {
-        "id": "c7200",
-        "name": "Cisco 7200",
-        "image": "c7200-adventerprisek9-mz.124-25d.image",
-        "nodeTypes": ["router"],
-        "description": "IOS Cisco 7200 (image .image à fournir)"
-      },
-      {
-        "id": "c3700",
-        "name": "Cisco 3700",
-        "image": "c3700-adventerprisek9-mz.124-25d.image",
-        "nodeTypes": ["router"],
-        "description": "IOS Cisco 3700"
-      },
-      {
-        "id": "c2691",
-        "name": "Cisco 2691",
-        "image": "c2691-adventerprisek9-mz.124-25d.image",
-        "nodeTypes": ["router"],
-        "description": "IOS Cisco 2691"
-      }
+      {"id": "c7200", "name": "Cisco 7200", "image": "c7200-adventerprisek9-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 7200"},
+      {"id": "c3745", "name": "Cisco 3745", "image": "c3745-adventerprisek9-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 3745"},
+      {"id": "c3725", "name": "Cisco 3725", "image": "c3725-adventerprisek9-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 3725"},
+      {"id": "c3700", "name": "Cisco 3700", "image": "c3700-adventerprisek9-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 3700"},
+      {"id": "c3660", "name": "Cisco 3660", "image": "c3660-adventerprisek9-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 3660"},
+      {"id": "c3640", "name": "Cisco 3640", "image": "c3640-a3js-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 3640"},
+      {"id": "c3620", "name": "Cisco 3620", "image": "c3620-a3jk8s-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 3620"},
+      {"id": "c2691", "name": "Cisco 2691", "image": "c2691-adventerprisek9-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 2691"},
+      {"id": "c2600", "name": "Cisco 2600", "image": "c2600-adventerprisek9-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 2600"},
+      {"id": "c1700", "name": "Cisco 1700", "image": "c1700-adventerprisek9-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 1700"},
+      {"id": "c1710", "name": "Cisco 1710", "image": "c1710-bk9no3r2sy-mz.image", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS 1710"}
     ],
     "iol": [
-      {
-        "id": "l2",
-        "name": "IOL L2",
-        "image": "L2-ADVENTERPRISEK9-M-15.2-4.0.58-E2.bin",
-        "nodeTypes": ["switch"],
-        "description": "Cisco IOL L2 (switch)"
-      },
-      {
-        "id": "l3",
-        "name": "IOL L3",
-        "image": "L3-ADVENTERPRISEK9-M-15.4-2.0.55-E3.bin",
-        "nodeTypes": ["switch"],
-        "description": "Cisco IOL L3 (switch multi-couches)"
-      }
+      {"id": "iol-l2", "name": "Cisco IOL L2 (switch)", "image": "L2-ADVENTERPRISEK9-M.bin", "nodeTypes": ["switch"], "category": "switch", "description": "Switch Cisco IOS on Linux L2"},
+      {"id": "iol-l3", "name": "Cisco IOL L3", "image": "L3-ADVENTERPRISEK9-M.bin", "nodeTypes": ["switch"], "category": "switch", "description": "Switch Cisco IOL L3 multi-couches"},
+      {"id": "vios-l2", "name": "Cisco vIOS L2", "image": "viosl2-adventerprisek9-m.tar.gz", "nodeTypes": ["switch"], "category": "switch", "description": "Switch virtuel Cisco vIOS L2"},
+      {"id": "vios-l3", "name": "Cisco vIOS L3", "image": "vios-adventerprisek9-m.tar.gz", "nodeTypes": ["router"], "category": "router", "description": "Routeur virtuel Cisco vIOS L3"}
+    ],
+    "qemu-network": [
+      {"id": "vwlc", "name": "Cisco vWLC (WiFi)", "image": "vwlc-8.10", "nodeTypes": ["ap"], "category": "wifi", "description": "Contrôleur WiFi virtuel Cisco"},
+      {"id": "vxrv", "name": "Cisco IOS-XRv", "image": "xrv-k9", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco IOS-XR virtuel"},
+      {"id": "asav", "name": "Cisco ASAv", "image": "asav-9", "nodeTypes": ["firewall"], "category": "firewall", "description": "Pare-feu Cisco ASA virtuel"},
+      {"id": "csr1000v", "name": "Cisco CSR 1000v", "image": "csr1000v-universalk9", "nodeTypes": ["router"], "category": "router", "description": "Routeur Cisco CSR 1000v"},
+      {"id": "nxosv", "name": "Cisco NX-OSv", "image": "nxosv9k", "nodeTypes": ["switch"], "category": "switch", "description": "Switch Cisco NX-OS virtuel"},
+      {"id": "vsrx", "name": "Juniper vSRX", "image": "vsrxng-18", "nodeTypes": ["firewall", "router"], "category": "router", "description": "Firewall/routeur Juniper vSRX"},
+      {"id": "vqfx", "name": "Juniper vQFX", "image": "vqfxpfe-18", "nodeTypes": ["switch"], "category": "switch", "description": "Switch Juniper vQFX"},
+      {"id": "veos", "name": "Arista vEOS", "image": "veos-4.28", "nodeTypes": ["switch"], "category": "switch", "description": "Switch Arista vEOS"}
     ]
+  },
+  "categories": {
+    "other": "Autres",
+    "pc": "Postes clients",
+    "server": "Serveurs",
+    "router": "Routeurs",
+    "switch": "Commuteurs",
+    "firewall": "Pare-feu",
+    "ap": "Point d'accès / WiFi",
+    "linux": "Linux",
+    "windows": "Windows",
+    "attacker": "Attaquant / Pentest",
+    "dhcp": "Serveur DHCP",
+    "dns": "Serveur DNS",
+    "network": "Réseau / Émulation",
+    "mobile": "Mobile",
+    "wifi": "WiFi / Contrôleur"
   }
 }
