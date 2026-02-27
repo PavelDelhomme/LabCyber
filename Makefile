@@ -414,17 +414,21 @@ lab-images-gns3a-dir:
 
 lab-images-gns3a: lab-images-dir
 	@total=0; for f in "$(GNS3A_DIR)"/*.gns3a; do [ -f "$$f" ] && total=$$((total+1)); done; \
-	count=0; \
+	count=0; all_start=$$(date +%s); \
 	for f in "$(GNS3A_DIR)"/*.gns3a; do \
 	  [ -f "$$f" ] || continue; \
 	  count=$$((count+1)); \
+	  start=$$(date +%s); \
 	  echo ""; echo "  [$$count/$$total] $$(date +%H:%M:%S) — $$(basename "$$f" .gns3a)"; \
 	  $(ROOT)scripts/gns3a-import.sh "$$f" "$(LAB_IMAGES_DIR)"; \
+	  elapsed=$$(($$(date +%s) - start)); \
+	  echo "  ⏱ $$elapsed s"; \
 	done; \
+	all_elapsed=$$(($$(date +%s) - all_start)); \
 	if [ $$count -eq 0 ]; then \
 	  echo "  Aucun .gns3a dans $(GNS3A_DIR)"; \
 	else \
-	  echo ""; echo "  ✓ $$count/$$total .gns3a traités — Les échecs sont normaux (Alcatel, Aruba, Brocade… = pages d'inscription)"; \
+	  echo ""; echo "  ✓ $$count/$$total .gns3a traités en $$all_elapsed s — Échecs normaux (Brocade, Alcatel… = portails d'inscription)"; \
 	fi
 
 lab-images-sync: lab-images-dir

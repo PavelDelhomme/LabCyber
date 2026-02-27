@@ -138,6 +138,21 @@ La structure `/opt/unetlab/addons/` (qemu, dynamips, iol) est compatible avec EV
 
 ---
 
+## Récap — À faire après avoir ouvert EVE en web (127.0.0.1:9080)
+
+1. **Clé SSH** (une seule fois) :
+   ```bash
+   ssh-keygen -t ed25519 -f ~/.ssh/eve-ng -N ""
+   ssh-copy-id -i ~/.ssh/eve-ng -p 9022 root@127.0.0.1
+   ```
+2. **Transférer les images** :
+   ```bash
+   EVE_SSH_KEY=~/.ssh/eve-ng make lab-images-transfer-eve-ng
+   ```
+3. Créer un lab → Add nodes → Start → Console → mots de passe dans `isos/docs/passwords/PASSWORDS-EVE-NG.md`
+
+---
+
 ## En cas de problème
 
 - **Transfert échoue (mot de passe demandé)** : configure la clé SSH (voir section 3).
