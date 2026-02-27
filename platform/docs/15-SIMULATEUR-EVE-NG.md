@@ -83,7 +83,7 @@ EVE_NG_ISO_PATH=/chemin/absolu/vers/LabCyber/isos/eve-ce-prod-6.2.0-4-full.iso
 3. **Quand l'installateur annonce un redémarrage** : **fermer immédiatement la fenêtre QEMU** (Ctrl+C ou fermer la fenêtre). Ne pas laisser la VM redémarrer.
 4. **Lancer** `make eve-ng-boot` → démarre EVE-NG depuis le disque, sans ISO.
 5. **Premier démarrage** : l'écran console demande la config (hostname, domaine, IP DHCP/statique, NTP, proxy). Login : **root** / **eve**. Suis les prompts (entrée pour défauts). À la fin, EVE redémarre.
-6. **Après redémarrage** : Web UI → **https://127.0.0.1:9443** (login **admin** / **eve**). SSH → `ssh -p 9022 root@127.0.0.1`.
+6. **Après redémarrage** : Web UI → **http://127.0.0.1:9080** (défaut CE) ou **https://127.0.0.1:9443** si HTTPS configuré (login **admin** / **eve**). SSH → `ssh -p 9022 root@127.0.0.1`.
 
 **Pourquoi fermer avant le redémarrage ?** Avec `eve-ng-run`, le CD reste en priorité de boot (`-boot order=dc`). Si la VM redémarre, elle repart sur le CD → l'installateur se relance → **boucle infinie**. La seule façon de démarrer depuis le disque est `make eve-ng-boot` (pas de CD, boot sur disque uniquement).
 
@@ -104,10 +104,14 @@ Si l'installateur EVE-NG bloque ou échoue :
 
 L'interface web d'EVE-NG est **celle de la VM** : c'est l'UI de gestion des topologies (labs, nœuds, Docker, etc.), pas la console texte du système.
 
-- **URL** : **https://127.0.0.1:9443** (depuis ton navigateur sur la machine hôte).
+EVE-NG Community Edition écoute sur **port 80 (HTTP)** par défaut. Le Makefile redirige : host 9080 → guest 80.
+
+- **URL principale** : **http://127.0.0.1:9080** (depuis ton navigateur sur la machine hôte).
+- **HTTPS** (si configuré dans EVE-NG) : https://127.0.0.1:9443 — accepter le certificat auto-signé si demandé.
 - **Attendre** : la VM met 2–5 minutes à démarrer. Une fois le boot terminé (prompt login sur la fenêtre QEMU), le service web est prêt.
-- **Certificat** : le navigateur affiche un avertissement (certificat auto-signé) → « Avancé » → « Accepter le risque et continuer » (ou équivalent).
-- **Login** : **admin** / **eve**.
+- **Login** : **admin** / **eve**. Console HTML recommandée (File Manager, topologies).
+- **Depuis LabCyber** : la page « Simulateur EVE-NG (lab) » (`#/eve-ng-sim`) intègre l'interface EVE-NG en iframe pour un accès direct.
+- **Import d'images** : VPCS seul par défaut. Tes images → `isos/lab-images/{qemu,dynamips,iol}`. Commandes : `make lab-images-pull-docker`, `make lab-images-download-c7200`, `./scripts/gns3a-import.sh fichier.gns3a`. Doc : [18-EVE-NG-IMPORT-IMAGES.md](18-EVE-NG-IMPORT-IMAGES.md).
 
 ### Que faire maintenant (premier login)
 
