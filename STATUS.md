@@ -4,7 +4,7 @@ Ce fichier liste ce qui reste à faire en priorité, puis les améliorations, et
 
 **Phase actuelle** : **Phase 3** (conteneur attaquant, packs/prédéfinitions, terminal par lab, barre scénario, cibles /cible/*). Prochaine : Phase 4 (bureau fait maison), Phase 5 (interconnexion complète, reprise lab). Voir [docs/ROADMAP-SYSTEME-MAISON.md](docs/ROADMAP-SYSTEME-MAISON.md).
 
-**Travail en cours** : **Review EVE-NG** → documenter ce qu'on veut récupérer dans le simulateur LabCyber. EVE-NG lancé avec `make eve-ng-boot`. Web UI : **https://127.0.0.1:9443** (login **admin** / **eve**). Console : **root** / **eve**. Fichier de review : [platform/docs/17-EVE-NG-REVIEW-SOUHAITS.md](platform/docs/17-EVE-NG-REVIEW-SOUHAITS.md). Simulateur actuel : [platform/src/views/tools/NetworkSimulatorView.jsx](platform/src/views/tools/NetworkSimulatorView.jsx). Doc architecture : [platform/docs/15-SIMULATEUR-EVE-NG.md](platform/docs/15-SIMULATEUR-EVE-NG.md).
+**Travail en cours** : **Review EVE-NG** → documenter ce qu'on veut récupérer dans le simulateur LabCyber. EVE-NG lancé avec `make eve-ng-boot`. Web UI : **http://127.0.0.1:9080** (login **admin** / **eve**). Console : **root** / **eve**. Fichier de review : [platform/docs/17-EVE-NG-REVIEW-SOUHAITS.md](platform/docs/17-EVE-NG-REVIEW-SOUHAITS.md). Simulateur actuel : [platform/src/views/tools/NetworkSimulatorView.jsx](platform/src/views/tools/NetworkSimulatorView.jsx). Doc architecture : [platform/docs/15-SIMULATEUR-EVE-NG.md](platform/docs/15-SIMULATEUR-EVE-NG.md).
 
 ---
 
