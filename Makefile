@@ -2,7 +2,7 @@
 # Usage : make [cible]
 # make help pour la liste des cibles
 
-.PHONY: help up down build lab-setup disk-report rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start terminal-check eve-ng-check eve-ng-run eve-ng-disk eve-ng-disk-expand eve-ng-expand-fs eve-ng-boot eve-ng-free-space eve-ng-fix-api eve-ng-images-download eve-ng-images-help lab-images-dir lab-images-gns3a-dir lab-images-pull-docker lab-images-download-c7200 lab-images-check lab-images-verify lab-images-organize lab-images-organize-orphans lab-images-extract lab-images-gns3a lab-images-sync lab-images-gns3-registry lab-images-gns3-server lab-images-transfer-eve-ng lab-images-transfer-eve-ng-stream lab-isos-free-space lab-archives-dedup lab-backup eve-ng-verify
+.PHONY: help up down build lab-setup disk-report disk-report-images rebuild test test-full test-full-report test-require-lab test-report test-e2e tests logs shell shell-attacker clean clean-all proxy up-proxy down-proxy blue up-blue down-blue status lab up-minimal ports dev restart restart-clean restart-clean-all terminal-html start terminal-check eve-ng-check eve-ng-run eve-ng-disk eve-ng-disk-expand eve-ng-expand-fs eve-ng-boot eve-ng-free-space eve-ng-fix-api eve-ng-images-download eve-ng-images-help lab-images-dir lab-images-gns3a-dir lab-images-pull-docker lab-images-download-c7200 lab-images-check lab-images-verify lab-images-organize lab-images-organize-orphans lab-images-extract lab-images-gns3a lab-images-sync lab-images-gns3-registry lab-images-gns3-server lab-images-transfer-eve-ng lab-images-transfer-eve-ng-stream lab-isos-free-space lab-archives-dedup lab-backup eve-ng-verify disk-report-images lab-init
 
 # Dossier du projet (racine)
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -53,6 +53,7 @@ help:
 	@echo "  make eve-ng-images-download  Télécharger des images Linux (linux-netem) pour EVE-NG"
 	@echo "  make eve-ng-images-help       Aide pour l'import d'images EVE-NG"
 	@echo "  make lab-images-dir           Créer isos/lab-images/ (qemu, dynamips, iol)"
+	@echo "  make lab-init                 Init structure isos/ après clone ou lab-isos-free-space"
 	@echo "  make lab-images-pull-docker   Pull wbitt/network-multitool + docker-dhcp"
 	@echo "  make lab-images-download-c7200  Info c7200 (placement manuel)"
 	@echo "  make lab-images-check           Vérifier les images installées"
@@ -72,6 +73,7 @@ help:
 	@echo "  make eve-ng-expand-fs      Étendre le FS dans EVE (après disk-expand, EVE démarré)"
 	@echo "  make lab-backup              Sauvegarde complète du projet (tar.gz)"
 	@echo "  make disk-report             Rapport espace disque /home vs /data"
+	@echo "  make disk-report-images    Taille isos/ + recommandations pour réduire"
 	@echo "  make lab-images-gns3a         Importer les .gns3a depuis isos/gns3a/"
 	@echo "  make lab-images-gns3-server  Télécharger les .gns3a depuis GitHub GNS3"
 	@echo ""
@@ -354,6 +356,23 @@ lab-images-dir:
 	@echo "  Répertoire images : $(LAB_IMAGES_DIR)"
 	@echo "  Place tes images (fournies par admin, GNS3, etc.) dans qemu/, dynamips/, iol/"
 
+# (Ré)initialiser la structure isos/ après clone ou lab-isos-free-space (sans télécharger d'images).
+# Vérifie que isos/ existe (répertoire ou lien symbolique), crée lab-images/{qemu,dynamips,iol} et gns3a.
+lab-init:
+	@if [ ! -d "$(ROOT)isos" ] && [ ! -L "$(ROOT)isos" ]; then \
+	  echo "  Erreur : isos/ absent. Créez un lien vers vos archives :"; \
+	  echo "    ln -s /data/LabCyber-isos $(ROOT)isos"; \
+	  echo "  ou exécutez une fois : ./scripts/move-isos-to-data.sh"; \
+	  exit 1; \
+	fi
+	@mkdir -p "$(LAB_IMAGES_DIR)"/qemu "$(LAB_IMAGES_DIR)"/dynamips "$(LAB_IMAGES_DIR)"/iol
+	@mkdir -p "$(GNS3A_DIR)"
+	@echo "  lab-images : $(LAB_IMAGES_DIR)"
+	@echo "  gns3a     : $(GNS3A_DIR)"
+	@echo "  Init OK. Prochaines étapes :"
+	@echo "    make lab-isos-free-space   # vider lab-images/ si besoin"
+	@echo "    make lab-images-transfer-eve-ng-stream   # transférer vers EVE-NG (à la volée)"
+
 lab-images-pull-docker: lab-images-dir
 	@echo "  Pull des images Docker pour LabCyber : Network Multitool, DHCP ISC"
 	@docker pull wbitt/network-multitool 2>/dev/null || docker pull praqma/network-multitool
@@ -432,6 +451,10 @@ lab-backup:
 # Rapport espace disque (gros dossiers, suggestions /data)
 disk-report:
 	@$(ROOT)scripts/disk-usage-report.sh
+
+# Rapport détaillé taille des images du lab (isos/) + recommandations réduction
+disk-report-images:
+	@$(ROOT)scripts/lab-images-size-report.sh
 
 # Vérifier mémoire et ressources
 check-resources:

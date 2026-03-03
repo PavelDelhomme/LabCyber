@@ -2,6 +2,35 @@
 
 ---
 
+## Taille actuelle et objectif
+
+Le lab contient **beaucoup d’images** (EVE-NG, GNS3, Cisco, etc.) stockées localement. Ordre de grandeur typique :
+
+| Emplacement | Taille typique | Réductible |
+|-------------|----------------|------------|
+| **isos/** (total) | **~350–370 Gio** | Oui (voir ci‑dessous) |
+| isos/archives-compressed | ~187 Gio | Doublon qemu ~95 Gio |
+| isos/archives | ~106 Gio | Déplaçable / supprimable si compressed OK |
+| isos/eve-ng-disk.qcow2 | ~45 Gio | Déplaçable hors projet |
+| isos/docs | ~12 Gio | Optionnel |
+| Racine (*.image, etc.) | ~100 Mio | À mettre dans isos/ ou ignorer |
+
+**Commande pour voir la répartition exacte :**
+
+```bash
+make disk-report-images
+```
+
+**Stratégie pour que le projet prenne beaucoup moins de place :**
+
+1. **Ne jamais versionner les images** — `isos/` et les `*.image` / `*.qcow2` / `*.iso` doivent rester hors Git (`.gitignore`).
+2. **Déplacer `isos/` hors du projet** — par ex. vers `/data` ou un disque externe, puis un lien symbolique `ln -s /data/LabCyber-isos ./isos`. Le Makefile et les scripts continuent de fonctionner.
+3. **Supprimer les doublons** — `make lab-archives-dedup` enlève ~95 Gio si tu as à la fois le monolithe qemu et les archives par image.
+4. **Ne pas garder d’extraits locaux** — garder uniquement les archives compressées et utiliser le transfert à la volée vers EVE-NG (`make lab-images-transfer-eve-ng-stream`).
+5. **Setup minimal** — cloner le dépôt sans `isos/` (ou avec `isos/` vide) et n’avoir les grosses archives que sur un seul disque/NAS monté à la demande.
+
+---
+
 ## 0. Doublon archives-compressed (qemu) — ~95G en trop
 
 Si tu as **à la fois** `lab-images-qemu.tar.zst` (95G) et un dossier `qemu/` avec des `*.tar.zst` par image (92G), c’est le **même contenu** stocké deux fois. Conserve uniquement le format par-image (`qemu/*.tar.zst`) — utile pour l’extraction ciblée et le transfert à la volée.
@@ -164,7 +193,9 @@ Tout le projet LabCyber est sous `~/Documents/Cyber/LabCyber`. La grosse part (3
 
 | Action | Commande |
 |--------|----------|
+| **Rapport taille images** | `make disk-report-images` |
 | Rapport espace | `make disk-report` |
+| **Init structure isos/** | `make lab-init` (après clone ou lab-isos-free-space) |
 | Nettoyer cache yay | `./scripts/cache-yay-clean.sh` |
 | Fix pacman download-* | `sudo rm -rf /var/cache/pacman/pkg/download-*` |
 | Déplacer isos | `./scripts/move-isos-to-data.sh` |

@@ -564,6 +564,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
   const [nodes, setNodes] = useState(currentSim?.nodes || []);
   const [edges, setEdges] = useState(currentSim?.edges || []);
   const buildings = currentSim?.buildings || [];
+  const segments = currentSim?.segments || [];
   const [currentBuildingId, setCurrentBuildingId] = useState(null);
   /** Lieu de travail unique (comme Packet Tracer / outils d'archi) : contrôle à la fois l'affichage et le placement.
    * null = toute la carte, '__unassigned__' = sans bâtiment, 'bId' = bâtiment, 'bId:fId' = pièce. */
@@ -635,16 +636,17 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       const newId = 'sim' + Date.now();
       const ts = Date.now();
       const defaultBuildings = [{ id: 'b' + ts, name: 'Bâtiment 1', floors: [{ id: 'f' + ts, name: 'RDC' }] }];
-      migrated = [{ id: newId, name: 'Carte 1', nodes: [], edges: [], buildings: defaultBuildings, createdAt: new Date().toISOString() }];
+      migrated = [{ id: newId, name: 'Carte 1', nodes: [], edges: [], buildings: defaultBuildings, segments: [], createdAt: new Date().toISOString() }];
       cur = newId;
       storage?.setNetworkSimulations?.(effectiveLabId, { simulations: migrated, currentId: cur });
     } else {
       migrated = sims.map((s) => {
-        if (!s.buildings || s.buildings.length === 0) {
+        let out = { ...s, segments: s.segments || [] };
+        if (!out.buildings || out.buildings.length === 0) {
           const ts = Date.now();
-          return { ...s, buildings: [{ id: 'b' + ts, name: 'Bâtiment 1', floors: [{ id: 'f' + ts, name: 'RDC' }] }] };
+          out = { ...out, buildings: [{ id: 'b' + ts, name: 'Bâtiment 1', floors: [{ id: 'f' + ts, name: 'RDC' }] }] };
         }
-        return s;
+        return out;
       });
       if (migrated.some((s, i) => s !== sims[i])) {
         storage?.setNetworkSimulations?.(effectiveLabId, { simulations: migrated, currentId: cur });
@@ -672,6 +674,11 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     setSelectedEdgeId(null);
   }, [currentSimId, effectiveLabId]);
 
+  /** Persister nodes/edges quand ils changent (ex. config appareil, segment) pour garder la sim et le stockage à jour. */
+  useEffect(() => {
+    if (!currentSimId) return;
+    persistCurrentSim(nodes, edges, buildings, segments);
+  }, [nodes, edges]);
 
   const panelResizeStartRef = useRef({ x: 0 });
   const handlePanelResizeStart = (e) => {
@@ -692,13 +699,14 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     window.addEventListener('mouseup', onUp);
   };
 
-  const persistCurrentSim = (nextNodes, nextEdges, nextBuildings) => {
+  const persistCurrentSim = (nextNodes, nextEdges, nextBuildings, nextSegments) => {
     const n = nextNodes ?? nodes;
     const e = nextEdges ?? edges;
     const b = nextBuildings ?? buildings;
+    const seg = nextSegments ?? segments;
     if (!currentSimId) return;
     const updated = simulations.map((s) =>
-      s.id === currentSimId ? { ...s, nodes: n, edges: e, buildings: b, updatedAt: new Date().toISOString() } : s
+      s.id === currentSimId ? { ...s, nodes: n, edges: e, buildings: b, segments: seg, updatedAt: new Date().toISOString() } : s
     );
     setSimulations(updated);
     storage?.setNetworkSimulations?.(effectiveLabId, { simulations: updated, currentId: currentSimId });
@@ -717,7 +725,7 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
         backend,
         image,
         deviceModel: n.deviceModel,
-        config: { ip: n.ip, gateway: n.gateway, subnetMask: n.subnetMask },
+        config: { ip: n.ip, gateway: n.gateway, subnetMask: n.subnetMask, segmentId: n.segmentId },
       };
     });
     const labLinks = edges.map((e, i) => ({
@@ -942,10 +950,65 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
     persistCurrentSim(nextNodes, edges, nextBuildings);
   };
 
+  /** Nombre d'appareils dans un segment (pour affichage). */
+  const getSegmentDeviceCount = (segmentId) => nodes.filter((n) => n.segmentId === segmentId).length;
+
+  /** Suggère une IP libre dans le segment (dernier octet 2–254, évite les IP déjà utilisées dans le segment). */
+  const getSuggestedIpForSegment = (segmentId) => {
+    const seg = segments.find((s) => s.id === segmentId);
+    if (!seg || !seg.subnet) return '';
+    const parts = seg.subnet.trim().split('.');
+    if (parts.length !== 4) return '';
+    const base = parts.slice(0, 3).join('.') + '.';
+    const used = nodes
+      .filter((n) => n.segmentId === segmentId && n.ip)
+      .map((n) => parseInt(n.ip.trim().split('.').pop(), 10))
+      .filter((o) => o >= 1 && o <= 254);
+    const gatewayLast = seg.gateway ? parseInt(seg.gateway.trim().split('.').pop(), 10) : 0;
+    const start = gatewayLast >= 1 && gatewayLast < 254 ? gatewayLast + 1 : 2;
+    for (let i = start; i <= 254; i++) {
+      if (!used.includes(i)) return base + i;
+    }
+    return base + '2';
+  };
+
+  const addSegment = () => {
+    const name = prompt('Nom du segment / sous-réseau (ex. DMZ, VLAN 10, Réseau interne) ?', 'Réseau ' + (segments.length + 1));
+    if (name == null || !name.trim()) return;
+    const subnet = prompt('Sous-réseau (ex. 192.168.1.0) ?', '192.168.' + (segments.length + 1) + '.0');
+    if (subnet == null || !subnet.trim()) return;
+    const subnetMask = prompt('Masque (ex. 255.255.255.0 ou /24) ?', '255.255.255.0');
+    if (subnetMask == null) return;
+    const mask = (subnetMask || '255.255.255.0').trim();
+    const gateway = prompt('Passerelle par défaut (ex. 192.168.1.1) ?', subnet.replace(/\d+$/, '1'));
+    if (gateway == null) return;
+    const id = 'seg' + Date.now();
+    const next = [...segments, { id, name: name.trim(), subnet: subnet.trim(), subnetMask: mask, gateway: (gateway || '').trim(), vlanId: null }];
+    persistCurrentSim(nodes, edges, buildings, next);
+  };
+
+  const renameSegment = (segmentId) => {
+    const seg = segments.find((s) => s.id === segmentId);
+    if (!seg) return;
+    const name = prompt('Nouveau nom du segment ?', seg.name);
+    if (name == null || !name.trim()) return;
+    const next = segments.map((s) => (s.id === segmentId ? { ...s, name: name.trim() } : s));
+    persistCurrentSim(nodes, edges, buildings, next);
+  };
+
+  const deleteSegment = (segmentId) => {
+    const count = getSegmentDeviceCount(segmentId);
+    if (count > 0 && !confirm(`${count} appareil(s) sont dans ce segment. Ils n\'auront plus de segment assigné. Continuer ?`)) return;
+    const nextSegs = segments.filter((s) => s.id !== segmentId);
+    const nextNodes = nodes.map((n) => (n.segmentId === segmentId ? { ...n, segmentId: undefined } : n));
+    setNodes(nextNodes);
+    persistCurrentSim(nextNodes, edges, buildings, nextSegs);
+  };
+
   const addSimulation = () => {
     const id = 'sim' + Date.now();
     const name = 'Carte ' + (simulations.length + 1);
-    const next = [...simulations, { id, name, nodes: [], edges: [], buildings: getDefaultBuildingsForNewSim(), createdAt: new Date().toISOString() }];
+    const next = [...simulations, { id, name, nodes: [], edges: [], buildings: getDefaultBuildingsForNewSim(), segments: [], createdAt: new Date().toISOString() }];
     setSimulations(next);
     setCurrentSimId(id);
     setNodes([]);
@@ -991,11 +1054,23 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
       from: idMap[e.from] || e.from,
       to: idMap[e.to] || e.to,
     }));
-    const newSim = { id, name, nodes: newNodes, edges: newEdges, buildings: newBuildings, createdAt: new Date().toISOString() };
+    const oldSegments = currentSim.segments || [];
+    const segmentIdMap = {};
+    const newSegments = oldSegments.map((seg, i) => {
+      const newSegId = 'seg' + Date.now() + '_' + i;
+      segmentIdMap[seg.id] = newSegId;
+      return { ...seg, id: newSegId };
+    });
+    const newNodesWithSegments = newNodes.map((n, i) => {
+      const oldN = oldNodes[i];
+      const segId = oldN?.segmentId && segmentIdMap[oldN.segmentId] ? segmentIdMap[oldN.segmentId] : undefined;
+      return segId != null ? { ...n, segmentId: segId } : n;
+    });
+    const newSim = { id, name, nodes: newNodesWithSegments, edges: newEdges, buildings: newBuildings, segments: newSegments, createdAt: new Date().toISOString() };
     const next = [...simulations, newSim];
     setSimulations(next);
     setCurrentSimId(id);
-    setNodes(newNodes);
+    setNodes(newNodesWithSegments);
     setEdges(newEdges);
     setCurrentBuildingId(null);
     setWorkplace(null);
@@ -2183,6 +2258,38 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
               })
             )}
           </div>
+
+          <h3 class="network-sim-view-panel-title" style={{ marginTop: '1rem' }}>Segmentation réseau</h3>
+          <p class="text-muted" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>Sous-réseaux / VLANs : définir des segments et assigner les appareils.</p>
+          <div class="network-sim-buildings-toolbar">
+            <button type="button" class="btn btn-primary" onClick={addSegment} title="Créer un segment (sous-réseau, VLAN)">+ Segment</button>
+          </div>
+          <div class="network-sim-segments-list">
+            {segments.length === 0 ? (
+              <div class="network-sim-building-empty" role="status">
+                <span class="network-sim-building-empty-icon" aria-hidden="true">🔀</span>
+                <p>Aucun segment. Cliquez sur <strong>+ Segment</strong> pour en créer (ex. DMZ, VLAN 10).</p>
+              </div>
+            ) : (
+              <ul class="network-sim-floor-list">
+                {segments.map((seg) => (
+                  <li key={seg.id} class="network-sim-segment-item">
+                    <span class="network-sim-floor-icon" aria-hidden="true">🔀</span>
+                    <div class="network-sim-segment-info">
+                      <span class="network-sim-floor-name">{escapeHtml(seg.name)}</span>
+                      <span class="network-sim-segment-cidr">{escapeHtml(seg.subnet || '')} {seg.subnetMask ? (seg.subnetMask.startsWith('/') ? seg.subnetMask : `— ${seg.subnetMask}`) : ''}</span>
+                      {seg.gateway && <span class="text-muted" style={{ fontSize: '0.75rem' }}>GW: {escapeHtml(seg.gateway)}</span>}
+                      <span class="network-sim-floor-count">{getSegmentDeviceCount(seg.id)} app.</span>
+                    </div>
+                    <div class="network-sim-floor-actions">
+                      <button type="button" class="btn btn-secondary btn-icon btn-icon-sm" onClick={() => renameSegment(seg.id)} title="Renommer">✎</button>
+                      <button type="button" class="btn btn-secondary btn-icon btn-icon-sm btn-icon-danger" onClick={() => deleteSegment(seg.id)} title="Supprimer">×</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </aside>
 
         {(selectedNode || selectedEdgeId || selectedIds.length > 1) && (
@@ -2360,6 +2467,37 @@ export default function NetworkSimulatorView({ storage, currentLabId: appLabId }
               )}
               {['pc', 'server', 'router'].includes(selectedNode.type) && (
                 <>
+                  <label>Segment réseau (sous-réseau / VLAN)</label>
+                  <select
+                    value={selectedNode.segmentId || ''}
+                    onInput={(e) => {
+                      const segId = e.target.value || undefined;
+                      if (!segId) {
+                        updateNodeConfig(selectedNode.id, { segmentId: undefined });
+                        return;
+                      }
+                      const seg = segments.find((s) => s.id === segId);
+                      if (!seg) return;
+                      const suggestedIp = getSuggestedIpForSegment(segId);
+                      updateNodeConfig(selectedNode.id, {
+                        segmentId: segId,
+                        subnetMask: seg.subnetMask || '255.255.255.0',
+                        gateway: seg.gateway || '',
+                        ...(suggestedIp && !selectedNode.ip ? { ip: suggestedIp } : {}),
+                      });
+                    }}
+                    title="Assigner cet appareil à un segment ; IP/masque/passerelle seront remplis automatiquement"
+                  >
+                    <option value="">Aucun segment</option>
+                    {segments.map((s) => (
+                      <option key={s.id} value={s.id}>{escapeHtml(s.name)} — {escapeHtml(s.subnet || '')}</option>
+                    ))}
+                  </select>
+                  {selectedNode.segmentId && (
+                    <p class="text-muted" style={{ fontSize: '0.75rem', margin: '0.1rem 0 0.3rem' }}>
+                      Segment : masque et passerelle issus du segment. Modifiable ci‑dessous.
+                    </p>
+                  )}
                   <label>IP</label>
                   <input
                     type="text"

@@ -59,6 +59,8 @@ test-results/
 e2e/test-results/
 
 # Images lab (gros binaires — ne pas versionner)
+# Tout isos/ (souvent lien symbolique vers /data) : non versionné
+isos/
 isos/lab-images/
 isos/lab-images/qemu/
 isos/lab-images/dynamips/

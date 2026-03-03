@@ -2254,6 +2254,12 @@ body {
 .network-sim-filter-empty { max-width: 32rem; }
 .network-sim-building-add-floor { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
 .network-sim-floor-item-active { background: var(--accent-soft); border-radius: var(--radius); }
+.network-sim-segments-list { margin-top: 0.5rem; }
+.network-sim-segments-list .network-sim-floor-list { display: flex; flex-direction: column; gap: 0.35rem; }
+.network-sim-segment-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.6rem; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem; flex-wrap: wrap; }
+.network-sim-segment-item .network-sim-segment-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.network-sim-segment-info .network-sim-floor-name { font-weight: 600; }
+.network-sim-segment-cidr { font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono, monospace); }
 .network-sim-workplace-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
 .network-sim-workplace-label { font-weight: 600; color: var(--text); }
 .network-sim-workplace-select { min-width: 220px; }
