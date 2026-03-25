@@ -24,52 +24,61 @@ import EveNgSimulatorView from './views/tools/EveNgSimulatorView';
 import ProxyConfigView from './views/tools/ProxyConfigView';
 import ApiClientView from './views/tools/ApiClientView';
 import CaptureView from './views/tools/CaptureView';
+import OsintWorkbenchView from './views/tools/OsintWorkbenchView';
 import TerminalFullView from './views/term/TerminalFullView';
 import DocOfflineView from './views/docs/DocOfflineView';
 import CvePanel from './components/CvePanel';
 import JournalCompletModal from './components/JournalCompletModal';
 
-const VIEWS = {
-  dashboard: Dashboard,
-  docs: DocsView,
-  learning: LearningView,
-  'doc-offline': DocOfflineView,
-  engagements: EngagementsView,
-  progression: ProgressionView,
-  labs: LabsView,
-  'network-sim': NetworkSimulatorView,
-  'eve-ng-sim': EveNgSimulatorView,
-  'proxy-tools': ApiClientView,
-  'proxy-config': ProxyConfigView,
-  'api-client': ApiClientView,
-  capture: CaptureView,
-  'terminal-full': TerminalFullView,
-  options: OptionsView,
-  scenario: ScenarioView,
-  room: RoomView,
-};
+/** Registre des vues (briques modulaires). Ajouter une entrée ici pour une nouvelle page/route. */
+const VIEW_REGISTRY = [
+  { id: 'dashboard', pathPrefix: '', pathParam: null, Component: Dashboard },
+  { id: 'scenario', pathPrefix: 'scenario', pathParam: 'scenarioId', Component: ScenarioView },
+  { id: 'room', pathPrefix: 'room', pathParam: 'roomId', Component: RoomView },
+  { id: 'learning', pathPrefix: 'learning', pathParam: 'learningTopicId', pathParam2: 'learningSubId', Component: LearningView },
+  { id: 'doc-offline', pathPrefix: 'doc-offline', pathParam: 'docOfflineId', Component: DocOfflineView },
+  { id: 'docs', pathPrefix: 'docs', pathParam: null, Component: DocsView },
+  { id: 'engagements', pathPrefix: 'engagements', pathParam: null, Component: EngagementsView },
+  { id: 'progression', pathPrefix: 'progression', pathParam: null, Component: ProgressionView },
+  { id: 'labs', pathPrefix: 'labs', pathParam: null, Component: LabsView },
+  { id: 'network-sim', pathPrefix: 'network-sim', pathParam: null, Component: NetworkSimulatorView },
+  { id: 'eve-ng-sim', pathPrefix: 'eve-ng-sim', pathParam: null, Component: EveNgSimulatorView },
+  { id: 'proxy-tools', pathPrefix: 'proxy-tools', pathParam: null, Component: ApiClientView },
+  { id: 'proxy-config', pathPrefix: 'proxy-config', pathParam: null, Component: ProxyConfigView },
+  { id: 'api-client', pathPrefix: 'api-client', pathParam: null, Component: ApiClientView },
+  { id: 'capture', pathPrefix: 'capture', pathParam: null, Component: CaptureView },
+  { id: 'osint-workbench', pathPrefix: 'osint-workbench', pathParam: null, Component: OsintWorkbenchView },
+  { id: 'terminal-full', pathPrefix: 'terminal-full', pathParam: null, Component: TerminalFullView },
+  { id: 'options', pathPrefix: 'options', pathParam: null, Component: OptionsView },
+];
 
-const VALID_VIEWS = new Set(Object.keys(VIEWS));
+const VIEWS = Object.fromEntries(VIEW_REGISTRY.map((r) => [r.id, r.Component]));
+const VALID_VIEWS = new Set(VIEW_REGISTRY.map((r) => r.id));
 
 function parseHash() {
-  const h = typeof window !== 'undefined' ? window.location.hash.slice(1).replace(/^\/+/, '') || 'dashboard' : 'dashboard';
+  const empty = { scenarioId: null, roomId: null, learningTopicId: null, learningSubId: null, docOfflineId: null };
+  const h = typeof window !== 'undefined' ? window.location.hash.slice(1).replace(/^\/+/, '') || '' : '';
   const parts = h.split('/').filter(Boolean);
-  if (parts[0] === 'scenario' && parts[1]) return { view: 'scenario', scenarioId: parts[1], roomId: null, learningTopicId: null, learningSubId: null };
-  if (parts[0] === 'room' && parts[1]) return { view: 'room', scenarioId: null, roomId: parts[1], learningTopicId: null, learningSubId: null };
-  if (parts[0] === 'learning') {
-    return { view: 'learning', scenarioId: null, roomId: null, learningTopicId: parts[1] || null, learningSubId: parts[2] || null, docOfflineId: null };
+  for (const r of VIEW_REGISTRY) {
+    if (r.pathPrefix === '') {
+      if (!parts[0] || parts[0] === 'dashboard') return { view: 'dashboard', ...empty };
+      continue;
+    }
+    if (parts[0] !== r.pathPrefix) continue;
+    const out = { view: r.id, ...empty };
+    if (r.pathParam) out[r.pathParam] = parts[1] || null;
+    if (r.pathParam2) out[r.pathParam2] = parts[2] || null;
+    return out;
   }
-  if (parts[0] === 'doc-offline') {
-    return { view: 'doc-offline', scenarioId: null, roomId: null, learningTopicId: null, learningSubId: null, docOfflineId: parts[1] || null };
-  }
-  const view = VALID_VIEWS.has(parts[0]) ? parts[0] : 'dashboard';
-  return { view, scenarioId: null, roomId: null, learningTopicId: null, learningSubId: null, docOfflineId: null };
+  return { view: VALID_VIEWS.has(parts[0]) ? parts[0] : 'dashboard', ...empty };
 }
 
 function hashFor(view, scenarioId, roomId) {
-  if (view === 'scenario' && scenarioId) return `#/scenario/${encodeURIComponent(scenarioId)}`;
-  if (view === 'room' && roomId) return `#/room/${encodeURIComponent(roomId)}`;
-  if (view === 'dashboard') return '#/';
+  const r = VIEW_REGISTRY.find((x) => x.id === view);
+  if (!r) return '#/';
+  if (r.pathPrefix === '') return '#/';
+  if (r.pathParam === 'scenarioId' && scenarioId) return `#/scenario/${encodeURIComponent(scenarioId)}`;
+  if (r.pathParam === 'roomId' && roomId) return `#/room/${encodeURIComponent(roomId)}`;
   return `#/${view}`;
 }
 
@@ -164,10 +173,84 @@ export default function App() {
   const labTerminalLoadedRef = useRef(false);
   const labSwitchInProgressRef = useRef(false);
   const terminalTabClickRef = useRef({ tabId: null, timeout: null });
+  const terminalOutputBufRef = useRef('');
+  const terminalInputBufRef = useRef('');
+  const actionLogRef = useRef([]);
+  const [challengesDoneRevision, setChallengesDoneRevision] = useState(0);
+  const MAX_TERMINAL_OUTPUT_BUF = 12000;
+  const MAX_TERMINAL_INPUT_BUF = 4000;
+  const MAX_ACTION_LOG = 80;
+
+  const runChallengeValidation = (out, inp, actionLog, doneSet) => {
+    const toMark = [];
+    (challenges || []).forEach((c) => {
+      if (doneSet.has(c.id)) return;
+      const av = c.autoValidate;
+      if (!av) return;
+      const hasTerminalRules = !!(av.outputContains || av.commandContains);
+      const hasActionRules = !!(av.actionMatch && (av.actionMatch.action || typeof av.actionMatch === 'string'));
+      let terminalOk = !hasTerminalRules;
+      if (hasTerminalRules) {
+        const outputOk = !av.outputContains || (Array.isArray(av.outputContains) ? av.outputContains.every((s) => out.includes(String(s).toLowerCase())) : out.includes(String(av.outputContains).toLowerCase()));
+        const commandOk = !av.commandContains || (Array.isArray(av.commandContains) ? av.commandContains.every((s) => inp.includes(String(s).toLowerCase())) : inp.includes(String(av.commandContains).toLowerCase()));
+        terminalOk = outputOk && commandOk;
+      }
+      let actionOk = !hasActionRules;
+      if (hasActionRules && actionLog.length > 0) {
+        const match = av.actionMatch;
+        const action = typeof match === 'string' ? match : (match && match.action);
+        const found = actionLog.some((entry) => {
+          if (entry.action !== action) return false;
+          if (match && typeof match === 'object' && match.target != null && entry.target !== match.target) return false;
+          if (match && typeof match === 'object' && match.urlContains && (!entry.url || !entry.url.toLowerCase().includes(String(match.urlContains).toLowerCase()))) return false;
+          if (match && typeof match === 'object' && match.method && entry.method !== match.method) return false;
+          return true;
+        });
+        actionOk = found;
+      }
+      if (terminalOk || actionOk) toMark.push(c.id);
+    });
+    toMark.forEach((id) => { storage.setChallengeDone(id, true); });
+    if (toMark.length) setChallengesDoneRevision((prev) => prev + 1);
+  };
 
   useEffect(() => {
     uiSessionRef.current = { terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth };
   }, [terminalPanelOpen, labPanelOpen, capturePanelOpen, capturePanelPosition, optionsInLeftPanel, optionsPanelOpen, terminalUseDefaultLab, terminalTabs, activeTerminalTabId, terminalPanelMinimized, terminalPanelWidth]);
+
+  // Validation automatique : terminal (postMessage) + actions (CVE, cibles, API, tâches, rooms).
+  useEffect(() => {
+    if (typeof window === 'undefined' || !storage || !challenges?.length) return;
+    const onMessage = (e) => {
+      if (!e?.data || typeof e.data !== 'object') return;
+      const msg = e.data;
+      if (msg.type === 'lab-cyber-terminal-output' && typeof msg.text === 'string') {
+        terminalOutputBufRef.current = (terminalOutputBufRef.current + msg.text).slice(-MAX_TERMINAL_OUTPUT_BUF);
+      } else if (msg.type === 'lab-cyber-terminal-input' && typeof msg.text === 'string') {
+        terminalInputBufRef.current = (terminalInputBufRef.current + msg.text).slice(-MAX_TERMINAL_INPUT_BUF);
+      } else return;
+      const out = terminalOutputBufRef.current.toLowerCase();
+      const inp = terminalInputBufRef.current.toLowerCase();
+      const done = storage.getChallengesDone() || [];
+      const doneSet = new Set(done);
+      runChallengeValidation(out, inp, actionLogRef.current, doneSet);
+    };
+    const onAction = (e) => {
+      const detail = e?.detail && typeof e.detail === 'object' ? e.detail : {};
+      actionLogRef.current = [...actionLogRef.current, { ...detail }].slice(-MAX_ACTION_LOG);
+      const out = terminalOutputBufRef.current.toLowerCase();
+      const inp = terminalInputBufRef.current.toLowerCase();
+      const done = storage.getChallengesDone() || [];
+      const doneSet = new Set(done);
+      runChallengeValidation(out, inp, actionLogRef.current, doneSet);
+    };
+    window.addEventListener('message', onMessage);
+    window.addEventListener('lab-cyber-action', onAction);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      window.removeEventListener('lab-cyber-action', onAction);
+    };
+  }, [storage, challenges]);
 
   // Focus du champ renommage quand on passe en mode édition (double-clic onglet)
   useEffect(() => {
@@ -761,7 +844,7 @@ export default function App() {
             ? `Scénario : ${currentScenario.title}`
             : view === 'room' && currentRoomId
               ? (data?.rooms?.find(r => r.id === currentRoomId)?.title || 'Room')
-              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', 'doc-offline': 'Bibliothèque doc', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', options: 'Options', 'network-sim': 'Simulateur réseau', 'eve-ng-sim': 'Simulateur EVE-NG (lab)', 'proxy-tools': 'Requêtes API', 'proxy-config': 'Proxy (config)', 'api-client': 'Requêtes API (Postman)', capture: 'Capture pcap' }[view] || view)}
+              : ({ dashboard: 'Accueil', docs: 'Documentation projet', learning: 'Doc & Cours', 'doc-offline': 'Bibliothèque doc', engagements: 'Cibles & Proxy', progression: 'Ma progression', labs: 'Labs', options: 'Options', 'network-sim': 'Simulateur réseau', 'eve-ng-sim': 'Simulateur EVE-NG (lab)', 'proxy-tools': 'Requêtes API', 'proxy-config': 'Proxy (config)', 'api-client': 'Requêtes API (Postman)', capture: 'Capture pcap', 'osint-workbench': 'OSINT Workbench' }[view] || view)}
         </div>
         {loaded && (
           <div class="view active" key={view}>

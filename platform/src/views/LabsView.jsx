@@ -218,6 +218,11 @@ export default function LabsView({ storage, onNavigate, onLabChange }) {
             <p class="card-category">Visualiseur .pcap : paquets, détail hex, filtres. Session enregistrée par lab.</p>
             <span class="btn btn-primary" style="margin-top:0.5rem; display:inline-block">Ouvrir le visualiseur</span>
           </article>
+          <article class="card" onClick={() => onNavigate?.('osint-workbench')} style="cursor:pointer">
+            <h4 class="card-title">🕵️ OSINT Workbench</h4>
+            <p class="card-category">Gestion structurée des entreprises, contacts (RH/métiers), actifs externes, sources et pistes d’investigation avec stockage persistant.</p>
+            <span class="btn btn-primary" style="margin-top:0.5rem; display:inline-block">Ouvrir l’outil OSINT</span>
+          </article>
         </div>
       </section>
     </div>

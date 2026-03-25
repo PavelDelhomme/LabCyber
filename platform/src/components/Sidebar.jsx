@@ -98,6 +98,7 @@ export default function Sidebar({
               <button class={`nav-item nav-item-sub ${view === 'proxy-config' ? 'active' : ''}`} onClick={() => onNavigate('proxy-config')}>🔧 Proxy (config)</button>
               <button class={`nav-item nav-item-sub ${view === 'api-client' || view === 'proxy-tools' ? 'active' : ''}`} onClick={() => onNavigate('api-client')}>📤 Requêtes API (Postman)</button>
               <button class={`nav-item nav-item-sub ${view === 'capture' ? 'active' : ''}`} onClick={() => onNavigate('capture')}>📡 Capture pcap (Wireshark)</button>
+              <button class={`nav-item nav-item-sub ${view === 'osint-workbench' ? 'active' : ''}`} onClick={() => onNavigate('osint-workbench')}>🕵️ OSINT Workbench</button>
             </div>
           </div>
           )}

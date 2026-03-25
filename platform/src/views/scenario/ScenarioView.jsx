@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
-import { escapeHtml, getTerminalUrl, getMachineUrl } from '../../lib/store';
+import { escapeHtml, getTerminalUrl, getMachineUrl, dispatchLabAction } from '../../lib/store';
+import { ACTION } from '../../lib/actionTypes';
 
 export default function ScenarioView({ scenarios, config, currentScenarioId, currentLabId, storage, onOpenTerminalInPanel, onOpenTerminalPip, onStartScenario, onResumeScenario, onScenarioStatusChange, onAbandonScenario, docSources }) {
   const scenario = currentScenarioId ? (scenarios || []).find(s => s.id === currentScenarioId) : null;
@@ -47,6 +48,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
   const isDone = (i) => storage?.getTaskDone(scenario.id, i);
   const setDone = (i, done) => {
     storage?.setTaskDone(scenario.id, i, done);
+    if (done) dispatchLabAction({ action: ACTION.SCENARIO_TASK_DONE, scenarioId: scenario.id, taskIndex: i });
     storage?.setLastScenario(scenario.id, taskIndex);
   };
   const termUrl = getTerminalUrl();
@@ -170,7 +172,7 @@ export default function ScenarioView({ scenarios, config, currentScenarioId, cur
                       {m.urlKey && m.urlKey !== 'terminal' && (() => {
                         const { url, label } = getMachineUrl(m.urlKey);
                         return url && url !== '#' ? (
-                          <a href={url} target="_blank" rel="noopener" class="btn btn-small" title={label}>Ouvrir {escapeHtml(m.name || m.urlKey)} (navigateur)</a>
+                          <a href={url} target="_blank" rel="noopener" class="btn btn-small" title={label} onClick={() => dispatchLabAction({ action: ACTION.TARGET_OPENED, target: m.urlKey })}>Ouvrir {escapeHtml(m.name || m.urlKey)} (navigateur)</a>
                         ) : null;
                       })()}
                       {m.note && (

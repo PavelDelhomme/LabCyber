@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'preact/hooks';
-import { EMBEDDED_DOCS, EMBEDDED_LEARNING, EMBEDDED_TARGETS, EMBEDDED_DOC_SOURCES } from './defaultData';
+import { EMBEDDED_DOCS, EMBEDDED_LEARNING, EMBEDDED_TARGETS } from './defaultData';
+import { DATA_SOURCES } from './dataSources';
 
 function getStorage() {
   return typeof window !== 'undefined' ? window.LabCyberStorage : null;
@@ -35,6 +36,12 @@ export function getMachineUrl(urlKey) {
   return { url: base + path, label: 'Ouvrir dans le navigateur' };
 }
 
+/** Émet une action utilisateur pour la validation automatique des challenges (style TryHackMe). */
+export function dispatchLabAction(detail) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('lab-cyber-action', { detail: { ts: Date.now(), ...detail } }));
+}
+
 export function useStore() {
   const [data, setData] = useState({ rooms: [], categories: [] });
   const [scenarios, setScenarios] = useState([]);
@@ -49,26 +56,14 @@ export function useStore() {
   useEffect(() => {
     const base = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
     const get = (path) => fetch(base + path).then(r => (r.ok ? r.json() : null)).catch(() => null);
-    Promise.allSettled([
-      get('/data/rooms.json').then(x => x || { rooms: [], categories: [] }),
-      get('/data/scenarios.json').then(x => (x && x.scenarios) || (Array.isArray(x) ? x : [])),
-      get('/data/config.json').then(x => x || {}),
-      get('/data/docs.json').then(x => x && typeof x === 'object' && Array.isArray(x.entries) ? x : null),
-      get('/data/learning.json').then(x => x && typeof x === 'object' && Array.isArray(x.topics) ? x : null),
-      get('/data/targets.json').then(x => x),
-      get('/data/challenges.json').then(x => x),
-      get('/data/docSources.json').then(x => x && typeof x === 'object' && Array.isArray(x.sources) ? x : null),
-    ]).then((results) => {
-      const [roomsData, scenarioList, cfg, docsList, learningData, targetsData, challengesData, docSourcesData] = results.map(r => r.status === 'fulfilled' ? r.value : null);
-      setData(roomsData && (roomsData.rooms || roomsData.categories) ? roomsData : { rooms: [], categories: [] });
-      setScenarios((scenarioList && scenarioList.scenarios) || (Array.isArray(scenarioList) ? scenarioList : []));
-      setConfig(cfg || {});
-      if (docsList) setDocs(docsList);
-      if (learningData) setLearning(learningData);
-      const t = Array.isArray(targetsData) ? targetsData : (targetsData?.targets);
-      if (t && t.length) setTargets(t);
-      setChallenges(challengesData && Array.isArray(challengesData.challenges) ? challengesData.challenges : []);
-      setDocSources(docSourcesData || EMBEDDED_DOC_SOURCES);
+    const setters = { data: setData, scenarios: setScenarios, config: setConfig, docs: setDocs, learning: setLearning, targets: setTargets, challenges: setChallenges, docSources: setDocSources };
+    Promise.allSettled(DATA_SOURCES.map((src) => get(src.path))).then((results) => {
+      results.forEach((r, i) => {
+        const src = DATA_SOURCES[i];
+        const raw = r.status === 'fulfilled' ? r.value : null;
+        const val = raw != null ? src.normalize(raw) : src.defaultVal;
+        if (val !== undefined && val !== null) setters[src.key](val);
+      });
       setLoaded(true);
     });
   }, []);

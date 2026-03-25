@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
-import { escapeHtml } from '../lib/store';
+import { escapeHtml, dispatchLabAction } from '../lib/store';
+import { ACTION } from '../lib/actionTypes';
 
 const STATUS_FILTERS = [
   { value: '', label: 'Tous' },
@@ -10,11 +11,27 @@ const STATUS_FILTERS = [
   { value: 'not_started', label: 'Non commencés' },
 ];
 
+const CHALLENGE_CATEGORY_LABELS = {
+  network: 'Réseau',
+  api: 'API',
+  web: 'Web',
+  red: 'Red Team',
+  documentation: 'Documentation',
+  stego: 'Stéganographie',
+  crypto: 'Cryptographie',
+};
+
 export default function ProgressionView({ data, scenarios, challenges, storage, onOpenScenario, onOpenRoom }) {
   const [statusFilter, setStatusFilter] = useState('');
   const [roomStatusFilter, setRoomStatusFilter] = useState('');
+  const [challengeCategoryFilter, setChallengeCategoryFilter] = useState('');
   const rooms = data?.rooms || [];
   const challengesDone = storage ? storage.getChallengesDone() : [];
+  const challengeList = challenges || [];
+  const challengeCategories = [...new Set(challengeList.map(c => c.category).filter(Boolean))].sort();
+  const filteredChallenges = !challengeCategoryFilter
+    ? challengeList
+    : challengeList.filter(c => c.category === challengeCategoryFilter);
   const getProgress = (s) => {
     if (!storage || !s.tasks || !s.tasks.length) return { done: 0, total: 0 };
     let done = 0;
@@ -116,19 +133,47 @@ export default function ProgressionView({ data, scenarios, challenges, storage, 
 
       <section class="room-section">
         <h3>Challenges</h3>
-        <p class="section-desc">Fais le challenge (dans le lab), puis marque comme réussi. Déblocage comme les scénarios. Tu peux recommencer un challenge pour le refaire.</p>
+        <p class="section-desc">Fais le challenge (dans le lab), puis marque comme réussi. Déblocage comme les scénarios. Tu peux recommencer un challenge pour le refaire. Liens vers les rooms pour télécharger les fichiers (stégano, crypto).</p>
+        {challengeCategories.length > 0 && (
+          <div class="progression-filters">
+            <button
+              type="button"
+              class={`topbar-btn ${challengeCategoryFilter === '' ? 'active' : ''}`}
+              onClick={() => setChallengeCategoryFilter('')}
+            >
+              Tous
+            </button>
+            {challengeCategories.map(cat => (
+              <button
+                key={cat}
+                type="button"
+                class={`topbar-btn ${challengeCategoryFilter === cat ? 'active' : ''}`}
+                onClick={() => setChallengeCategoryFilter(cat)}
+              >
+                {CHALLENGE_CATEGORY_LABELS[cat] || cat}
+              </button>
+            ))}
+          </div>
+        )}
         <ul class="progression-challenges">
-          {(challenges || []).map(c => {
+          {filteredChallenges.map(c => {
             const done = isChallengeDone(c.id);
             return (
               <li key={c.id} class="progression-item progression-challenge-item">
                 <div class="progression-challenge-row">
                   <span class={`progression-status-badge ${done ? 'status-completed' : 'status-not_started'}`}>{done ? '✓' : '—'}</span>
                   <span class="progression-challenge-title">{escapeHtml(c.title)}</span>
+                  {c.category && <span class="progression-challenge-category">{CHALLENGE_CATEGORY_LABELS[c.category] || c.category}</span>}
                   <span class="difficulty-badge easy">{escapeHtml(c.difficulty || '')}</span>
                 </div>
                 <p class="progression-challenge-desc">{escapeHtml((c.description || '').slice(0, 120))}{(c.description || '').length > 120 ? '…' : ''}</p>
                 <div class="progression-challenge-actions">
+                  {c.roomId && onOpenRoom && (
+                    <button type="button" class="btn btn-secondary" onClick={() => onOpenRoom(c.roomId)} title="Ouvrir la room pour télécharger les fichiers et voir les tâches">Voir la room</button>
+                  )}
+                  {c.downloadUrl && (
+                    <a href={c.downloadUrl} class="btn btn-secondary" target="_blank" rel="noopener noreferrer" title="Télécharger les fichiers du challenge" onClick={() => dispatchLabAction({ action: ACTION.CHALLENGE_DOWNLOAD, challengeId: c.id, url: c.downloadUrl })}>Télécharger</a>
+                  )}
                   {done ? (
                     <button type="button" class="btn btn-secondary" onClick={() => storage?.setChallengeDone(c.id, false)} title="Supprimer la validation pour recommencer le challenge">Recommencer</button>
                   ) : (
@@ -139,7 +184,8 @@ export default function ProgressionView({ data, scenarios, challenges, storage, 
             );
           })}
         </ul>
-        {(challenges || []).length === 0 && <p class="text-muted">Aucun challenge.</p>}
+        {filteredChallenges.length === 0 && <p class="text-muted">Aucun challenge pour ce filtre.</p>}
+        {challengeList.length === 0 && <p class="text-muted">Aucun challenge.</p>}
       </section>
     </div>
   );

@@ -741,6 +741,10 @@ body {
 .engagement-target-url { color: var(--accent); font-size: 0.9rem; }
 .engagement-target-notes { color: var(--text-muted); font-size: 0.85rem; }
 .engagement-target-delete { margin-left: auto; }
+.osint-form-grid input,
+.osint-form-grid select {
+  min-width: 180px;
+}
 
 /* PiP Récap : au-dessus de la barre scénario, à gauche (pas en bas à droite sous la barre) */
 .pip-panel {

@@ -19,6 +19,14 @@ const defaultEngagement = () => ({
   sessions: [],
   todos: [],
   history: [],
+  osintCases: [],
+  osintPeople: [],
+  osintCompanies: [],
+  osintSources: [],
+  osintFindings: [],
+  osintTimeline: [],
+  osintTasks: [],
+  osintNotes: '',
 });
 
 export default function EngagementsView({ storage, targets, onNavigate }) {
@@ -42,6 +50,13 @@ export default function EngagementsView({ storage, targets, onNavigate }) {
         sessions: d.sessions || [],
         todos: d.todos || [],
         history: d.history || [],
+        osintCases: d.osintCases || [],
+        osintPeople: d.osintPeople || [],
+        osintCompanies: d.osintCompanies || [],
+        osintSources: d.osintSources || [],
+        osintFindings: d.osintFindings || [],
+        osintTimeline: d.osintTimeline || [],
+        osintTasks: d.osintTasks || [],
       });
     }
   }, [storageReady, storage]);
@@ -131,6 +146,147 @@ export default function EngagementsView({ storage, targets, onNavigate }) {
     save({ ...engagement, history });
   };
 
+  const addOsintCase = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const title = form.querySelector('[name="caseTitle"]')?.value?.trim();
+    if (!title) return;
+    const item = {
+      id: Date.now().toString(),
+      title,
+      objective: form.querySelector('[name="caseObjective"]')?.value?.trim() || '',
+      scope: form.querySelector('[name="caseScope"]')?.value?.trim() || '',
+      status: form.querySelector('[name="caseStatus"]')?.value || 'open',
+      createdAt: new Date().toISOString(),
+    };
+    save({ ...engagement, osintCases: [...(engagement.osintCases || []), item] });
+    form.reset();
+  };
+
+  const removeOsintCase = (id) => {
+    save({ ...engagement, osintCases: (engagement.osintCases || []).filter((c) => c.id !== id) });
+  };
+
+  const addOsintCompany = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.querySelector('[name="companyName"]')?.value?.trim();
+    if (!name) return;
+    const item = {
+      id: Date.now().toString(),
+      name,
+      website: form.querySelector('[name="companyWebsite"]')?.value?.trim() || '',
+      linkedin: form.querySelector('[name="companyLinkedin"]')?.value?.trim() || '',
+      notes: form.querySelector('[name="companyNotes"]')?.value?.trim() || '',
+    };
+    save({ ...engagement, osintCompanies: [...(engagement.osintCompanies || []), item] });
+    form.reset();
+  };
+
+  const removeOsintCompany = (id) => {
+    save({ ...engagement, osintCompanies: (engagement.osintCompanies || []).filter((c) => c.id !== id) });
+  };
+
+  const addOsintPerson = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const fullName = form.querySelector('[name="personName"]')?.value?.trim();
+    if (!fullName) return;
+    const item = {
+      id: Date.now().toString(),
+      fullName,
+      role: form.querySelector('[name="personRole"]')?.value?.trim() || '',
+      company: form.querySelector('[name="personCompany"]')?.value?.trim() || '',
+      profileUrl: form.querySelector('[name="personProfile"]')?.value?.trim() || '',
+      confidence: form.querySelector('[name="personConfidence"]')?.value || 'medium',
+      notes: form.querySelector('[name="personNotes"]')?.value?.trim() || '',
+      createdAt: new Date().toISOString(),
+    };
+    save({ ...engagement, osintPeople: [...(engagement.osintPeople || []), item] });
+    form.reset();
+  };
+
+  const removeOsintPerson = (id) => {
+    save({ ...engagement, osintPeople: (engagement.osintPeople || []).filter((p) => p.id !== id) });
+  };
+
+  const addOsintSource = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const url = form.querySelector('[name="sourceUrl"]')?.value?.trim();
+    if (!url) return;
+    const item = {
+      id: Date.now().toString(),
+      type: form.querySelector('[name="sourceType"]')?.value || 'web',
+      url,
+      credibility: form.querySelector('[name="sourceCredibility"]')?.value || 'medium',
+      notes: form.querySelector('[name="sourceNotes"]')?.value?.trim() || '',
+      createdAt: new Date().toISOString(),
+    };
+    save({ ...engagement, osintSources: [...(engagement.osintSources || []), item] });
+    form.reset();
+  };
+
+  const removeOsintSource = (id) => {
+    save({ ...engagement, osintSources: (engagement.osintSources || []).filter((s) => s.id !== id) });
+  };
+
+  const addOsintFinding = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const title = form.querySelector('[name="findingTitle"]')?.value?.trim();
+    if (!title) return;
+    const item = {
+      id: Date.now().toString(),
+      title,
+      severity: form.querySelector('[name="findingSeverity"]')?.value || 'medium',
+      relatedPerson: form.querySelector('[name="findingPerson"]')?.value?.trim() || '',
+      evidenceUrl: form.querySelector('[name="findingEvidence"]')?.value?.trim() || '',
+      status: form.querySelector('[name="findingStatus"]')?.value || 'open',
+      notes: form.querySelector('[name="findingNotes"]')?.value?.trim() || '',
+      createdAt: new Date().toISOString(),
+    };
+    save({ ...engagement, osintFindings: [...(engagement.osintFindings || []), item] });
+    form.reset();
+  };
+
+  const removeOsintFinding = (id) => {
+    save({ ...engagement, osintFindings: (engagement.osintFindings || []).filter((f) => f.id !== id) });
+  };
+
+  const addOsintTimelineEntry = (e) => {
+    e.preventDefault();
+    const input = e.target.querySelector('input[name="timelineText"], textarea[name="timelineText"]');
+    const text = (input?.value || '').trim();
+    if (!text) return;
+    const osintTimeline = [...(engagement.osintTimeline || []), { id: Date.now().toString(), text, createdAt: new Date().toISOString() }];
+    save({ ...engagement, osintTimeline });
+    input.value = '';
+  };
+
+  const removeOsintTimelineEntry = (id) => {
+    save({ ...engagement, osintTimeline: (engagement.osintTimeline || []).filter((t) => t.id !== id) });
+  };
+
+  const addOsintTask = (e) => {
+    e.preventDefault();
+    const input = e.target.querySelector('input[name="osintTaskText"]');
+    const text = (input?.value || '').trim();
+    if (!text) return;
+    const osintTasks = [...(engagement.osintTasks || []), { id: Date.now().toString(), text, status: 'pending', createdAt: new Date().toISOString() }];
+    save({ ...engagement, osintTasks });
+    input.value = '';
+  };
+
+  const toggleOsintTask = (id) => {
+    const osintTasks = (engagement.osintTasks || []).map((t) => (t.id === id ? { ...t, status: t.status === 'done' ? 'pending' : 'done' } : t));
+    save({ ...engagement, osintTasks });
+  };
+
+  const removeOsintTask = (id) => {
+    save({ ...engagement, osintTasks: (engagement.osintTasks || []).filter((t) => t.id !== id) });
+  };
+
   const addTarget = (e) => {
     e.preventDefault();
     const form = e.target;
@@ -213,7 +369,9 @@ export default function EngagementsView({ storage, targets, onNavigate }) {
         <h2>Cibles &amp; Proxy</h2>
         <p class="section-desc">Gère tes cibles (machines, URLs), sessions d’engagement, notes et données récupérées. Tout est enregistré localement. Utilise les raccourcis ci-dessous pour les outils intégrés.</p>
         <div class="engagement-shortcuts">
-          <button type="button" class="btn btn-primary" onClick={() => onNavigate?.('proxy-tools')}>📤 Proxy / Requêtes HTTP</button>
+          <button type="button" class="btn btn-primary" onClick={() => onNavigate?.('osint-workbench')}>🕵️ OSINT Workbench</button>
+          <button type="button" class="btn topbar-btn" onClick={() => onNavigate?.('labs')}>🧪 Labs &amp; outils</button>
+          <button type="button" class="btn topbar-btn" onClick={() => onNavigate?.('proxy-tools')}>📤 Proxy / Requêtes HTTP</button>
           <button type="button" class="btn topbar-btn" onClick={() => onNavigate?.('capture')}>📡 Capture pcap (Wireshark)</button>
           <button type="button" class="btn topbar-btn" onClick={() => onNavigate?.('progression')}>📊 Ma progression</button>
         </div>
@@ -384,6 +542,210 @@ export default function EngagementsView({ storage, targets, onNavigate }) {
           value={engagement.dataCollected || ''}
           onInput={e => save({ ...engagement, dataCollected: e.target.value })}
           placeholder="Ex: flag{...}, hash récupéré, extrait SQL..."
+        />
+      </section>
+      <section class="dashboard-section">
+        <h3 class="section-title">OSINT complet (entreprise / RH / personnes)</h3>
+        <p class="section-desc">
+          Espace de travail OSINT pour enregistrer tes enquêtes, sources, profils, preuves, résultats et actions. Données sauvegardées localement avec la session.
+        </p>
+        <div class="engagement-shortcuts">
+          <button type="button" class="btn btn-primary" onClick={() => onNavigate?.('osint-workbench')}>🕵️ Ouvrir OSINT Workbench</button>
+          <button type="button" class="btn topbar-btn" onClick={() => onNavigate?.('learning')}>📖 Doc &amp; Cours (OSINT)</button>
+          <button type="button" class="btn topbar-btn" onClick={() => onNavigate?.('api-client')}>📤 Outil requêtes API</button>
+        </div>
+      </section>
+
+      <section class="dashboard-section">
+        <h3 class="section-title">Cas d’enquête OSINT</h3>
+        <form class="engagement-form osint-form-grid" onSubmit={addOsintCase}>
+          <input name="caseTitle" placeholder="Nom du cas (ex: Vérification RH - Acme)" required />
+          <input name="caseObjective" placeholder="Objectif (ex: vérifier parcours et cohérence)" />
+          <input name="caseScope" placeholder="Périmètre (ex: public web, LinkedIn, presse)" />
+          <select name="caseStatus" defaultValue="open">
+            <option value="open">Ouvert</option>
+            <option value="in_progress">En cours</option>
+            <option value="closed">Clôturé</option>
+          </select>
+          <button type="submit" class="topbar-btn">Ajouter le cas</button>
+        </form>
+        <ul class="engagement-list">
+          {(engagement.osintCases || []).map((c) => (
+            <li key={c.id} class="engagement-target-item">
+              <span class="engagement-target-name">{escapeHtml(c.title)}</span>
+              {c.objective && <span class="engagement-target-notes">Objectif: {escapeHtml(c.objective)}</span>}
+              {c.scope && <span class="engagement-target-notes">Périmètre: {escapeHtml(c.scope)}</span>}
+              <span class="engagement-target-notes">Statut: {escapeHtml(c.status)}</span>
+              <button type="button" class="topbar-btn danger" onClick={() => removeOsintCase(c.id)}>Supprimer</button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="dashboard-section">
+        <h3 class="section-title">Entreprises suivies</h3>
+        <form class="engagement-form osint-form-grid" onSubmit={addOsintCompany}>
+          <input name="companyName" placeholder="Nom de l’entreprise" required />
+          <input name="companyWebsite" placeholder="Site web" />
+          <input name="companyLinkedin" placeholder="Page LinkedIn" />
+          <input name="companyNotes" placeholder="Notes (secteur, localisation, taille...)" />
+          <button type="submit" class="topbar-btn">Ajouter l’entreprise</button>
+        </form>
+        <ul class="engagement-list">
+          {(engagement.osintCompanies || []).map((c) => (
+            <li key={c.id} class="engagement-target-item">
+              <span class="engagement-target-name">{escapeHtml(c.name)}</span>
+              {c.website && <a href={c.website} target="_blank" rel="noopener nofollow" class="engagement-target-url">{escapeHtml(c.website)}</a>}
+              {c.linkedin && <a href={c.linkedin} target="_blank" rel="noopener nofollow" class="engagement-target-url">LinkedIn</a>}
+              {c.notes && <span class="engagement-target-notes">{escapeHtml(c.notes)}</span>}
+              <button type="button" class="topbar-btn danger" onClick={() => removeOsintCompany(c.id)}>Supprimer</button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="dashboard-section">
+        <h3 class="section-title">Profils personnes (RH, direction, équipes)</h3>
+        <form class="engagement-form osint-form-grid" onSubmit={addOsintPerson}>
+          <input name="personName" placeholder="Nom complet" required />
+          <input name="personRole" placeholder="Rôle (ex: RH, CTO, Recruteur...)" />
+          <input name="personCompany" placeholder="Entreprise associée" />
+          <input name="personProfile" placeholder="URL profil public" />
+          <select name="personConfidence" defaultValue="medium">
+            <option value="low">Confiance faible</option>
+            <option value="medium">Confiance moyenne</option>
+            <option value="high">Confiance élevée</option>
+          </select>
+          <input name="personNotes" placeholder="Notes (éléments vérifiés / à vérifier)" />
+          <button type="submit" class="topbar-btn">Ajouter le profil</button>
+        </form>
+        <ul class="engagement-list">
+          {(engagement.osintPeople || []).map((p) => (
+            <li key={p.id} class="engagement-target-item">
+              <span class="engagement-target-name">{escapeHtml(p.fullName)}</span>
+              {p.role && <span class="engagement-target-notes">{escapeHtml(p.role)}</span>}
+              {p.company && <span class="engagement-target-notes">{escapeHtml(p.company)}</span>}
+              {p.profileUrl && <a href={p.profileUrl} target="_blank" rel="noopener nofollow" class="engagement-target-url">Profil</a>}
+              <span class="engagement-target-notes">Fiabilité: {escapeHtml(p.confidence)}</span>
+              {p.notes && <span class="engagement-target-notes">{escapeHtml(p.notes)}</span>}
+              <button type="button" class="topbar-btn danger" onClick={() => removeOsintPerson(p.id)}>Supprimer</button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="dashboard-section">
+        <h3 class="section-title">Sources et preuves (avec fiabilité)</h3>
+        <form class="engagement-form osint-form-grid" onSubmit={addOsintSource}>
+          <select name="sourceType" defaultValue="web">
+            <option value="web">Web</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="press">Presse</option>
+            <option value="registry">Registre public</option>
+            <option value="social">Réseau social</option>
+            <option value="other">Autre</option>
+          </select>
+          <input name="sourceUrl" placeholder="URL de la source / preuve" required />
+          <select name="sourceCredibility" defaultValue="medium">
+            <option value="low">Crédibilité faible</option>
+            <option value="medium">Crédibilité moyenne</option>
+            <option value="high">Crédibilité élevée</option>
+          </select>
+          <input name="sourceNotes" placeholder="Pourquoi cette source est pertinente" />
+          <button type="submit" class="topbar-btn">Ajouter la source</button>
+        </form>
+        <ul class="engagement-list">
+          {(engagement.osintSources || []).map((s) => (
+            <li key={s.id} class="engagement-target-item">
+              <span class="engagement-target-notes">[{escapeHtml(s.type)}]</span>
+              <a href={s.url} target="_blank" rel="noopener nofollow" class="engagement-target-url">{escapeHtml(s.url)}</a>
+              <span class="engagement-target-notes">Crédibilité: {escapeHtml(s.credibility)}</span>
+              {s.notes && <span class="engagement-target-notes">{escapeHtml(s.notes)}</span>}
+              <button type="button" class="topbar-btn danger" onClick={() => removeOsintSource(s.id)}>Supprimer</button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="dashboard-section">
+        <h3 class="section-title">Résultats / Findings OSINT</h3>
+        <form class="engagement-form osint-form-grid" onSubmit={addOsintFinding}>
+          <input name="findingTitle" placeholder="Résumé du résultat" required />
+          <select name="findingSeverity" defaultValue="medium">
+            <option value="low">Impact faible</option>
+            <option value="medium">Impact moyen</option>
+            <option value="high">Impact élevé</option>
+          </select>
+          <input name="findingPerson" placeholder="Personne concernée (optionnel)" />
+          <input name="findingEvidence" placeholder="URL preuve principale" />
+          <select name="findingStatus" defaultValue="open">
+            <option value="open">Ouvert</option>
+            <option value="validated">Validé</option>
+            <option value="dismissed">Écarté</option>
+          </select>
+          <input name="findingNotes" placeholder="Notes / recommandations" />
+          <button type="submit" class="topbar-btn">Ajouter le résultat</button>
+        </form>
+        <ul class="engagement-list">
+          {(engagement.osintFindings || []).map((f) => (
+            <li key={f.id} class="engagement-target-item">
+              <span class="engagement-target-name">{escapeHtml(f.title)}</span>
+              <span class="engagement-target-notes">Impact: {escapeHtml(f.severity)}</span>
+              {f.relatedPerson && <span class="engagement-target-notes">Personne: {escapeHtml(f.relatedPerson)}</span>}
+              <span class="engagement-target-notes">Statut: {escapeHtml(f.status)}</span>
+              {f.evidenceUrl && <a href={f.evidenceUrl} target="_blank" rel="noopener nofollow" class="engagement-target-url">Preuve</a>}
+              {f.notes && <span class="engagement-target-notes">{escapeHtml(f.notes)}</span>}
+              <button type="button" class="topbar-btn danger" onClick={() => removeOsintFinding(f.id)}>Supprimer</button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="dashboard-section">
+        <h3 class="section-title">Timeline OSINT</h3>
+        <form class="engagement-form" onSubmit={addOsintTimelineEntry}>
+          <input name="timelineText" placeholder="Ex: 10:32 vérification profil RH + recoupement presse" />
+          <button type="submit" class="topbar-btn">Ajouter à la timeline</button>
+        </form>
+        <ul class="engagement-list engagement-history">
+          {(engagement.osintTimeline || []).slice().reverse().map((t) => (
+            <li key={t.id} class="engagement-history-item">
+              <span class="engagement-history-date">{t.createdAt ? new Date(t.createdAt).toLocaleString('fr-FR') : ''}</span>
+              <span class="engagement-history-text">{escapeHtml(t.text)}</span>
+              <button type="button" class="topbar-btn danger" onClick={() => removeOsintTimelineEntry(t.id)} aria-label="Supprimer">×</button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="dashboard-section">
+        <h3 class="section-title">Checklist OSINT</h3>
+        <form class="engagement-form" onSubmit={addOsintTask}>
+          <input name="osintTaskText" placeholder="Ex: recouper 2e source pour le poste RH" required />
+          <button type="submit" class="topbar-btn">Ajouter</button>
+        </form>
+        <ul class="engagement-list engagement-todos">
+          {(engagement.osintTasks || []).map((t) => (
+            <li key={t.id} class="engagement-target-item engagement-todo-item">
+              <label class="engagement-todo-label">
+                <input type="checkbox" checked={t.status === 'done'} onChange={() => toggleOsintTask(t.id)} />
+                <span class={t.status === 'done' ? 'engagement-todo-done' : ''}>{escapeHtml(t.text)}</span>
+              </label>
+              <button type="button" class="topbar-btn danger" onClick={() => removeOsintTask(t.id)} aria-label="Supprimer">×</button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="dashboard-section">
+        <h3 class="section-title">Synthèse OSINT</h3>
+        <p class="section-desc">Rédige ici ta synthèse finale (constats, niveau de confiance, actions recommandées, limites).</p>
+        <textarea
+          class="engagement-notes"
+          rows={8}
+          value={engagement.osintNotes || ''}
+          onInput={e => save({ ...engagement, osintNotes: e.target.value })}
+          placeholder="Synthèse: ce qui est confirmé, ce qui reste incertain, plan de vérification complémentaire..."
         />
       </section>
     </div>

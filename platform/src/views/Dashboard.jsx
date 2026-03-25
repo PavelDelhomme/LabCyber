@@ -125,14 +125,35 @@ export default function Dashboard({ data, scenarios, config, targets, challenges
       </section>
       <section class="dashboard-section">
         <h3 class="section-title">Challenges</h3>
-        <p class="section-desc">Défis style CTF / TryHackMe à valider (Redis, SSH, API, SQLi, sniffing). Voir la doc « Challenges ».</p>
+        <p class="section-desc">Défis style CTF / TryHackMe à valider (réseau, API, web, stégano, crypto). Clique pour aller à Ma progression.</p>
         <div class="dashboard-grid" id="dashboard-challenges-cards">
-          {Array.isArray(challenges) && challenges.length > 0 ? challenges.slice(0, 6).map(c => (
-            <article key={c.id} class="card challenge-card">
+          {Array.isArray(challenges) && challenges.length > 0 ? challenges.slice(0, 8).map(c => (
+            <article key={c.id} class="card challenge-card" onClick={() => onNavigate('progression')} style={{ cursor: 'pointer' }} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('progression'); } }} title="Ouvrir Ma progression pour valider les challenges">
               <h3 class="card-title">{escapeHtml(c.title)}</h3>
-              <p class="card-category"><span class="difficulty-badge easy">{escapeHtml(c.difficulty || '')}</span> {escapeHtml((c.description || '').slice(0, 55))}{(c.description || '').length > 55 ? '…' : ''}</p>
+              <p class="card-category"><span class="difficulty-badge easy">{escapeHtml(c.difficulty || '')}</span> {c.category && <span class="challenge-card-category">{escapeHtml(c.category)}</span>} {escapeHtml((c.description || '').slice(0, 50))}{(c.description || '').length > 50 ? '…' : ''}</p>
             </article>
           )) : <p class="section-desc">Chargement des challenges…</p>}
+        </div>
+        {Array.isArray(challenges) && challenges.length > 0 && (
+          <p class="section-desc" style={{ marginTop: '0.5rem' }}>
+            <button type="button" class="btn btn-secondary" onClick={() => onNavigate('progression')}>Voir tous les challenges ({challenges.length})</button>
+          </p>
+        )}
+      </section>
+      <section class="dashboard-section">
+        <h3 class="section-title">Labs &amp; outils (dont OSINT)</h3>
+        <p class="section-desc">
+          Ouvre <strong>Labs</strong> pour le simulateur réseau, le client API, la capture pcap, etc. L’outil <strong>OSINT Workbench</strong> est aussi dans la barre latérale sous « Labs &amp; outils ». Accès direct : <code>#/osint-workbench</code> dans l’URL du navigateur.
+        </p>
+        <div class="dashboard-grid" id="dashboard-labs-osint-cards">
+          <article class="card" onClick={() => onNavigate('labs')} style="cursor:pointer" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('labs'); } }}>
+            <h3 class="card-title">🧪 Labs &amp; outils</h3>
+            <p class="card-category">Gestion des labs, terminal, simulateur, proxy, API, capture pcap.</p>
+          </article>
+          <article class="card" onClick={() => onNavigate('osint-workbench')} style="cursor:pointer" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('osint-workbench'); } }}>
+            <h3 class="card-title">🕵️ OSINT Workbench</h3>
+            <p class="card-category">Entreprises, contacts RH/métiers, actifs, pistes, export, rapport — données sauvegardées localement.</p>
+          </article>
         </div>
       </section>
       <section class="dashboard-section">

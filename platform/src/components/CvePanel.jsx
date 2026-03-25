@@ -1,5 +1,6 @@
-import { useState } from 'preact/hooks';
-import { escapeHtml } from '../lib/store';
+import { useState, useEffect } from 'preact/hooks';
+import { escapeHtml, dispatchLabAction } from '../lib/store';
+import { ACTION } from '../lib/actionTypes';
 
 const NVD_API = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
 
@@ -26,8 +27,10 @@ export default function CvePanel({ open: isOpen, onClose }) {
     try {
       const res = await fetch(`${NVD_API}?keywordSearch=${encodeURIComponent(q)}&resultsPerPage=20`);
       const data = await res.json();
-      setResults(data.vulnerabilities || []);
-      if ((data.vulnerabilities || []).length === 0) setError('Aucun résultat. Essaie un autre mot-clé (logiciel, OS, version).');
+      const vulns = data.vulnerabilities || [];
+      setResults(vulns);
+      if (vulns.length > 0) dispatchLabAction({ action: ACTION.CVE_SEARCHED });
+      if (vulns.length === 0) setError('Aucun résultat. Essaie un autre mot-clé (logiciel, OS, version).');
     } catch (e) {
       setError(e.message || 'Erreur réseau. Limite NVD : 5 requêtes / 30 s sans clé API.');
     } finally {
@@ -46,6 +49,10 @@ export default function CvePanel({ open: isOpen, onClose }) {
     const desc = (cve.descriptions || []).find(d => d.lang === 'en') || (cve.descriptions || [])[0];
     return desc?.value || '';
   };
+
+  useEffect(() => {
+    if (isOpen) dispatchLabAction({ action: ACTION.CVE_OPENED });
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

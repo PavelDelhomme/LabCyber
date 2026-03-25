@@ -517,6 +517,8 @@ body {
 .docs-list a { color: var(--accent); text-decoration: none; }
 .docs-list a:hover { text-decoration: underline; }
 
+.challenge-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(0, 210, 106, 0.12); }
+.challenge-card-category { font-size: 0.7rem; color: var(--text-muted); text-transform: capitalize; margin-right: 0.25rem; }
 .card-title, .scenario-card-title {
   margin: 0 0 0.5rem;
   font-size: 1rem;
@@ -2193,9 +2195,10 @@ body {
 .progression-done { color: var(--success); margin-left: auto; }
 .progression-challenge-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .progression-challenge-row input { margin: 0; }
+.progression-challenge-category { font-size: 0.75rem; color: var(--text-muted); padding: 0.15rem 0.4rem; background: var(--bg-hover); border-radius: var(--radius); }
 .progression-challenge-desc { margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--text-muted); }
 .progression-challenge-item { margin-bottom: 0.75rem; }
-.progression-challenge-actions { margin-top: 0.35rem; }
+.progression-challenge-actions { margin-top: 0.35rem; display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
 
 /* Labs */
 .labs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }

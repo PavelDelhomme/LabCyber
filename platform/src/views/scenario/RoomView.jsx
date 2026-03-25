@@ -1,5 +1,6 @@
 import { useEffect } from 'preact/hooks';
-import { escapeHtml, getTerminalUrl, getDesktopUrl, getMachineUrl } from '../../lib/store';
+import { escapeHtml, getTerminalUrl, getDesktopUrl, getMachineUrl, dispatchLabAction } from '../../lib/store';
+import { ACTION } from '../../lib/actionTypes';
 
 function byCategory(categories, categoryId) {
   return (categories || []).find(c => c.id === categoryId) || {};
@@ -37,6 +38,10 @@ export default function RoomView({
   const allDone = tasks.length > 0 && doneCount >= tasks.length;
 
   useEffect(() => {
+    if (room?.id) dispatchLabAction({ action: ACTION.ROOM_OPENED, roomId: room.id });
+  }, [room?.id]);
+
+  useEffect(() => {
     if (!room || !storage) return;
     if (allDone && status !== 'completed') {
       storage.setRoomStatus(room.id, 'completed');
@@ -48,6 +53,7 @@ export default function RoomView({
   const isDone = (i) => storage?.getRoomTaskDone(room.id, i);
   const setDone = (i, done) => {
     storage?.setRoomTaskDone(room.id, i, done);
+    if (done) dispatchLabAction({ action: ACTION.ROOM_TASK_DONE, roomId: room.id, taskIndex: i });
     storage?.setLastRoom(room.id);
     storage?.setRoomStatus(room.id, 'in_progress');
     onRoomStatusChange?.();
@@ -140,7 +146,7 @@ export default function RoomView({
                       {(m.credentials || m.note) && <p class="machine-note">{escapeHtml(m.credentials || m.note || '')}</p>}
                       <div class="machine-card-actions">
                         {(m.urlKey || m.url) && machineUrl(m) !== '#' && (
-                          <a href={machineUrl(m)} target="_blank" rel="noopener" class="btn btn-small">Ouvrir la cible (nouvel onglet)</a>
+                          <a href={machineUrl(m)} target="_blank" rel="noopener" class="btn btn-small" onClick={() => m.urlKey && dispatchLabAction({ action: ACTION.TARGET_OPENED, target: m.urlKey })}>Ouvrir la cible (nouvel onglet)</a>
                         )}
                         <button type="button" class="btn btn-small" onClick={() => onOpenTerminalInPanel?.()}>Terminal</button>
                       </div>

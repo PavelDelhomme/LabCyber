@@ -9,7 +9,13 @@
       "difficulty": "Débutant",
       "description": "Depuis la machine attaquant, connecte-toi à Redis sur vuln-network et exécute la commande INFO. Note la version de Redis.",
       "hint": "redis-cli -h vuln-network puis INFO",
-      "validation": "Tu as vu la section # Server avec la version Redis."
+      "validation": "Tu as vu la section # Server avec la version Redis.",
+      "autoValidate": {
+        "outputContains": [
+          "redis_version",
+          "Server"
+        ]
+      }
     },
     {
       "id": "chall-02-ssh-root",
@@ -18,7 +24,15 @@
       "difficulty": "Débutant",
       "description": "Ouvre une session SSH en tant que root sur vuln-network depuis l’attaquant.",
       "hint": "ssh root@vuln-network — mot de passe : labpassword",
-      "validation": "Tu obtiens un shell root sur la cible."
+      "validation": "Tu obtiens un shell root sur la cible.",
+      "autoValidate": {
+        "outputContains": [
+          "root@"
+        ],
+        "commandContains": [
+          "ssh"
+        ]
+      }
     },
     {
       "id": "chall-03-api-login",
@@ -27,7 +41,19 @@
       "difficulty": "Débutant",
       "description": "Envoie une requête POST /api/login à vuln-api avec les identifiants admin et récupère le token.",
       "hint": "curl -X POST http://vuln-api:5000/api/login -H 'Content-Type: application/json' -d '{\"login\":\"admin\",\"password\":\"admin123\"}'",
-      "validation": "La réponse JSON contient un champ \"token\"."
+      "validation": "La réponse JSON contient un champ \"token\".",
+      "autoValidate": {
+        "outputContains": [
+          "token"
+        ],
+        "commandContains": [
+          "/api/login"
+        ],
+        "actionMatch": {
+          "action": "api_request",
+          "urlContains": "/api/login"
+        }
+      }
     },
     {
       "id": "chall-04-idor-user2",
@@ -36,7 +62,16 @@
       "difficulty": "Facile",
       "description": "Sans te connecter, accède à /api/users/2 et récupère les infos du second utilisateur (IDOR = accès non autorisé).",
       "hint": "GET http://vuln-api:5000/api/users/2",
-      "validation": "Tu vois login et role de l’utilisateur 2."
+      "validation": "Tu vois login et role de l’utilisateur 2.",
+      "autoValidate": {
+        "outputContains": [
+          "users/2",
+          "login"
+        ],
+        "commandContains": [
+          "users/2"
+        ]
+      }
     },
     {
       "id": "chall-05-sqli-products",
@@ -45,7 +80,15 @@
       "difficulty": "Facile",
       "description": "Le paramètre q de /api/products est vulnérable à l’injection SQL. Trouve un payload pour lister tous les produits ou provoquer une erreur SQL.",
       "hint": "Ex: q=1' OR '1'='1 ou q=1 UNION SELECT 1,2,3--",
-      "validation": "Tu obtiens des données supplémentaires ou un message d’erreur SQL."
+      "validation": "Tu obtiens des données supplémentaires ou un message d’erreur SQL.",
+      "autoValidate": {
+        "outputContains": [
+          "products"
+        ],
+        "commandContains": [
+          "api/products"
+        ]
+      }
     },
     {
       "id": "chall-06-dvwa-sqli",
@@ -54,7 +97,13 @@
       "difficulty": "Débutant",
       "description": "Sur DVWA, module SQL Injection niveau Low, extraire plus d’un utilisateur avec une injection (ex: 1' OR '1'='1).",
       "hint": "Créer la base puis SQL Injection > Low.",
-      "validation": "Plusieurs lignes utilisateur s’affichent."
+      "validation": "Plusieurs lignes utilisateur s’affichent.",
+      "autoValidate": {
+        "actionMatch": {
+          "action": "target_opened",
+          "target": "dvwa"
+        }
+      }
     },
     {
       "id": "chall-07-nmap-ports",
@@ -63,7 +112,16 @@
       "difficulty": "Débutant",
       "description": "Depuis l’attaquant, lance nmap sur vuln-network et identifie les ports 22 et 6379 ouverts.",
       "hint": "nmap -sV vuln-network",
-      "validation": "Tu notes 22/tcp (SSH) et 6379/tcp (Redis)."
+      "validation": "Tu notes 22/tcp (SSH) et 6379/tcp (Redis).",
+      "autoValidate": {
+        "outputContains": [
+          "22/tcp",
+          "6379"
+        ],
+        "commandContains": [
+          "nmap"
+        ]
+      }
     },
     {
       "id": "chall-08-sniff-traffic",
@@ -72,7 +130,15 @@
       "difficulty": "Facile",
       "description": "Depuis l’attaquant, lance tcpdump pendant que tu fais un curl vers vuln-api. Arrête la capture et vérifie que tu vois des paquets.",
       "hint": "tcpdump -i any -w /workspace/cap.pcap host vuln-api &  puis curl http://vuln-api:5000/api/health",
-      "validation": "Un fichier cap.pcap contient des paquets."
+      "validation": "Un fichier cap.pcap contient des paquets.",
+      "autoValidate": {
+        "outputContains": [
+          "cap.pcap"
+        ],
+        "commandContains": [
+          "tcpdump"
+        ]
+      }
     },
     {
       "id": "chall-09-hydra-ssh",
@@ -81,7 +147,16 @@
       "difficulty": "Moyen",
       "description": "Utilise Hydra pour tester une wordlist sur le SSH de vuln-network (utilisateur root). En lab la wordlist peut être courte (ex: 3–5 mots).",
       "hint": "hydra -l root -P wordlist.txt ssh://vuln-network -t 4",
-      "validation": "Hydra trouve le mot de passe (labpassword)."
+      "validation": "Hydra trouve le mot de passe (labpassword).",
+      "autoValidate": {
+        "outputContains": [
+          "password:",
+          "labpassword"
+        ],
+        "commandContains": [
+          "hydra"
+        ]
+      }
     },
     {
       "id": "chall-10-scapy-ping",
@@ -90,7 +165,17 @@
       "difficulty": "Facile",
       "description": "Depuis l'attaquant, en Python avec Scapy, envoie un paquet ICMP (ping) vers vuln-network et affiche la réponse.",
       "hint": "from scapy.all import *; sr1(IP(dst=\"vuln-network\")/ICMP())",
-      "validation": "Tu reçois une réponse ICMP (type 0)."
+      "validation": "Tu reçois une réponse ICMP (type 0).",
+      "autoValidate": {
+        "outputContains": [
+          "ICMP",
+          "1 received"
+        ],
+        "commandContains": [
+          "scapy",
+          "ICMP"
+        ]
+      }
     },
     {
       "id": "chall-11-cve-recherche",
@@ -99,7 +184,52 @@
       "difficulty": "Débutant",
       "description": "Utilise le bouton CVE (ou Doc & Cours → CVE) pour comprendre le fonctionnement des CVE. Ouvre NVD, cherche un CVE pour un logiciel de ton choix (ex. Redis, OpenSSH) et note son score CVSS et sa description.",
       "hint": "Bouton CVE en haut à droite ; nvd.nist.gov ; format CVE-ANNÉE-NNNNN",
-      "validation": "Tu as trouvé un CVE, noté son ID, le produit concerné et le score CVSS."
+      "validation": "Tu as trouvé un CVE, noté son ID, le produit concerné et le score CVSS.",
+      "autoValidate": {
+        "actionMatch": {
+          "action": "cve_searched"
+        }
+      }
+    },
+    {
+      "id": "chall-12-stego-extract",
+      "title": "Stéganographie : extraire un flag d’une image",
+      "category": "stego",
+      "difficulty": "Débutant",
+      "description": "Télécharge l’image avec données cachées (room Stéganographie ou /challenges/stego/). Utilise steghide pour extraire le fichier caché (mot de passe : labstego).",
+      "hint": "steghide extract -sf image_stego.jpg ; mot de passe : labstego",
+      "validation": "Tu as extrait un fichier contenant le flag (ex. LAB_STEGO_FLAG_1).",
+      "roomId": "stego-intro",
+      "downloadUrl": "/challenges/stego/image_stego.jpg",
+      "autoValidate": {
+        "outputContains": [
+          "extracted",
+          "wrote"
+        ],
+        "commandContains": [
+          "steghide"
+        ]
+      }
+    },
+    {
+      "id": "chall-13-crypto-decode",
+      "title": "Cryptographie : Base64 et OpenSSL",
+      "category": "crypto",
+      "difficulty": "Débutant",
+      "description": "Télécharge les défis crypto (room Cryptographie ou /challenges/crypto/). Décode le flag en Base64 (flag_b64.txt) et déchiffre flag.enc avec OpenSSL (mot de passe : labcrypto).",
+      "hint": "base64 -d flag_b64.txt ; openssl enc -d -aes-256-cbc -in flag.enc -out flag.txt -k labcrypto",
+      "validation": "Tu as obtenu les deux flags (LAB_CRYPTO_FLAG_B64_1 et LAB_CRYPTO_FLAG_ENC_1).",
+      "roomId": "crypto-intro",
+      "downloadUrl": "/challenges/crypto/",
+      "autoValidate": {
+        "outputContains": [
+          "LAB_CRYPTO"
+        ],
+        "commandContains": [
+          "base64",
+          "openssl"
+        ]
+      }
     }
   ]
 }

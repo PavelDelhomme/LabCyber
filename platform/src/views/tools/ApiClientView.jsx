@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
-import { escapeHtml } from '../../lib/store';
+import { escapeHtml, dispatchLabAction } from '../../lib/store';
+import { ACTION } from '../../lib/actionTypes';
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
@@ -81,6 +82,7 @@ export default function ApiClientView({ storage, currentLabId: appLabId }) {
         body: text,
         parsed,
       });
+      dispatchLabAction({ action: ACTION.API_REQUEST, url, method: request.method });
       persistRequestData(null, [{ method: request.method, url, ts: new Date().toISOString() }, ...history].slice(0, 50));
     } catch (e) {
       setError(e.message || 'Erreur réseau. Pour les cibles sans CORS, utilise le terminal (curl) ou un proxy.');
