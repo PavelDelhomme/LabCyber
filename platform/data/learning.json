@@ -9,21 +9,57 @@
       "short": "SQLi, XSS, CSRF, OWASP",
       "content": "La sécurité des applications web vise à protéger les sites et APIs contre les attaques (injection SQL, XSS, CSRF, etc.). Le référentiel OWASP Top 10 liste les vulnérabilités les plus critiques. Dans le lab, vous pouvez pratiquer sur DVWA, Juice Shop ou bWAPP.",
       "subcategories": [
-        { "id": "owasp", "name": "OWASP Top 10", "content": "Les 10 vulnérabilités les plus critiques : injection, authentification cassée, exposition de données sensibles, XML externe, contrôle d'accès, mauvaise config, XSS, désérialisation, composants vulnérables, journalisation insuffisante." },
-        { "id": "sqli", "name": "Injection SQL", "content": "Une injection SQL permet d'exécuter du code SQL non prévu en injectant du texte dans une requête. Prévention : requêtes paramétrées, échappement, moindre privilège." },
-        { "id": "xss", "name": "XSS (Cross-Site Scripting)", "content": "Le XSS injecte du JavaScript dans une page vue par d'autres utilisateurs. Types : stocké, réfléchi, DOM-based. Prévention : échappement des sorties, Content-Security-Policy." }
+        {
+          "id": "owasp",
+          "name": "OWASP Top 10",
+          "content": "Les 10 vulnérabilités les plus critiques : injection, authentification cassée, exposition de données sensibles, XML externe, contrôle d'accès, mauvaise config, XSS, désérialisation, composants vulnérables, journalisation insuffisante."
+        },
+        {
+          "id": "sqli",
+          "name": "Injection SQL",
+          "content": "Une injection SQL permet d'exécuter du code SQL non prévu en injectant du texte dans une requête. Prévention : requêtes paramétrées, échappement, moindre privilège."
+        },
+        {
+          "id": "xss",
+          "name": "XSS (Cross-Site Scripting)",
+          "content": "Le XSS injecte du JavaScript dans une page vue par d'autres utilisateurs. Types : stocké, réfléchi, DOM-based. Prévention : échappement des sorties, Content-Security-Policy."
+        }
       ],
       "documentation": [
-        { "label": "OWASP Top 10", "url": "https://owasp.org/www-project-top-ten/", "desc": "Les 10 vulnérabilités web les plus critiques" },
-        { "label": "OWASP Testing Guide", "url": "https://owasp.org/www-project-web-security-testing-guide/", "desc": "Guide de test d'intrusion web" }
+        {
+          "label": "OWASP Top 10",
+          "url": "https://owasp.org/www-project-top-ten/",
+          "desc": "Les 10 vulnérabilités web les plus critiques"
+        },
+        {
+          "label": "OWASP Testing Guide",
+          "url": "https://owasp.org/www-project-web-security-testing-guide/",
+          "desc": "Guide de test d'intrusion web"
+        }
       ],
       "courses": [
-        { "label": "PortSwigger Web Security Academy", "url": "https://portswigger.net/web-security", "desc": "Cours gratuit complet avec labs" }
+        {
+          "label": "PortSwigger Web Security Academy",
+          "url": "https://portswigger.net/web-security",
+          "desc": "Cours gratuit complet avec labs"
+        }
       ],
       "tools": [
-        { "name": "Burp Suite", "url": "https://portswigger.net/burp", "desc": "Proxy / scanner web, référence pentest" },
-        { "name": "OWASP ZAP", "url": "https://www.zaproxy.org/", "desc": "Scanner de vulnérabilités open source" },
-        { "name": "sqlmap", "url": "https://sqlmap.org/", "desc": "Automatisation des injections SQL" }
+        {
+          "name": "Burp Suite",
+          "url": "https://portswigger.net/burp",
+          "desc": "Proxy / scanner web, référence pentest"
+        },
+        {
+          "name": "OWASP ZAP",
+          "url": "https://www.zaproxy.org/",
+          "desc": "Scanner de vulnérabilités open source"
+        },
+        {
+          "name": "sqlmap",
+          "url": "https://sqlmap.org/",
+          "desc": "Automatisation des injections SQL"
+        }
       ]
     },
     {
@@ -33,20 +69,52 @@
       "short": "AES, RSA, Base64, hachage",
       "content": "La cryptographie assure confidentialité (chiffrement), intégrité (hachage) et authentification. En pentest et CTF on rencontre souvent Base64, AES, RSA, et des hachages (MD5, SHA) à casser avec John ou hashcat.",
       "subcategories": [
-        { "id": "chiffrement", "name": "Chiffrement", "content": "Chiffrement symétrique (AES) : une même clé pour chiffrer/déchiffrer. Chiffrement asymétrique (RSA) : paire clé publique/privée. En pratique on combine les deux." },
-        { "id": "hachage", "name": "Hachage", "content": "Une fonction de hachage produit une empreinte fixe (ex. SHA-256). Non réversible ; pour casser un hash on utilise des dictionnaires et du brute-force (John the Ripper, hashcat)." }
+        {
+          "id": "chiffrement",
+          "name": "Chiffrement",
+          "content": "Chiffrement symétrique (AES) : une même clé pour chiffrer/déchiffrer. Chiffrement asymétrique (RSA) : paire clé publique/privée. En pratique on combine les deux."
+        },
+        {
+          "id": "hachage",
+          "name": "Hachage",
+          "content": "Une fonction de hachage produit une empreinte fixe (ex. SHA-256). Non réversible ; pour casser un hash on utilise des dictionnaires et du brute-force (John the Ripper, hashcat)."
+        }
       ],
       "documentation": [
-        { "label": "OpenSSL", "url": "https://www.openssl.org/docs/", "desc": "Documentation officielle" },
-        { "label": "CTF 101 – Crypto", "url": "https://ctf101.org/cryptography/overview/", "desc": "Bases crypto pour CTF" }
+        {
+          "label": "OpenSSL",
+          "url": "https://www.openssl.org/docs/",
+          "desc": "Documentation officielle"
+        },
+        {
+          "label": "CTF 101 – Crypto",
+          "url": "https://ctf101.org/cryptography/overview/",
+          "desc": "Bases crypto pour CTF"
+        }
       ],
       "courses": [
-        { "label": "CryptoHack", "url": "https://cryptohack.org/", "desc": "Cours crypto interactif gratuit" }
+        {
+          "label": "CryptoHack",
+          "url": "https://cryptohack.org/",
+          "desc": "Cours crypto interactif gratuit"
+        }
       ],
       "tools": [
-        { "name": "OpenSSL", "url": "https://www.openssl.org/", "desc": "Chiffrement AES/RSA, certificats" },
-        { "name": "John the Ripper", "url": "https://www.openwall.com/john/", "desc": "Casseur de mots de passe" },
-        { "name": "CyberChef", "url": "https://gchq.github.io/CyberChef/", "desc": "Encode/decode, Base64, XOR (navigateur)" }
+        {
+          "name": "OpenSSL",
+          "url": "https://www.openssl.org/",
+          "desc": "Chiffrement AES/RSA, certificats"
+        },
+        {
+          "name": "John the Ripper",
+          "url": "https://www.openwall.com/john/",
+          "desc": "Casseur de mots de passe"
+        },
+        {
+          "name": "CyberChef",
+          "url": "https://gchq.github.io/CyberChef/",
+          "desc": "Encode/decode, Base64, XOR (navigateur)"
+        }
       ]
     },
     {
@@ -56,14 +124,34 @@
       "short": "Données cachées dans images / audio",
       "content": "La stéganographie cache des données dans des fichiers (images, audio) sans changer l'apparence. En CTF on utilise steghide, binwalk, exiftool pour extraire les données cachées.",
       "documentation": [
-        { "label": "Steghide", "url": "https://steghide.sourceforge.io/", "desc": "Cacher/extraire dans JPEG, BMP" },
-        { "label": "0xrick – Steganography", "url": "https://0xrick.com/categories/#steganography", "desc": "Tutoriels stégano CTF" }
+        {
+          "label": "Steghide",
+          "url": "https://steghide.sourceforge.io/",
+          "desc": "Cacher/extraire dans JPEG, BMP"
+        },
+        {
+          "label": "0xrick – Steganography",
+          "url": "https://0xrick.com/categories/#steganography",
+          "desc": "Tutoriels stégano CTF"
+        }
       ],
       "courses": [],
       "tools": [
-        { "name": "steghide", "url": "https://steghide.sourceforge.io/", "desc": "Données cachées dans images (mot de passe)" },
-        { "name": "binwalk", "url": "https://github.com/ReFirmLabs/binwalk", "desc": "Fichiers embarqués dans binaires/images" },
-        { "name": "exiftool", "url": "https://exiftool.org/", "desc": "Métadonnées EXIF" }
+        {
+          "name": "steghide",
+          "url": "https://steghide.sourceforge.io/",
+          "desc": "Données cachées dans images (mot de passe)"
+        },
+        {
+          "name": "binwalk",
+          "url": "https://github.com/ReFirmLabs/binwalk",
+          "desc": "Fichiers embarqués dans binaires/images"
+        },
+        {
+          "name": "exiftool",
+          "url": "https://exiftool.org/",
+          "desc": "Métadonnées EXIF"
+        }
       ]
     },
     {
@@ -73,12 +161,24 @@
       "short": "Hameçonnage, défense",
       "content": "Le phishing vise à obtenir des identifiants ou des actions via des emails ou sites trompeurs. La défense repose sur la formation et des simulations (ex. Gophish). Usage strictement encadré en formation.",
       "documentation": [
-        { "label": "ANSSI – Hameçonnage", "url": "https://www.ssi.gouv.fr/entreprise/boite-outils/fiches-pratiques/le-hameconnage-phishing/", "desc": "Fiche pratique française" },
-        { "label": "Cybermalveillance.gouv.fr", "url": "https://www.cybermalveillance.gouv.fr/", "desc": "Signalement et prévention" }
+        {
+          "label": "ANSSI – Hameçonnage",
+          "url": "https://www.ssi.gouv.fr/entreprise/boite-outils/fiches-pratiques/le-hameconnage-phishing/",
+          "desc": "Fiche pratique française"
+        },
+        {
+          "label": "Cybermalveillance.gouv.fr",
+          "url": "https://www.cybermalveillance.gouv.fr/",
+          "desc": "Signalement et prévention"
+        }
       ],
       "courses": [],
       "tools": [
-        { "name": "Gophish", "url": "https://getgophish.com/", "desc": "Simulation de phishing (campagnes internes)" }
+        {
+          "name": "Gophish",
+          "url": "https://getgophish.com/",
+          "desc": "Simulation de phishing (campagnes internes)"
+        }
       ]
     },
     {
@@ -88,13 +188,29 @@
       "short": "Scan, services, Redis, SSH",
       "content": "Le pentest réseau consiste à scanner les ports (Nmap), identifier les services, tester les authentifications (Hydra) et les configurations (Redis, SSH). Le lab propose un réseau vulnérable pour s'entraîner.",
       "documentation": [
-        { "label": "Nmap Reference", "url": "https://nmap.org/book/man.html", "desc": "Documentation Nmap" },
-        { "label": "Redis Security", "url": "https://redis.io/docs/management/security/", "desc": "Sécuriser Redis" }
+        {
+          "label": "Nmap Reference",
+          "url": "https://nmap.org/book/man.html",
+          "desc": "Documentation Nmap"
+        },
+        {
+          "label": "Redis Security",
+          "url": "https://redis.io/docs/management/security/",
+          "desc": "Sécuriser Redis"
+        }
       ],
       "courses": [],
       "tools": [
-        { "name": "Nmap", "url": "https://nmap.org/", "desc": "Scan de ports et services" },
-        { "name": "Hydra", "url": "https://github.com/vanhauser-thc/thc-hydra", "desc": "Brute-force SSH, HTTP, FTP" }
+        {
+          "name": "Nmap",
+          "url": "https://nmap.org/",
+          "desc": "Scan de ports et services"
+        },
+        {
+          "name": "Hydra",
+          "url": "https://github.com/vanhauser-thc/thc-hydra",
+          "desc": "Brute-force SSH, HTTP, FTP"
+        }
       ]
     },
     {
@@ -104,15 +220,35 @@
       "short": "REST, auth, IDOR",
       "content": "Les API REST sont des cibles courantes : authentification (JWT, API keys), contrôle d'accès (IDOR), injection, rate limiting. OWASP publie un Top 10 dédié aux API.",
       "documentation": [
-        { "label": "OWASP API Security Top 10", "url": "https://owasp.org/API-Security/", "desc": "Vulnérabilités API" },
-        { "label": "REST Security Cheat Sheet", "url": "https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html", "desc": "Bonnes pratiques REST" }
+        {
+          "label": "OWASP API Security Top 10",
+          "url": "https://owasp.org/API-Security/",
+          "desc": "Vulnérabilités API"
+        },
+        {
+          "label": "REST Security Cheat Sheet",
+          "url": "https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html",
+          "desc": "Bonnes pratiques REST"
+        }
       ],
       "courses": [
-        { "label": "PortSwigger – API Security", "url": "https://portswigger.net/web-security/api-security", "desc": "Labs API" }
+        {
+          "label": "PortSwigger – API Security",
+          "url": "https://portswigger.net/web-security/api-security",
+          "desc": "Labs API"
+        }
       ],
       "tools": [
-        { "name": "Postman", "url": "https://www.postman.com/", "desc": "Tester des API" },
-        { "name": "curl", "url": "https://curl.se/", "desc": "Requêtes HTTP en CLI" }
+        {
+          "name": "Postman",
+          "url": "https://www.postman.com/",
+          "desc": "Tester des API"
+        },
+        {
+          "name": "curl",
+          "url": "https://curl.se/",
+          "desc": "Requêtes HTTP en CLI"
+        }
       ]
     },
     {
@@ -122,13 +258,29 @@
       "short": "Pcap, trafic, analyse",
       "content": "L'analyse forensique réseau repose sur la capture (tcpdump, Wireshark) et l'analyse du trafic (filtres, flux, protocoles). Utile pour comprendre des attaques et retrouver des données exfiltrées.",
       "documentation": [
-        { "label": "Wireshark User Guide", "url": "https://www.wireshark.org/docs/wsug_html/", "desc": "Guide Wireshark" },
-        { "label": "tshark", "url": "https://www.wireshark.org/docs/man-pages/tshark.html", "desc": "Capture et filtres en CLI" }
+        {
+          "label": "Wireshark User Guide",
+          "url": "https://www.wireshark.org/docs/wsug_html/",
+          "desc": "Guide Wireshark"
+        },
+        {
+          "label": "tshark",
+          "url": "https://www.wireshark.org/docs/man-pages/tshark.html",
+          "desc": "Capture et filtres en CLI"
+        }
       ],
       "courses": [],
       "tools": [
-        { "name": "Wireshark", "url": "https://www.wireshark.org/", "desc": "Analyse de trafic" },
-        { "name": "tcpdump", "url": "https://www.tcpdump.org/", "desc": "Capture de paquets CLI" }
+        {
+          "name": "Wireshark",
+          "url": "https://www.wireshark.org/",
+          "desc": "Analyse de trafic"
+        },
+        {
+          "name": "tcpdump",
+          "url": "https://www.tcpdump.org/",
+          "desc": "Capture de paquets CLI"
+        }
       ]
     },
     {
@@ -138,12 +290,24 @@
       "short": "Reconnaissance, sources ouvertes",
       "content": "L'OSINT (Open Source Intelligence) recueille des informations depuis des sources publiques : moteurs de recherche, réseaux sociaux, DNS, Shodan. C'est la première phase d'un pentest.",
       "documentation": [
-        { "label": "OSINT Framework", "url": "https://osintframework.com/", "desc": "Arbre d'outils OSINT" }
+        {
+          "label": "OSINT Framework",
+          "url": "https://osintframework.com/",
+          "desc": "Arbre d'outils OSINT"
+        }
       ],
       "courses": [],
       "tools": [
-        { "name": "theHarvester", "url": "https://github.com/laramies/theHarvester", "desc": "Emails, sous-domaines" },
-        { "name": "Shodan", "url": "https://www.shodan.io/", "desc": "Moteur de recherche appareils connectés" }
+        {
+          "name": "theHarvester",
+          "url": "https://github.com/laramies/theHarvester",
+          "desc": "Emails, sous-domaines"
+        },
+        {
+          "name": "Shodan",
+          "url": "https://www.shodan.io/",
+          "desc": "Moteur de recherche appareils connectés"
+        }
       ]
     },
     {
@@ -153,16 +317,40 @@
       "short": "Test d'intrusion, exploitation",
       "content": "Le Red Team simule un attaquant pour tester les défenses. Méthodologies : PTES, OSSTM, MITRE ATT&CK. Outils : Kali, Metasploit. TryHackMe et HackTheBox permettent de s'entraîner.",
       "documentation": [
-        { "label": "PTES", "url": "http://www.pentest-standard.org/", "desc": "Méthodologie pentest" },
-        { "label": "MITRE ATT&CK", "url": "https://attack.mitre.org/", "desc": "Tactiques et techniques d'attaque" }
+        {
+          "label": "PTES",
+          "url": "http://www.pentest-standard.org/",
+          "desc": "Méthodologie pentest"
+        },
+        {
+          "label": "MITRE ATT&CK",
+          "url": "https://attack.mitre.org/",
+          "desc": "Tactiques et techniques d'attaque"
+        }
       ],
       "courses": [
-        { "label": "TryHackMe – Pentesting", "url": "https://tryhackme.com/path/outline/pentesting", "desc": "Parcours pentest" },
-        { "label": "HackTheBox", "url": "https://www.hackthebox.com/", "desc": "Machines et challenges" }
+        {
+          "label": "TryHackMe – Pentesting",
+          "url": "https://tryhackme.com/path/outline/pentesting",
+          "desc": "Parcours pentest"
+        },
+        {
+          "label": "HackTheBox",
+          "url": "https://www.hackthebox.com/",
+          "desc": "Machines et challenges"
+        }
       ],
       "tools": [
-        { "name": "Kali Linux", "url": "https://www.kali.org/", "desc": "Distribution pentest" },
-        { "name": "Metasploit", "url": "https://www.metasploit.com/", "desc": "Framework d'exploitation" }
+        {
+          "name": "Kali Linux",
+          "url": "https://www.kali.org/",
+          "desc": "Distribution pentest"
+        },
+        {
+          "name": "Metasploit",
+          "url": "https://www.metasploit.com/",
+          "desc": "Framework d'exploitation"
+        }
       ]
     },
     {
@@ -172,11 +360,19 @@
       "short": "IDS/IPS, SIEM",
       "content": "Le Blue Team défend et détecte les intrusions. IDS/IPS (ex. Suricata) analysent le trafic et bloquent les menaces. Les SIEM agrègent les logs pour la détection.",
       "documentation": [
-        { "label": "Suricata", "url": "https://suricata.io/documentation/", "desc": "Moteur IDS/IPS" }
+        {
+          "label": "Suricata",
+          "url": "https://suricata.io/documentation/",
+          "desc": "Moteur IDS/IPS"
+        }
       ],
       "courses": [],
       "tools": [
-        { "name": "Suricata", "url": "https://suricata.io/", "desc": "IDS/IPS" }
+        {
+          "name": "Suricata",
+          "url": "https://suricata.io/",
+          "desc": "IDS/IPS"
+        }
       ]
     },
     {
@@ -186,13 +382,29 @@
       "short": "Bases CVE, NVD, recherche",
       "content": "Les CVE identifient des vulnérabilités publiques. Dans la plateforme : bouton CVE (flottant) → recherche par ID ou par mot-clé (logiciel, OS, application, version) ; résultats et détails (résumé, score CVSS) dans l'interface, lien vers NVD. NVD et CVE.mitre.org restent les références officielles.",
       "documentation": [
-        { "label": "NVD (NIST)", "url": "https://nvd.nist.gov/vuln/search", "desc": "Recherche et fiches CVE" },
-        { "label": "CVE.mitre.org", "url": "https://cve.mitre.org/", "desc": "Liste officielle CVE" }
+        {
+          "label": "NVD (NIST)",
+          "url": "https://nvd.nist.gov/vuln/search",
+          "desc": "Recherche et fiches CVE"
+        },
+        {
+          "label": "CVE.mitre.org",
+          "url": "https://cve.mitre.org/",
+          "desc": "Liste officielle CVE"
+        }
       ],
       "courses": [],
       "tools": [
-        { "name": "NVD Search", "url": "https://nvd.nist.gov/vuln/search", "desc": "Recherche par mot-clé" },
-        { "name": "CVE.mitre.org", "url": "https://cve.mitre.org/", "desc": "Référence CVE" }
+        {
+          "name": "NVD Search",
+          "url": "https://nvd.nist.gov/vuln/search",
+          "desc": "Recherche par mot-clé"
+        },
+        {
+          "name": "CVE.mitre.org",
+          "url": "https://cve.mitre.org/",
+          "desc": "Référence CVE"
+        }
       ]
     },
     {
@@ -200,22 +412,269 @@
       "name": "Systèmes & Réseau",
       "icon": "🖥️",
       "short": "Linux, protocoles",
-      "content": "Bases des systèmes (Linux) et des protocoles réseau (TCP/IP, DNS, HTTP). Le lab utilise des conteneurs Linux ; le terminal attaquant (Kali) et les cibles permettent de pratiquer en CLI et en réseau. Pour aller plus loin : fichiers et permissions, processus, réseau (ip, ss), connexion (proxy, VPN). Voir la doc Lab (UTILISER_LE_LAB, PROXY-VPN) et les scénarios pentest.",
+      "content": "Bases des systèmes (Linux) et des protocoles réseau (TCP/IP, DNS, HTTP). Le lab utilise des conteneurs Linux ; le terminal attaquant (Kali) et les cibles permettent de pratiquer en CLI et en réseau. Pour aller plus loin : fichiers et permissions, processus, réseau (ip, ss), connexion (proxy, VPN). Voir la doc Lab (UTILISER_LE_LAB, PROXY-VPN) et les scénarios pentest. Parcours conseillé dans le lab : (1) vérifier interfaces/routes avec `ip a` et `ip r`, (2) lister services locaux avec `ss -tulpen`, (3) tester DNS/HTTP avec `dig` et `curl`, (4) capturer avec `tcpdump`, (5) scanner la cible avec `nmap`, puis documenter le résultat dans OSINT/Engagements. Commandes à utiliser tout le temps en pratique pentest/réseau Linux: `ip a`, `ip r`, `ss -tulpen`, `ss -tpn`, `dig +short`, `curl -I -v`, `tcpdump -i any -nn`, `nmap -sV`, `journalctl -xeu <service>`, `sudo nft list ruleset`.",
       "subcategories": [
-        { "id": "linux-fichiers", "name": "Linux : fichiers et permissions", "content": "Système de fichiers (/, /etc, /var), permissions (chmod, chown), utilisateurs et groupes. En pentest : lecture de configs, élévation de privilèges." },
-        { "id": "linux-processus", "name": "Linux : processus et services", "content": "Processus (ps, top), services (systemd), logs (/var/log). Utile pour comprendre ce qui tourne sur une cible." },
-        { "id": "linux-reseau", "name": "Réseau sous Linux", "content": "Interfaces (ip addr), routage, DNS (/etc/resolv.conf), connexion (proxy : variables http_proxy ; VPN : voir PROXY-VPN)." }
+        {
+          "id": "linux-fichiers",
+          "name": "Linux : fichiers et permissions",
+          "content": "Système de fichiers (/, /etc, /var), permissions (chmod, chown), utilisateurs et groupes. En pentest : lecture de configs, élévation de privilèges."
+        },
+        {
+          "id": "linux-processus",
+          "name": "Linux : processus et services",
+          "content": "Processus (ps, top), services (systemd), logs (/var/log). Utile pour comprendre ce qui tourne sur une cible."
+        },
+        {
+          "id": "linux-reseau",
+          "name": "Réseau sous Linux",
+          "content": "Interfaces (ip addr), routage, DNS (/etc/resolv.conf), connexion (proxy : variables http_proxy ; VPN : voir PROXY-VPN)."
+        },
+        {
+          "id": "linux-reseau-ss",
+          "name": "Sockets et connexions (ss)",
+          "content": "`ss` remplace netstat pour inspecter sockets TCP/UDP. Commandes clés : `ss -tulpen` (ports en écoute), `ss -tpn` (connexions établies + PID), `ss -s` (résumé), `ss -lntp '( sport = :80 or sport = :443 )'` (filtre ports). Objectif lab : identifier quels services écoutent et quel processus est associé."
+        },
+        {
+          "id": "linux-reseau-ip",
+          "name": "Interfaces et routage (ip)",
+          "content": "`ip` est l’outil central réseau Linux : `ip a` (interfaces/adresses), `ip r` (table de routage), `ip neigh` (voisinage ARP), `ip link set eth0 up/down` (état interface). Objectif lab : comprendre le chemin réseau de l’attaquant vers les cibles et valider passerelle/DNS."
+        },
+        {
+          "id": "linux-reseau-dns-http",
+          "name": "DNS et HTTP en CLI (dig, nslookup, curl)",
+          "content": "Commande d’investigation : `dig +short`, `nslookup`, `host` pour DNS ; `curl -I`, `curl -v`, `curl -X` pour analyser les réponses HTTP/API. Objectif lab : vérifier résolution des cibles, entêtes HTTP, redirections et endpoints API vulnérables."
+        },
+        {
+          "id": "linux-reseau-capture",
+          "name": "Capture réseau (tcpdump) + lecture rapide",
+          "content": "`tcpdump` pour capturer : `tcpdump -i any host vuln-api -w cap.pcap`, puis lecture `tcpdump -nn -r cap.pcap`. Filtres utiles : `port 80`, `port 443`, `tcp`, `udp`, `icmp`. Objectif lab : observer les requêtes générées pendant tests web/API et corréler avec les findings."
+        },
+        {
+          "id": "linux-reseau-scan-lab",
+          "name": "Scan et validation services (nmap + ss)",
+          "content": "Méthode pratique : scanner avec `nmap -sV vuln-network`, puis confirmer côté cible/service avec `ss`/logs. Objectif lab : faire correspondre vue externe (ports détectés) et vue interne (processus écoute) pour valider une exposition réseau."
+        },
+        {
+          "id": "linux-reseau-workflow",
+          "name": "Workflow réseau Linux (méthode pro)",
+          "content": "Routine recommandée en investigation: 1) `ip a` + `ip r` + `resolvectl status` (ou `/etc/resolv.conf`), 2) `ss -tulpen` + `ss -tpn`, 3) `ping`/`tracepath`, 4) `dig +short`/`nslookup`, 5) `curl -I -v`, 6) `tcpdump` court ciblé, 7) `nmap -sV` côté externe. Documenter chaque étape (commande, sortie, hypothèse, conclusion)."
+        },
+        {
+          "id": "linux-reseau-ss-advanced",
+          "name": "ss avancé (filtres, états, diagnostic)",
+          "content": "Commandes utiles en continu: `ss -s` (synthèse), `ss -lntup` (écoutes), `ss -o state established '( dport = :443 or sport = :443 )'`, `ss -tapn` (processus), `ss -i` (infos TCP). États TCP importants: LISTEN, ESTAB, TIME-WAIT, CLOSE-WAIT. Objectif: repérer saturation, connexions anormales, services exposés."
+        },
+        {
+          "id": "linux-reseau-routage-policy",
+          "name": "Routage, policy routing et namespaces",
+          "content": "Au-delà de `ip r`: `ip rule` (policy routing), tables personnalisées, `ip netns` (isolation), `ip route get <ip>` (chemin réel), `ip -br a` (vue compacte). Très utile en labs Docker/multi-réseaux pour comprendre pourquoi un flux passe (ou pas)."
+        },
+        {
+          "id": "linux-reseau-firewall",
+          "name": "Pare-feu Linux (nftables/iptables) et contrôle flux",
+          "content": "Vérifier rapidement la politique de filtrage: `sudo nft list ruleset` (nftables), `sudo iptables -S` / `-L -n -v` (legacy). Croiser avec `ss` pour distinguer service ouvert localement vs bloqué en entrée."
+        },
+        {
+          "id": "linux-reseau-systemd-network",
+          "name": "Services réseau et démarrage",
+          "content": "Identifier qui gère le réseau: NetworkManager, systemd-networkd, ifupdown. Commandes: `systemctl status NetworkManager`, `systemctl status systemd-networkd`, `journalctl -u NetworkManager -b`, `journalctl -u systemd-networkd -b`."
+        },
+        {
+          "id": "linux-reseau-dns-deep",
+          "name": "DNS avancé pour pentest",
+          "content": "Investigations courantes: `dig +short A`, `AAAA`, `MX`, `TXT`, `NS`, `SOA`, `dig axfr @ns1.example.com example.com` (test transfert zone), `dig +trace`. En OSINT/pentest, DNS révèle souvent sous-domaines, prestataires, architecture."
+        },
+        {
+          "id": "linux-reseau-http-api-cli",
+          "name": "HTTP/API CLI (curl/jq) orienté sécurité",
+          "content": "Base opérationnelle: `curl -i`, `curl -v`, `curl -k`, `curl --proxy`, `curl -X POST -H 'Content-Type: application/json' -d ...`, pipeline avec `jq`. Vérifier headers de sécurité, codes HTTP, auth, redirections, erreurs."
+        },
+        {
+          "id": "linux-reseau-capture-advanced",
+          "name": "Capture paquets avancée (tcpdump/tshark)",
+          "content": "Filtres BPF utiles: `host`, `net`, `port`, `portrange`, `tcp[tcpflags] & tcp-syn != 0`, `icmp`. Exemples: `tcpdump -i any -nn 'host vuln-api and (tcp port 80 or 443)'`; lecture: `tshark -r cap.pcap -Y http`."
+        },
+        {
+          "id": "linux-reseau-performance",
+          "name": "Performance et saturation réseau",
+          "content": "Mesures de base: `sar -n DEV 1`, `iftop`, `nload`, `ethtool -S eth0`, `ss -s`, backlog SYN, retransmissions. Objectif: distinguer panne applicative, saturation bande passante, perte paquets, MTU, DNS lent."
+        },
+        {
+          "id": "linux-reseau-troubleshooting",
+          "name": "Troubleshooting (playbook incidents)",
+          "content": "Check-list: interface up? route correcte? DNS résout? service écoute? firewall autorise? paquet sort/retour? latence/pertes? logs applicatifs? Utiliser `ip`, `ss`, `dig`, `curl`, `tcpdump`, `journalctl` dans cet ordre."
+        },
+        {
+          "id": "linux-reseau-lab1",
+          "name": "Lab guidé 1: cartographier une cible",
+          "content": "Objectif: produire une fiche technique cible. Étapes: `nmap -sV`, `ss -tulpen` (si accès local), test DNS/HTTP, capture courte `tcpdump`, conclusion risques/exposition. Livrable: tableau ports/services/preuves."
+        },
+        {
+          "id": "linux-reseau-lab2",
+          "name": "Lab guidé 2: diagnostiquer une panne API",
+          "content": "Scénario: API inaccessible intermittente. Étapes: vérifier résolution DNS, connexion TCP (`ss`/`curl -v`), captures ciblées, statut service, firewall. Livrable: cause probable + plan d’action + preuve commande/sortie."
+        },
+        {
+          "id": "linux-reseau-lab3",
+          "name": "Lab guidé 3: hardening exposition réseau",
+          "content": "Identifier ports inutiles, services legacy, règles firewall permissives, endpoints sensibles. Proposer mesures: fermer ports, restreindre ACL, TLS strict, headers sécurité, monitoring."
+        }
       ],
       "documentation": [
-        { "label": "Linux man pages", "url": "https://man7.org/linux/man-pages/", "desc": "Documentation commandes Linux" },
-        { "label": "RFC Editor", "url": "https://www.rfc-editor.org/", "desc": "Protocoles réseau" }
+        {
+          "label": "Linux man pages",
+          "url": "https://man7.org/linux/man-pages/",
+          "desc": "Documentation commandes Linux"
+        },
+        {
+          "label": "RFC Editor",
+          "url": "https://www.rfc-editor.org/",
+          "desc": "Protocoles réseau"
+        },
+        {
+          "label": "man7 – ip-route(8)",
+          "url": "https://man7.org/linux/man-pages/man8/ip-route.8.html",
+          "desc": "Routage avancé iproute2"
+        },
+        {
+          "label": "man7 – ip-rule(8)",
+          "url": "https://man7.org/linux/man-pages/man8/ip-rule.8.html",
+          "desc": "Policy routing Linux"
+        },
+        {
+          "label": "man7 – tcpdump(8)",
+          "url": "https://man7.org/linux/man-pages/man8/tcpdump.8.html",
+          "desc": "Référence tcpdump"
+        },
+        {
+          "label": "nftables wiki",
+          "url": "https://wiki.nftables.org/",
+          "desc": "Pare-feu Linux moderne"
+        },
+        {
+          "label": "systemd.network",
+          "url": "https://www.freedesktop.org/software/systemd/man/systemd.network.html",
+          "desc": "Configuration réseau systemd"
+        }
       ],
       "courses": [
-        { "label": "Linux Journey", "url": "https://linuxjourney.com/", "desc": "Apprentissage Linux en profondeur" }
+        {
+          "label": "Linux Journey",
+          "url": "https://linuxjourney.com/",
+          "desc": "Apprentissage Linux en profondeur"
+        },
+        {
+          "label": "Linux Command Line Basics",
+          "url": "https://linuxjourney.com/",
+          "desc": "Parcours Linux progressif (CLI, fichiers, processus)"
+        },
+        {
+          "label": "man7 – ss(8)",
+          "url": "https://man7.org/linux/man-pages/man8/ss.8.html",
+          "desc": "Référence complète de la commande ss"
+        },
+        {
+          "label": "man7 – ip(8)",
+          "url": "https://man7.org/linux/man-pages/man8/ip.8.html",
+          "desc": "Référence iproute2 (interfaces, routes, voisinage)"
+        },
+        {
+          "label": "Wireshark / tcpdump Lab Guide",
+          "url": "https://www.tcpdump.org/manpages/tcpdump.1.html",
+          "desc": "Guide capture réseau et filtres de base"
+        },
+        {
+          "label": "Practical Networking",
+          "url": "https://www.practicalnetworking.net/",
+          "desc": "Cours réseau clairs et progressifs"
+        },
+        {
+          "label": "TryHackMe – Network Fundamentals",
+          "url": "https://tryhackme.com/module/network-fundamentals",
+          "desc": "Parcours pratique réseau"
+        },
+        {
+          "label": "Cisco Packet Tracer Intro",
+          "url": "https://www.netacad.com/courses/packet-tracer",
+          "desc": "Base de topologies et troubleshooting"
+        },
+        {
+          "label": "Wireshark Mastery (free docs)",
+          "url": "https://www.wireshark.org/docs/",
+          "desc": "Approfondir analyse protocolaire"
+        }
       ],
       "tools": [
-        { "name": "Kali (lab)", "url": "#", "desc": "Terminal attaquant du lab" },
-        { "name": "Wireshark", "url": "https://www.wireshark.org/", "desc": "Analyse de paquets" }
+        {
+          "name": "Kali (lab)",
+          "url": "#",
+          "desc": "Terminal attaquant du lab"
+        },
+        {
+          "name": "Wireshark",
+          "url": "https://www.wireshark.org/",
+          "desc": "Analyse de paquets"
+        },
+        {
+          "name": "ss",
+          "url": "https://man7.org/linux/man-pages/man8/ss.8.html",
+          "desc": "Lister sockets, connexions et ports en écoute"
+        },
+        {
+          "name": "ip (iproute2)",
+          "url": "https://man7.org/linux/man-pages/man8/ip.8.html",
+          "desc": "Interfaces réseau, routes, voisinage ARP/NDP"
+        },
+        {
+          "name": "tcpdump",
+          "url": "https://www.tcpdump.org/",
+          "desc": "Capture paquets en ligne de commande"
+        },
+        {
+          "name": "dig",
+          "url": "https://man7.org/linux/man-pages/man1/dig.1.html",
+          "desc": "Diagnostic DNS en CLI"
+        },
+        {
+          "name": "curl",
+          "url": "https://curl.se/",
+          "desc": "Tests HTTP/API en ligne de commande"
+        },
+        {
+          "name": "nmap",
+          "url": "https://nmap.org/",
+          "desc": "Scan réseau et détection de services"
+        },
+        {
+          "name": "tshark",
+          "url": "https://www.wireshark.org/docs/man-pages/tshark.html",
+          "desc": "Analyse pcap en CLI"
+        },
+        {
+          "name": "nft",
+          "url": "https://wiki.nftables.org/",
+          "desc": "Gestion pare-feu nftables"
+        },
+        {
+          "name": "ethtool",
+          "url": "https://man7.org/linux/man-pages/man8/ethtool.8.html",
+          "desc": "Infos driver/NIC, stats lien"
+        },
+        {
+          "name": "mtr",
+          "url": "https://www.bitwizard.nl/mtr/",
+          "desc": "Traceroute + pertes/latence"
+        },
+        {
+          "name": "iperf3",
+          "url": "https://software.es.net/iperf/",
+          "desc": "Mesure de débit réseau"
+        },
+        {
+          "name": "jq",
+          "url": "https://jqlang.github.io/jq/",
+          "desc": "Traitement JSON en CLI (API)"
+        }
       ]
     }
   ]
